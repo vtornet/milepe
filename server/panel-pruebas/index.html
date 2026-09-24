@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>MiLepe — Panel de pruebas</title>
+<style>
+  :root { --verde: #1e6f5c; --fondo: #f7f7f5; --borde: #ddd; --error: #b3261e; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; max-width: 760px; margin: 0 auto; padding: 24px 16px 80px; background: var(--fondo); color: #1f1f1f; }
+  h1 { color: var(--verde); margin-bottom: 4px; }
+  .aviso { background: #fff3cd; border: 1px solid #ffe08a; padding: 8px 12px; border-radius: 6px; font-size: 14px; margin-bottom: 24px; }
+  section { background: white; border: 1px solid var(--borde); border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+  h2 { margin-top: 0; font-size: 18px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0 4px; }
+  input, textarea, select { width: 100%; padding: 8px; border: 1px solid var(--borde); border-radius: 6px; font-size: 14px; }
+  button { margin-top: 14px; background: var(--verde); color: white; border: none; padding: 10px 18px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+  button:hover { opacity: 0.9; }
+  button:disabled { background: #aaa; cursor: not-allowed; }
+  pre { background: #1f1f1f; color: #d4f5d4; padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+  .fila { display: flex; gap: 10px; }
+  .fila > div { flex: 1; }
+  #sesion { font-size: 14px; }
+  #sesion.activa { color: var(--verde); font-weight: 600; }
+  #sesion.inactiva { color: var(--error); }
+  .queja-card { border: 1px solid var(--borde); border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+  .queja-card .meta { font-size: 12px; color: #666; }
+</style>
+</head>
+<body>
+  <h1>MiLepe</h1>
+  <div class="aviso">Panel de pruebas para desarrollo. No forma parte de la app real (esa es <code>client/</code>) — solo llama a la API para probarla sin Postman ni curl.</div>
+
+  <section>
+    <h2>Sesión</h2>
+    <p id="sesion" class="inactiva">No has iniciado sesión.</p>
+    <button id="btnCerrarSesion" style="background:#666">Cerrar sesión</button>
+  </section>
+
+  <section>
+    <h2>1. Registrarse</h2>
+    <form id="formRegistro">
+      <div class="fila">
+        <div><label>Nombre de usuario</label><input name="nombre_usuario" required></div>
+        <div><label>Nombre</label><input name="nombre" required></div>
+      </div>
+      <label>Email</label><input name="email" type="email" required>
+      <label>Contraseña (mínimo 8 caracteres)</label><input name="contraseña" type="password" required minlength="8">
+      <button type="submit">Registrarse</button>
+    </form>
+    <pre id="salidaRegistro" style="display:none"></pre>
+  </section>
+
+  <section>
+    <h2>2. Iniciar sesión</h2>
+    <form id="formLogin">
+      <label>Email</label><input name="email" type="email" required>
+      <label>Contraseña</label><input name="contraseña" type="password" required>
+      <button type="submit">Iniciar sesión</button>
+    </form>
+    <pre id="salidaLogin" style="display:none"></pre>
+  </section>
+
+  <section>
+    <h2>3. Crear una queja</h2>
+    <form id="formQueja">
+      <label>Título</label><input name="titulo" required>
+      <label>Contenido</label><textarea name="contenido" rows="3" required></textarea>
+      <label>Categoría</label>
+      <select name="categoria" required>
+        <option value="limpieza">Limpieza</option>
+        <option value="suministros">Suministros (luz/agua)</option>
+        <option value="obras">Obras</option>
+        <option value="jardineria">Jardinería</option>
+        <option value="general">General</option>
+      </select>
+      <div class="fila">
+        <div><label>Latitud</label><input name="lat" type="number" step="any" value="37.2545" required></div>
+        <div><label>Longitud</label><input name="lng" type="number" step="any" value="-7.2039" required></div>
+      </div>
+      <label>Dirección aproximada (opcional)</label><input name="direccion_aproximada">
+      <button type="submit">Crear queja</button>
+    </form>
+    <pre id="salidaQueja" style="display:none"></pre>
+  </section>
+
+  <section>
+    <h2>4. Ver quejas publicadas</h2>
+    <button id="btnListar">Actualizar listado</button>
+    <div id="listaQuejas" style="margin-top:14px"></div>
+  </section>
+
+<script>
+  const API = '/api';
+  let token = localStorage.getItem('milepe_panel_token') || null;
+  let usuario = JSON.parse(localStorage.getItem('milepe_panel_usuario') || 'null');
+
+  const elSesion = document.getElementById('sesion');
+  const pintarSesion = () => {
+    if (token && usuario) {
+      elSesion.textContent = `Sesión activa como ${usuario.nombre_usuario} (${usuario.email})`;
+      elSesion.className = 'activa';
+    } else {
+      elSesion.textContent = 'No has iniciado sesión.';
+      elSesion.className = 'inactiva';
+    }
+  };
+  pintarSesion();
+
+  const guardarSesion = (data) => {
+    token = data.token;
+    usuario = data.usuario;
+    localStorage.setItem('milepe_panel_token', token);
+    localStorage.setItem('milepe_panel_usuario', JSON.stringify(usuario));
+    pintarSesion();
+  };
+
+  document.getElementById('btnCerrarSesion').addEventListener('click', () => {
+    token = null; usuario = null;
+    localStorage.removeItem('milepe_panel_token');
+    localStorage.removeItem('milepe_panel_usuario');
+    pintarSesion();
+  });
+
+  const mostrarSalida = (id, data, status) => {
+    const el = document.getElementById(id);
+    el.style.display = 'block';
+    el.textContent = `[HTTP ${status}]\n` + JSON.stringify(data, null, 2);
+  };
+
+  const enviarJSON = async (url, metodo, cuerpo, conToken) => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (conToken && token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(API + url, { method: metodo, headers, body: JSON.stringify(cuerpo) });
+    const data = await res.json().catch(() => ({ ok: false, mensaje: 'Respuesta no era JSON' }));
+    return { status: res.status, data };
+  };
+
+  document.getElementById('formRegistro').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const { status, data } = await enviarJSON('/auth/registro', 'POST', Object.fromEntries(f));
+    mostrarSalida('salidaRegistro', data, status);
+    if (data.ok) guardarSesion(data);
+  });
+
+  document.getElementById('formLogin').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const { status, data } = await enviarJSON('/auth/login', 'POST', Object.fromEntries(f));
+    mostrarSalida('salidaLogin', data, status);
+    if (data.ok) guardarSesion(data);
+  });
+
+  document.getElementById('formQueja').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!token) {
+      alert('Primero tienes que iniciar sesión (paso 2).');
+      return;
+    }
+    const f = Object.fromEntries(new FormData(e.target));
+    const cuerpo = {
+      titulo: f.titulo,
+      contenido: f.contenido,
+      categoria: f.categoria,
+      ubicacion: { lat: parseFloat(f.lat), lng: parseFloat(f.lng) },
+      direccion_aproximada: f.direccion_aproximada || undefined,
+    };
+    const { status, data } = await enviarJSON('/quejas', 'POST', cuerpo, true);
+    mostrarSalida('salidaQueja', data, status);
+    if (data.ok) cargarQuejas();
+  });
+
+  const cargarQuejas = async () => {
+    const res = await fetch(API + '/quejas');
+    const data = await res.json();
+    const cont = document.getElementById('listaQuejas');
+    if (!data.quejas?.length) {
+      cont.innerHTML = '<p style="color:#666">Todavía no hay quejas publicadas.</p>';
+      return;
+    }
+    cont.innerHTML = data.quejas.map((q) => `
+      <div class="queja-card">
+        <strong>${q.titulo}</strong> — <em>${q.categoria}</em> (${q.estado})
+        <p>${q.contenido}</p>
+        <div class="meta">Por ${q.autor?.nombre_usuario || '?'} · ${new Date(q.fecha_creacion).toLocaleString('es-ES')} · ${q.num_likes} likes · ${q.num_comentarios} comentarios</div>
+      </div>
+    `).join('');
+  };
+
+  document.getElementById('btnListar').addEventListener('click', cargarQuejas);
+  cargarQuejas();
+</script>
+</body>
+</html>

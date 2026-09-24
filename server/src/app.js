@@ -1,7 +1,11 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import routes from './routes/index.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
@@ -18,6 +22,13 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api', routes);
+
+// Panel HTML de pruebas manuales (registro/login/crear queja/listar), solo
+// en desarrollo: pide y llama a /api con fetch() desde el propio origen, sin
+// lios de CORS ni depender de Postman/curl. Nunca se sirve en produccion.
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/panel', express.static(path.join(__dirname, '..', 'panel-pruebas')));
+}
 
 // Manejador de errores centralizado. Los controladores hacen next(error) y
 // aqui se traduce a una respuesta JSON consistente. Ademas de ErrorHttp
