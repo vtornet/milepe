@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import authRoutes from './authRoutes.js';
 
 const router = Router();
 
@@ -7,11 +8,12 @@ router.get('/health', (req, res) => {
   res.json({ ok: true, servicio: 'milepe-api' });
 });
 
+router.use('/auth', authRoutes);
+
 // A medida que se implementen los modelos y controladores de cada seccion,
 // sus routers se importan y montan aqui. Un router por seccion mantiene
 // el feed general (posts) desacoplado de los detalles de cada tipo.
 //
-// router.use('/auth', authRoutes);
 // router.use('/posts', postsRoutes);          // muro (feed general)
 // router.use('/quejas', quejasRoutes);
 // router.use('/turismo', turismoRoutes);
