@@ -1,0 +1,4 @@
+# Cada subproyecto (client/, server/) tiene su propio .gitignore para
+# node_modules, dist/, .env, etc. Este archivo cubre solo la raiz.
+.DS_Store
+Thumbs.db
