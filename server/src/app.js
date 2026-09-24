@@ -32,6 +32,14 @@ app.use((error, req, res, next) => {
     return res.status(409).json({ ok: false, mensaje: `Ya existe un registro con ese ${campo}` });
   }
 
+  // Un :id de la URL que no es un ObjectId valido (typo, id de otra
+  // coleccion...) revienta como CastError, no como 404. Con rutas por :id
+  // multiplicandose a partir de aqui (posts, quejas...), vale la pena
+  // traducirlo aqui una sola vez.
+  if (error.name === 'CastError' && error.kind === 'ObjectId') {
+    return res.status(400).json({ ok: false, mensaje: 'Identificador no valido' });
+  }
+
   const status = error.status || 500;
   res.status(status).json({
     ok: false,
