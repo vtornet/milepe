@@ -31,6 +31,15 @@ Both are ESM (`"type": "module"` in both package.json files) — use
   or `MONGO_URL` (Railway's Mongo templates use different names depending
   on the template), checked in that order. The process exits with a logged
   error if none is set or the DB is unreachable.
+- The Railway MongoDB has no public proxy (deliberately — the "Public
+  Access" toggle bills egress and accepts connections from anyone with the
+  string). Local `npm run dev` instead goes through a Railway-managed SSH
+  tunnel: `railway link` once, then `railway connect MongoDB --tunnel-only
+  --port 27018` in a separate terminal, left running, with `MONGODB_URI` in
+  `.env` pointing at `127.0.0.1:27018`. Needs an SSH key registered with
+  Railway (`railway ssh keys add`) and, on Windows, `railway` CLI subcommands
+  that take a file path (like `ssh keys add -k`) want a Windows-style path
+  (`C:\Users\...`), not the POSIX-style path Git Bash's `~` expands to.
 - No test runner and no linter are configured yet. New Mongoose models have
   been verified during development with a throwaway script plus
   `npm install --no-save mongodb-memory-server` (spin up a real in-memory

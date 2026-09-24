@@ -24,10 +24,30 @@ Modelo de datos: colección central `posts` con un campo `tipo` discriminador
 
 ```
 cd server
-cp .env.example .env   # rellenar MONGODB_URI, JWT_SECRET, Cloudinary, Stripe...
+cp .env.example .env   # rellenar JWT_SECRET, Cloudinary, Stripe...
 npm install
 npm run dev             # http://localhost:5000 (health check en /api/health)
 ```
+
+La base de datos es un MongoDB en Railway sin acceso publico (por seguridad,
+solo habla con la red privada de Railway). Para conectar tu `npm run dev`
+local hace falta un tunel SSH del propio Railway, en otra terminal aparte:
+
+```
+railway link                                    # una vez, elige el proyecto de MiLepe
+railway connect MongoDB --tunnel-only --port 27018
+```
+
+Deja esa segunda terminal abierta mientras desarrollas (el tunel se cierra
+con Ctrl+C) y pon en `server/.env`:
+
+```
+MONGODB_URI=mongodb://mongo:<password-de-MONGOPASSWORD>@127.0.0.1:27018/milepe?authSource=admin
+```
+
+El usuario/password son los mismos que `railway variables --service MongoDB`
+(`MONGOUSER`/`MONGOPASSWORD`) o los que imprime el propio comando `connect`
+al abrir el tunel.
 
 ### Client
 
