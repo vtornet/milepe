@@ -10,6 +10,13 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// La raiz no es un endpoint real: existe solo para que quien abra
+// http://localhost:5000/ en el navegador vea algo util en vez de un
+// generico "Cannot GET /" y no piense que el servidor esta caido.
+app.get('/', (req, res) => {
+  res.json({ ok: true, mensaje: 'MiLepe API. Prueba /api/health o /api/quejas.' });
+});
+
 app.use('/api', routes);
 
 // Manejador de errores centralizado. Los controladores hacen next(error) y
