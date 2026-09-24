@@ -26,8 +26,11 @@ Both are ESM (`"type": "module"` in both package.json files) — use
 - `npm run dev` — start with nodemon on `http://localhost:5000`
   (`/api/health` for a liveness check).
 - `npm start` — start without nodemon.
-- Requires a `.env` (copy `.env.example`) with at least `MONGODB_URI`; the
-  process exits with a logged error if it's missing or unreachable.
+- Requires a `.env` (copy `.env.example`) with a Mongo connection string —
+  `conectarDB()` in `src/config/db.js` accepts `MONGODB_URI`, `MONGODB_URL`,
+  or `MONGO_URL` (Railway's Mongo templates use different names depending
+  on the template), checked in that order. The process exits with a logged
+  error if none is set or the DB is unreachable.
 - No test runner and no linter are configured yet. New Mongoose models have
   been verified during development with a throwaway script plus
   `npm install --no-save mongodb-memory-server` (spin up a real in-memory
