@@ -40,6 +40,14 @@ Both are ESM (`"type": "module"` in both package.json files) — use
   Railway (`railway ssh keys add`) and, on Windows, `railway` CLI subcommands
   that take a file path (like `ssh keys add -k`) want a Windows-style path
   (`C:\Users\...`), not the POSIX-style path Git Bash's `~` expands to.
+- That tunnel drops on its own occasionally (idle timeout / network blip),
+  independent of anything in the code. Symptom: a request that touches the
+  DB hangs for ~30s then the server logs `[db] Desconectado de MongoDB`
+  followed by `MongoServerSelectionError: read ECONNRESET`, and the response
+  is a 500 with that message. Fix: kill the stale `railway connect` process
+  and its child, then run the same `railway connect MongoDB --tunnel-only
+  --port 27018` again — no server restart needed, Mongoose reconnects to the
+  same local port on its own once the tunnel is back.
 - No test runner and no linter are configured yet. New Mongoose models have
   been verified during development with a throwaway script plus
   `npm install --no-save mongodb-memory-server` (spin up a real in-memory
