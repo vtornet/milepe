@@ -1,0 +1,7 @@
+{
+  "titulo": "Farola rota en la Plaza",
+  "contenido": "Lleva una semana sin luz por las noches.",
+  "categoria": "suministros",
+  "ubicacion": { "lat": 37.2545, "lng": -7.2039 },
+  "direccion_aproximada": "Plaza de la Iglesia"
+}
