@@ -1,7 +1,11 @@
 :root {
   --color-primario: #1e6f5c;
+  --color-primario-oscuro: #15503f;
   --color-fondo: #f7f7f5;
   --color-texto: #1f1f1f;
+  --color-borde: #ddd;
+  --color-error: #b3261e;
+  --color-tarjeta: #ffffff;
   color-scheme: light;
 }
 
@@ -18,4 +22,192 @@ body {
 
 a {
   color: var(--color-primario);
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 12px 60px;
+}
+
+/* --- Navegacion --- */
+nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: var(--color-primario);
+}
+
+nav a,
+nav .navbar-sesion span {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+nav a:first-child {
+  font-weight: 700;
+  font-size: 18px;
+  margin-right: 6px;
+}
+
+nav a.active {
+  text-decoration: underline;
+}
+
+.navbar-sesion {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-sesion button {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* --- Formularios --- */
+.formulario-auth {
+  max-width: 380px;
+  margin: 20px auto;
+  background: var(--color-tarjeta);
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 10px 0 4px;
+}
+
+input,
+textarea,
+select {
+  padding: 9px 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+form button[type='submit'] {
+  margin-top: 16px;
+  background: var(--color-primario);
+  color: white;
+  padding: 10px 16px;
+}
+
+form button[type='submit']:hover {
+  background: var(--color-primario-oscuro);
+}
+
+form button[type='submit']:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+
+.mensaje-error {
+  color: var(--color-error);
+  font-size: 13px;
+  margin: 8px 0 0;
+}
+
+/* --- Tarjetas de post / queja --- */
+.tarjeta {
+  background: var(--color-tarjeta);
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.tarjeta-meta {
+  font-size: 12px;
+  color: #666;
+  margin: 4px 0 10px;
+}
+
+.insignia {
+  display: inline-block;
+  background: #eef3f1;
+  color: var(--color-primario-oscuro);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.botones-reaccion {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.botones-reaccion button {
+  background: #f0f0f0;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.botones-reaccion button.activa {
+  background: var(--color-primario);
+  color: white;
+}
+
+.lista-filtros {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.lista-filtros select {
+  width: auto;
+}
+
+.comentarios {
+  margin-top: 12px;
+  border-top: 1px solid var(--color-borde);
+  padding-top: 10px;
+}
+
+.comentario {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.comentario strong {
+  margin-right: 6px;
+}
+
+.mapa-ubicacion {
+  height: 260px;
+  border-radius: 8px;
+  margin-top: 6px;
+  overflow: hidden;
 }

@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
 import MuroPage from '../pages/Muro/MuroPage.jsx';
 import QuejasPage from '../pages/Quejas/QuejasPage.jsx';
+import LoginPage from '../pages/Auth/LoginPage.jsx';
+import RegistroPage from '../pages/Auth/RegistroPage.jsx';
 import TurismoPage from '../pages/Turismo/TurismoPage.jsx';
 import FotosPage from '../pages/Fotos/FotosPage.jsx';
 import EventosPage from '../pages/Eventos/EventosPage.jsx';
@@ -13,6 +15,8 @@ function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<MuroPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/registro" element={<RegistroPage />} />
       <Route path="/quejas" element={<QuejasPage />} />
       <Route path="/turismo" element={<TurismoPage />} />
       <Route path="/fotos" element={<FotosPage />} />

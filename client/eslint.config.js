@@ -30,6 +30,10 @@ export default [
       ...react.configs.flat['jsx-runtime'].rules,
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // Sin TypeScript en este proyecto, declarar PropTypes en cada
+      // componente es boilerplate sin beneficio real; ni el propio template
+      // oficial de Vite para React activa esta regla.
+      'react/prop-types': 'off',
     },
   },
 ];
