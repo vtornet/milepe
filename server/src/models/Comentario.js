@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Post, { ESTADOS_MODERACION } from './Post.js';
+import { TIPOS_REACCION } from './constantes.js';
 
 const { Schema, model } = mongoose;
 
@@ -45,6 +46,15 @@ const comentarioSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'Usuario',
       default: null,
+    },
+    // Igual que en Post: contador por tipo de reaccion, mantenido por
+    // Reaccion.alternar().
+    reacciones_resumen: {
+      type: new Schema(
+        Object.fromEntries(TIPOS_REACCION.map((tipo) => [tipo, { type: Number, default: 0, min: 0 }])),
+        { _id: false },
+      ),
+      default: () => ({}),
     },
   },
   {

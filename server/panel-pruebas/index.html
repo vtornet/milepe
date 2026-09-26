@@ -178,13 +178,29 @@
       cont.innerHTML = '<p style="color:#666">Todavía no hay quejas publicadas.</p>';
       return;
     }
-    cont.innerHTML = data.quejas.map((q) => `
-      <div class="queja-card">
-        <strong>${q.titulo}</strong> — <em>${q.categoria}</em> (${q.estado})
-        <p>${q.contenido}</p>
-        <div class="meta">Por ${q.autor?.nombre_usuario || '?'} · ${new Date(q.fecha_creacion).toLocaleString('es-ES')} · ${q.num_likes} likes · ${q.num_comentarios} comentarios</div>
-      </div>
-    `).join('');
+    const emoji = { me_gusta: '👍', me_encanta: '❤️', apoyo: '🙌', triste: '😢' };
+    cont.innerHTML = data.quejas.map((q) => {
+      const totalReacciones = Object.values(q.reacciones || {}).reduce((a, b) => a + b, 0);
+      const botones = Object.keys(emoji).map((tipo) => `
+        <button type="button" onclick="reaccionarQueja('${q._id}','${tipo}')" style="background:#eee;color:#333;padding:4px 8px;font-size:16px;margin-right:4px;margin-top:8px">
+          ${emoji[tipo]} ${q.reacciones?.[tipo] || 0}
+        </button>
+      `).join('');
+      return `
+        <div class="queja-card">
+          <strong>${q.titulo}</strong> — <em>${q.categoria}</em> (${q.estado})
+          <p>${q.contenido}</p>
+          <div class="meta">Por ${q.autor?.nombre_usuario || '?'} · ${new Date(q.fecha_creacion).toLocaleString('es-ES')} · ${totalReacciones} reacciones · ${q.num_comentarios} comentarios</div>
+          <div>${botones}</div>
+        </div>
+      `;
+    }).join('');
+  };
+
+  window.reaccionarQueja = async (id, tipo) => {
+    if (!token) { alert('Primero tienes que iniciar sesión (paso 2).'); return; }
+    await enviarJSON(`/posts/${id}/reaccion`, 'POST', { tipo }, true);
+    cargarQuejas();
   };
 
   document.getElementById('btnListar').addEventListener('click', cargarQuejas);

@@ -1,5 +1,6 @@
 import Post, { ESTADOS_MODERACION } from '../models/Post.js';
 import Comentario from '../models/Comentario.js';
+import Reaccion, { TIPOS_REACCION } from '../models/Reaccion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 
 // Un post 'eliminado' es borrado logico: para cualquiera que no sea su
@@ -50,20 +51,26 @@ export const obtenerPost = async (req, res, next) => {
   }
 };
 
-// Da o quita el "me gusta" del usuario autenticado. Toggle: la misma
-// llamada sirve para dar y para quitar.
-export const alternarLike = async (req, res, next) => {
+// Da, cambia o quita la reaccion del usuario autenticado sobre un post.
+// Toggle: reaccionar otra vez con el mismo tipo la quita; con uno distinto,
+// la cambia. body: { tipo: 'me_gusta' | 'me_encanta' | 'apoyo' | 'triste' }.
+export const reaccionarPost = async (req, res, next) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const { tipo } = req.body;
 
+    if (!TIPOS_REACCION.includes(tipo)) {
+      throw new ErrorHttp(400, `tipo debe ser uno de: ${TIPOS_REACCION.join(', ')}`);
+    }
+
+    const post = await Post.findById(req.params.id);
     if (noEsVisible(post)) {
       throw new ErrorHttp(404, 'Publicacion no encontrada');
     }
 
-    post.alternarLike(req.usuario._id);
-    await post.save();
+    const resultado = await Reaccion.alternar({ autor_id: req.usuario._id, tipo, post_id: post._id });
+    const postActualizado = await Post.findById(post._id).select('reacciones_resumen');
 
-    res.json({ ok: true, num_likes: post.likes.length, le_gusta: post.likes.some((id) => id.equals(req.usuario._id)) });
+    res.json({ ok: true, ...resultado, reacciones: postActualizado.reacciones_resumen });
   } catch (error) {
     next(error);
   }
@@ -154,6 +161,35 @@ export const crearComentario = async (req, res, next) => {
     await comentario.populate('autor_id', 'nombre_usuario nombre avatar_url');
 
     res.status(201).json({ ok: true, comentario });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Igual que reaccionarPost pero sobre un comentario. Vive aqui (no en su
+// propia ruta /comentarios) porque comparte el mismo prefijo /:id que el
+// resto de acciones sobre un post; el comentario se referencia por su
+// propio id en el body, no en la URL.
+export const reaccionarComentario = async (req, res, next) => {
+  try {
+    const { tipo, comentario_id } = req.body;
+
+    if (!TIPOS_REACCION.includes(tipo)) {
+      throw new ErrorHttp(400, `tipo debe ser uno de: ${TIPOS_REACCION.join(', ')}`);
+    }
+    if (!comentario_id) {
+      throw new ErrorHttp(400, 'comentario_id es obligatorio');
+    }
+
+    const comentario = await Comentario.findOne({ _id: comentario_id, post_id: req.params.id });
+    if (!comentario || comentario.estado_moderacion === 'eliminado') {
+      throw new ErrorHttp(404, 'Comentario no encontrado');
+    }
+
+    const resultado = await Reaccion.alternar({ autor_id: req.usuario._id, tipo, comentario_id });
+    const comentarioActualizado = await Comentario.findById(comentario_id).select('reacciones_resumen');
+
+    res.json({ ok: true, ...resultado, reacciones: comentarioActualizado.reacciones_resumen });
   } catch (error) {
     next(error);
   }

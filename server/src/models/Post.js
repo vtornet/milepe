@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { TIPOS_REACCION } from './constantes.js';
 
 const { Schema, model } = mongoose;
 
@@ -79,9 +80,15 @@ const postSchema = new Schema(
       type: [String],
       default: [],
     },
-    likes: {
-      type: [{ type: Schema.Types.ObjectId, ref: 'Usuario' }],
-      default: [],
+    // Desnormalizado igual que num_comentarios: un contador por tipo de
+    // reaccion, para no tener que agregar la coleccion Reaccion en cada
+    // renderizado del feed. Lo mantiene al dia Reaccion.alternar().
+    reacciones_resumen: {
+      type: new Schema(
+        Object.fromEntries(TIPOS_REACCION.map((tipo) => [tipo, { type: Number, default: 0, min: 0 }])),
+        { _id: false },
+      ),
+      default: () => ({}),
     },
     // Desnormalizado para no contar la coleccion Comentarios en cada
     // renderizado del feed. Lo mantiene al dia el modelo Comentario
@@ -122,19 +129,10 @@ postSchema.index({ autor_id: 1, fecha_creacion: -1 });
 // Busqueda libre por texto en el muro.
 postSchema.index({ titulo: 'text', contenido: 'text' });
 
-// Da o quita el "me gusta" de un usuario. No persiste el cambio: el
-// controlador debe llamar a post.save() despues.
-postSchema.methods.alternarLike = function alternarLike(usuarioId) {
-  const indice = this.likes.findIndex((id) => id.equals(usuarioId));
-
-  if (indice === -1) {
-    this.likes.push(usuarioId);
-  } else {
-    this.likes.splice(indice, 1);
-  }
-
-  return this;
-};
+// Reaccionar (me_gusta/me_encanta/apoyo/triste) ya no es un metodo de Post:
+// lo gestiona Reaccion.alternar(), que es quien mantiene reacciones_resumen
+// al dia. Vive en su propio modelo porque tambien reacciona a comentarios,
+// no solo a posts.
 
 // Registra el reporte de un usuario. Un mismo usuario no puede reportar el
 // mismo post dos veces. Si se alcanza el umbral, el post se oculta solo en

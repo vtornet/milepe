@@ -2,7 +2,8 @@ import { Router } from 'express';
 import {
   listarMuro,
   obtenerPost,
-  alternarLike,
+  reaccionarPost,
+  reaccionarComentario,
   reportarPost,
   moderarPost,
   listarComentarios,
@@ -14,10 +15,11 @@ const router = Router();
 
 router.get('/', listarMuro);
 router.get('/:id', obtenerPost);
-router.post('/:id/like', protegido, alternarLike);
+router.post('/:id/reaccion', protegido, reaccionarPost);
 router.post('/:id/reportar', protegido, reportarPost);
 router.patch('/:id/moderar', protegido, autorizar('moderador', 'admin'), moderarPost);
 router.get('/:id/comentarios', listarComentarios);
 router.post('/:id/comentarios', protegido, crearComentario);
+router.post('/:id/comentarios/reaccion', protegido, reaccionarComentario);
 
 export default router;

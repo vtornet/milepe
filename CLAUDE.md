@@ -10,6 +10,15 @@ One general feed (Muro) aggregates posts from distinct sections — Quejas
 Tiempo (weather widget, no user content), Empleo (Busco/Ofrezco), Negocios
 locales, and Contactos de interés. See `README.md` for the full pitch.
 
+Beyond that section-based content, MiLepe is being built out into a fuller
+social network — reactions, blocking, contacts (friend requests),
+notifications, private messaging, and a proper report+appeal moderation
+workflow with an audit log — modeled after a previous project
+(`E:/Piverse`, a Flask/SQLAlchemy/Jinja2 app for a different, unrelated
+community, not reused as code — see the "Reactions" section below for how
+that translation into this stack's conventions works in practice). Expect
+this feature set to keep growing in that direction.
+
 Two independent apps, each with its own `package.json`/`node_modules` — there
 is no root package.json or workspace tooling:
 
@@ -72,7 +81,8 @@ Everything publishable lives in one central `posts` collection
 (`server/src/models/Post.js`) discriminated by `tipo` (`muro`, `queja`,
 `turismo`, `foto`, `evento`, `empleo_busco`, `empleo_ofrezco`, `negocio`).
 `Post` only holds generic feed fields: `autor_id`, `tipo`, `titulo`,
-`contenido`, `imagenes`, `likes`, moderation state, `reportes`. Type-specific
+`contenido`, `imagenes`, `reacciones_resumen`, moderation state, `reportes`.
+Type-specific
 fields live in a separate `*_detalle` collection, linked back by a unique
 `post_id` (one-to-one): `QuejaDetalle`, `FotoDetalle`, `EmpleoDetalle`,
 `EventoDetalle`, `NegocioDetalle`.
@@ -130,6 +140,27 @@ actually removed. `moderador_id` on `Post` tracks who last acted on it.
 `Usuario.rol` (`usuario`/`moderador`/`admin`) is designed so new moderators
 can be added later by editing one field on an existing document — no
 migration.
+
+### Reactions
+
+`Reaccion` (`server/src/models/Reaccion.js`) is one collection shared by
+posts and comments — a document has exactly `post_id` XOR `comentario_id`
+(enforced in `pre('validate')`), never both, never neither. `TIPOS_REACCION`
+(`me_gusta`, `me_encanta`, `apoyo`, `triste` — lives in `models/
+constantes.js`, not in `Reaccion.js`, specifically to avoid a circular
+import since `Post.js`/`Comentario.js` need the list too for their
+`reacciones_resumen` field) is deliberately not Facebook's full reaction
+set — `apoyo` doubles as "this happens to me too" solidarity on a Quejas
+post. `Reaccion.alternar({ autor_id, tipo, post_id | comentario_id })` is
+the only way to react: it upserts, and reacting again with the same `tipo`
+removes it (toggle) while a different `tipo` swaps it — one reaction per
+user per target, enforced by a partial unique index (partial because only
+one of `post_id`/`comentario_id` is set per document, so a plain compound
+unique index would collide across targets). It also keeps
+`reacciones_resumen` (a per-type counter, same denormalization pattern as
+`num_comentarios`) in sync on the right parent model. There used to be a
+simple `Post.likes: [ObjectId]` array with a `Post.alternarLike()` toggle —
+that's gone, replaced entirely by this.
 
 ### Auth building blocks (routes not built yet)
 
