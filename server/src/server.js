@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import app from './app.js';
 import conectarDB from './config/db.js';
+import { iniciarCronCaducarEmpleos } from './jobs/caducarEmpleos.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -11,9 +12,9 @@ const iniciar = async () => {
     console.log(`[server] MiLepe API escuchando en el puerto ${PORT}`);
   });
 
-  // Aqui se registran las tareas programadas (node-cron), por ejemplo
-  // la caducidad automatica de ofertas de empleo:
-  // import './jobs/caducarEmpleos.js';
+  // Tareas programadas (node-cron). Se registran aqui, despues de
+  // confirmar la conexion a Mongo, no al importar el modulo.
+  iniciarCronCaducarEmpleos();
 };
 
 iniciar().catch((error) => {
