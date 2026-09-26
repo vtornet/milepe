@@ -1,6 +1,7 @@
 import Usuario from '../models/Usuario.js';
 import Amistad from '../models/Amistad.js';
 import Bloqueo from '../models/Bloqueo.js';
+import Notificacion from '../models/Notificacion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 
 export const enviarSolicitud = async (req, res, next) => {
@@ -26,6 +27,15 @@ export const enviarSolicitud = async (req, res, next) => {
     }
 
     const amistad = await Amistad.create({ solicitante_id: req.usuario._id, receptor_id: receptorId });
+
+    await Notificacion.create({
+      usuario_id: receptorId,
+      tipo: 'solicitud_amistad',
+      mensaje: `${req.usuario.nombre_usuario} te ha enviado una solicitud de amistad`,
+      referencia_id: amistad._id,
+      referencia_tipo: 'amistad',
+    });
+
     res.status(201).json({ ok: true, amistad });
   } catch (error) {
     next(error);
@@ -49,6 +59,14 @@ export const aceptarSolicitud = async (req, res, next) => {
 
     amistad.estado = 'aceptada';
     await amistad.save();
+
+    await Notificacion.create({
+      usuario_id: amistad.solicitante_id,
+      tipo: 'amistad_aceptada',
+      mensaje: `${req.usuario.nombre_usuario} ha aceptado tu solicitud de amistad`,
+      referencia_id: amistad._id,
+      referencia_tipo: 'amistad',
+    });
 
     res.json({ ok: true, amistad });
   } catch (error) {

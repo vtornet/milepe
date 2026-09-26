@@ -2,11 +2,21 @@ import Post, { ESTADOS_MODERACION } from '../models/Post.js';
 import Comentario from '../models/Comentario.js';
 import Reaccion, { TIPOS_REACCION } from '../models/Reaccion.js';
 import Bloqueo from '../models/Bloqueo.js';
+import Notificacion from '../models/Notificacion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 
 // Un post 'eliminado' es borrado logico: para cualquiera que no sea su
 // autor o un moderador, se comporta como si no existiera.
 const noEsVisible = (post) => !post || post.estado_moderacion === 'eliminado';
+
+// Nunca te notificas a ti mismo (comentar/reaccionar en lo tuyo propio).
+// Centralizado aqui porque los tres disparadores de este archivo
+// (comentario, reaccion a post, reaccion a comentario) repiten la misma
+// comprobacion.
+const notificarSiNoEsUnoMismo = async ({ destinatarioId, autorAccionId, ...datos }) => {
+  if (destinatarioId.equals(autorAccionId)) return;
+  await Notificacion.create({ usuario_id: destinatarioId, ...datos });
+};
 
 // Muro: feed general, todas las secciones a la vez, sin joins. Filtro
 // opcional por tipo (lo usa cada seccion si alguna vez necesita reutilizar
@@ -74,6 +84,18 @@ export const reaccionarPost = async (req, res, next) => {
 
     const resultado = await Reaccion.alternar({ autor_id: req.usuario._id, tipo, post_id: post._id });
     const postActualizado = await Post.findById(post._id).select('reacciones_resumen');
+
+    // Quitar una reaccion no notifica nada; solo darla o cambiarla.
+    if (resultado.accion !== 'quitada') {
+      await notificarSiNoEsUnoMismo({
+        destinatarioId: post.autor_id,
+        autorAccionId: req.usuario._id,
+        tipo: 'reaccion',
+        mensaje: `${req.usuario.nombre_usuario} ha reaccionado a tu publicacion`,
+        referencia_id: post._id,
+        referencia_tipo: 'post',
+      });
+    }
 
     res.json({ ok: true, ...resultado, reacciones: postActualizado.reacciones_resumen });
   } catch (error) {
@@ -169,6 +191,15 @@ export const crearComentario = async (req, res, next) => {
 
     await comentario.populate('autor_id', 'nombre_usuario nombre avatar_url');
 
+    await notificarSiNoEsUnoMismo({
+      destinatarioId: post.autor_id,
+      autorAccionId: req.usuario._id,
+      tipo: 'comentario',
+      mensaje: `${req.usuario.nombre_usuario} ha comentado en tu publicacion`,
+      referencia_id: post._id,
+      referencia_tipo: 'post',
+    });
+
     res.status(201).json({ ok: true, comentario });
   } catch (error) {
     next(error);
@@ -197,6 +228,17 @@ export const reaccionarComentario = async (req, res, next) => {
 
     const resultado = await Reaccion.alternar({ autor_id: req.usuario._id, tipo, comentario_id });
     const comentarioActualizado = await Comentario.findById(comentario_id).select('reacciones_resumen');
+
+    if (resultado.accion !== 'quitada') {
+      await notificarSiNoEsUnoMismo({
+        destinatarioId: comentario.autor_id,
+        autorAccionId: req.usuario._id,
+        tipo: 'reaccion',
+        mensaje: `${req.usuario.nombre_usuario} ha reaccionado a tu comentario`,
+        referencia_id: comentario.post_id,
+        referencia_tipo: 'post',
+      });
+    }
 
     res.json({ ok: true, ...resultado, reacciones: comentarioActualizado.reacciones_resumen });
   } catch (error) {

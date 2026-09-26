@@ -4,6 +4,7 @@ import postsRoutes from './postsRoutes.js';
 import quejasRoutes from './quejasRoutes.js';
 import usuariosRoutes from './usuariosRoutes.js';
 import amistadesRoutes from './amistadesRoutes.js';
+import notificacionesRoutes from './notificacionesRoutes.js';
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.use('/posts', postsRoutes); // muro (feed general) + reaccion/reportar/co
 router.use('/quejas', quejasRoutes);
 router.use('/usuarios', usuariosRoutes); // bloqueos por ahora; perfil publico mas adelante
 router.use('/amistades', amistadesRoutes);
+router.use('/notificaciones', notificacionesRoutes);
 
 // A medida que se implementen los modelos y controladores de cada seccion,
 // sus routers se importan y montan aqui.

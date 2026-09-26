@@ -182,6 +182,26 @@ operation (`eliminarAmistad`): the document is deleted outright, there's no
 `'rechazada'` state sitting around — a friend request can always be sent
 again after a rejection.
 
+### Notifications
+
+`Notificacion` (`server/src/models/Notificacion.js`, routes under
+`/api/notificaciones`) stores an already-rendered `mensaje` string (not
+pieces to assemble client-side — server and client can't disagree on
+wording that way) plus a polymorphic `referencia_id`/`referencia_tipo`
+(`'post' | 'comentario' | 'amistad'`) pair for where to navigate on click,
+since there's no single `ref` a Mongoose populate could use across three
+unrelated collections. There is no model-level hook creating these (unlike
+`num_comentarios`/`reacciones_resumen`, which are hooked because they're
+data-integrity counters) — every trigger point calls `Notificacion.create()`
+explicitly from the controller, currently: new comment, new/changed
+reaction (never on removing one), a friend request sent, one accepted, and
+a queja's `estado` changing. `postsController.notificarSiNoEsUnoMismo()` is
+the shared "skip if you're notifying yourself" helper for the three post/
+comment triggers; the friend and queja triggers inline the same one-line
+check since they only need it once each. Adding a new trigger point
+anywhere else should follow this same explicit-call pattern, not add a new
+model hook.
+
 ### Auth building blocks (routes not built yet)
 
 `Usuario.js` hashes `contraseña` via a `pre('save')` bcrypt hook, the field

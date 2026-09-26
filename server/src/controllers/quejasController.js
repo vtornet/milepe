@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Post from '../models/Post.js';
 import QuejaDetalle, { CATEGORIAS_QUEJA, ESTADOS_QUEJA } from '../models/QuejaDetalle.js';
+import Notificacion from '../models/Notificacion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { aPuntoGeoJSON, deGeoJSONaLatLng } from '../utils/geo.js';
 
@@ -165,6 +166,17 @@ export const cambiarEstadoQueja = async (req, res, next) => {
 
     detalle.cambiarEstado(estado, req.usuario._id);
     await detalle.save();
+
+    const post = await Post.findById(req.params.id).select('autor_id titulo');
+    if (post && !post.autor_id.equals(req.usuario._id)) {
+      await Notificacion.create({
+        usuario_id: post.autor_id,
+        tipo: 'cambio_estado_queja',
+        mensaje: `Tu queja "${post.titulo}" ha pasado a estado "${detalle.estado}"`,
+        referencia_id: post._id,
+        referencia_tipo: 'post',
+      });
+    }
 
     res.json({ ok: true, estado: detalle.estado, historial_estados: detalle.historial_estados });
   } catch (error) {
