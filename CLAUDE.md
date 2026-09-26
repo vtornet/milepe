@@ -114,6 +114,16 @@ additionally queries/populates the matching `*_detalle` by `post_id`. Adding
 a new section type means adding a new `tipo` enum value and a new
 `*_detalle` model — never new fields on `Post` itself.
 
+The one deliberate exception: `negociosController.listarNegocios` builds
+its aggregation starting from `NegocioDetalle`, not `Post` (every other
+section's listing starts from `Post`). Reason: MongoDB requires `$geoNear`
+to be the pipeline's first stage, and the 2dsphere-indexed `ubicacion`
+field lives on `NegocioDetalle`, not `Post` — so a `?lat=&lng=&radioKm=`
+"cerca de mí" search has to start there. Follow this same
+flip-the-starting-collection approach for Turismo if/when it gets a
+similar geo search; don't try to `$geoNear` from `Post`, it can't reach the
+index.
+
 ### Naming and schema conventions
 
 - All collection and field names are Spanish (`autor_id`, `fecha_creacion`,

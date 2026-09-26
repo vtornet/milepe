@@ -8,6 +8,7 @@ import notificacionesRoutes from './notificacionesRoutes.js';
 import subidasRoutes from './subidasRoutes.js';
 import fotosRoutes from './fotosRoutes.js';
 import eventosRoutes from './eventosRoutes.js';
+import negociosRoutes from './negociosRoutes.js';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use('/notificaciones', notificacionesRoutes);
 router.use('/subidas', subidasRoutes); // generico: cualquier seccion sube imagenes por aqui antes de crear su post
 router.use('/fotos', fotosRoutes);
 router.use('/eventos', eventosRoutes);
+router.use('/negocios', negociosRoutes);
 
 // A medida que se implementen los modelos y controladores de cada seccion,
 // sus routers se importan y montan aqui.
@@ -32,7 +34,6 @@ router.use('/eventos', eventosRoutes);
 // router.use('/turismo', turismoRoutes);
 // router.use('/tiempo', tiempoRoutes);
 // router.use('/empleo', empleoRoutes);
-// router.use('/negocios', negociosRoutes);
 // router.use('/contactos-interes', contactosInteresRoutes);
 // router.use('/pagos', pagosRoutes);          // Stripe (checkout + webhook)
 
