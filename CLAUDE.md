@@ -68,6 +68,16 @@ Both are ESM (`"type": "module"` in both package.json files) — use
   (another ~15s) succeeds once it has. Confirmed self-healing end to end by
   killing the tunnel's `ssh.exe` mid-session and watching it recover
   unattended in about two cycles.
+- Creating and deleting several throwaway smoke-test files in quick
+  succession (the pattern below) makes nodemon fire a burst of "restarting
+  due to changes..." with no settled request in between. Once, this left a
+  *stale* `node` process still bound to port 5000 answering requests with
+  route tables from before a routes/index.js change (new routes 404'd even
+  though the file on disk was correct and nodemon claimed to have
+  restarted). Symptom: `Cannot POST /whatever-you-just-added`. Fix: `netstat
+  -ano | grep :5000` to find the real listening PID, kill that exact PID,
+  and start `npm run dev` fresh — don't assume nodemon's last restart
+  actually took.
 - No test runner and no linter are configured yet. New Mongoose models have
   been verified during development with a throwaway script plus
   `npm install --no-save mongodb-memory-server` (spin up a real in-memory
