@@ -229,9 +229,19 @@ already commented in, in the intended order.
 
 Deliberately **not** using `multer-storage-cloudinary` — it's unmaintained
 and only supports Cloudinary v1, which conflicts with the `cloudinary` v2
-SDK this project uses. The intended pattern is `multer` memory storage +
-manual upload to Cloudinary via a stream (`streamifier`), not disk storage
-or that package.
+SDK this project uses. Instead: `middlewares/upload.js` (multer,
+`memoryStorage`, image-mimetype filter, 8MB/5-files limit) + `utils/
+subirImagen.js` (pipes the in-memory buffer to `cloudinary.uploader.
+upload_stream` via `streamifier`, no disk write ever). `POST /api/subidas/
+imagenes` (generic, not tied to any one section) wraps both and returns
+`secure_url`s. Any section that needs images (Fotos today; Turismo/
+Negocios later) calls that first, then creates its post with the returned
+URLs — same two-step client flow as `client/src/pages/Fotos/
+FotoFormulario.jsx`. `MulterError` (oversized file, too many files, wrong
+field name) is mapped to 400 in the central handler like every other
+error class. Needs real `CLOUDINARY_CLOUD_NAME`/`_API_KEY`/`_API_SECRET`
+in `.env` — nothing here works against `mongodb-memory-server`-style fakes,
+there's no local Cloudinary stand-in.
 
 ### Client structure
 

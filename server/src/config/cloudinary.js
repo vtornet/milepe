@@ -2,8 +2,9 @@ import { v2 as cloudinary } from 'cloudinary';
 
 /**
  * Configura el SDK de Cloudinary con las credenciales del .env.
- * Los modulos de subida de imagenes (multer-storage-cloudinary) importan
- * esta instancia ya configurada.
+ * utils/subirImagen.js importa esta instancia ya configurada para subir
+ * por stream (multer en memoria + streamifier, no multer-storage-cloudinary:
+ * ver CLAUDE.md "Image uploads").
  */
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,

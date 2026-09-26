@@ -58,6 +58,13 @@ app.use((error, req, res, next) => {
     return res.status(400).json({ ok: false, mensaje: 'Identificador no valido' });
   }
 
+  // multer (subida de imagenes): archivo demasiado grande, demasiados
+  // archivos, campo equivocado... Todos vienen con este name, sea cual sea
+  // la ruta de subida que los dispare.
+  if (error.name === 'MulterError') {
+    return res.status(400).json({ ok: false, mensaje: `Error al subir el archivo: ${error.message}` });
+  }
+
   const status = error.status || 500;
   res.status(status).json({
     ok: false,
