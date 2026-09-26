@@ -185,6 +185,17 @@ form small {
   color: white;
 }
 
+.fila-fechas {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fila-fechas > div {
+  flex: 1;
+  min-width: 200px;
+}
+
 .lista-filtros {
   display: flex;
   gap: 10px;
