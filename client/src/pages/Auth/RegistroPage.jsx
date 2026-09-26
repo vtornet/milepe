@@ -4,6 +4,18 @@ import { useAuth } from '../../context/AuthContext.jsx';
 
 const DATOS_INICIALES = { nombre_usuario: '', nombre: '', email: '', contraseña: '' };
 
+// El servidor solo acepta letras, numeros, puntos, guiones y guiones bajos
+// en nombre_usuario (sin espacios). En vez de dejar que la gente escriba
+// "Juan Perez" y se encuentre con un 400 al enviar, lo vamos limpiando
+// mientras escribe: quita tildes (jose -> jose, no jos), cambia espacios
+// por "_", y descarta cualquier otro caracter que el servidor rechazaria.
+const normalizarNombreUsuario = (texto) =>
+  texto
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9._-]/g, '');
+
 function RegistroPage() {
   const { registro } = useAuth();
   const navigate = useNavigate();
@@ -12,7 +24,8 @@ function RegistroPage() {
   const [enviando, setEnviando] = useState(false);
 
   const manejarCambio = (evento) => {
-    setDatos({ ...datos, [evento.target.name]: evento.target.value });
+    const { name, value } = evento.target;
+    setDatos({ ...datos, [name]: name === 'nombre_usuario' ? normalizarNombreUsuario(value) : value });
   };
 
   const manejarEnvio = async (evento) => {
@@ -39,9 +52,11 @@ function RegistroPage() {
           name="nombre_usuario"
           required
           minLength={3}
+          maxLength={30}
           value={datos.nombre_usuario}
           onChange={manejarCambio}
         />
+        <small>Sin espacios ni acentos: se convierten solos mientras escribes.</small>
 
         <label htmlFor="nombre">Nombre</label>
         <input id="nombre" name="nombre" required value={datos.nombre} onChange={manejarCambio} />

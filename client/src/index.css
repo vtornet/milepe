@@ -129,6 +129,12 @@ form button[type='submit']:disabled {
   cursor: not-allowed;
 }
 
+form small {
+  color: #666;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
 .mensaje-error {
   color: var(--color-error);
   font-size: 13px;
