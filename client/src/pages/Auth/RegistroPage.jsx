@@ -31,6 +31,21 @@ function RegistroPage() {
   const manejarEnvio = async (evento) => {
     evento.preventDefault();
     setError(null);
+
+    // Comprobacion explicita en JS ademas de required/minLength del <input>:
+    // no dependemos solo de la validacion nativa del navegador (autofill,
+    // gestores de contraseñas o un envio programatico pueden saltarsela),
+    // asi el boton nunca se queda colgado en "Creando cuenta..." esperando
+    // una respuesta del servidor que ya sabemos que va a fallar.
+    if (datos.contraseña.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    if (datos.nombre_usuario.length < 3) {
+      setError('El nombre de usuario debe tener al menos 3 caracteres.');
+      return;
+    }
+
     setEnviando(true);
     try {
       await registro(datos);
