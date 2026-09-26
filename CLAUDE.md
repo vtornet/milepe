@@ -172,9 +172,15 @@ interaction between the two regardless of who blocked whom. It's wired into
 blocked the other); extend that same `existeEntre` check into any new
 interaction surface (messaging, contact requests) rather than reinventing
 the check. Note the naming: this is unrelated to `ContactoInteres` (the
-static Ayuntamiento/Policía/... directory) — a future friend-request system
-is planned as `Amistad`/`/api/amistades`, specifically to not collide with
-that name.
+static Ayuntamiento/Policía/... directory) — a friend-request system already exists as
+`Amistad`/`/api/amistades`, specifically named to not collide with that.
+`Amistad.existeEntre(a, b)` is the same "check both directions of a
+directional record" pattern as `Bloqueo.existeEntre` — one document holds
+`solicitante_id`/`receptor_id`, but either side queries it the same way.
+Rejecting a pending request or unfriending an accepted one are the same
+operation (`eliminarAmistad`): the document is deleted outright, there's no
+`'rechazada'` state sitting around — a friend request can always be sent
+again after a rejection.
 
 ### Auth building blocks (routes not built yet)
 

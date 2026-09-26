@@ -3,6 +3,7 @@ import authRoutes from './authRoutes.js';
 import postsRoutes from './postsRoutes.js';
 import quejasRoutes from './quejasRoutes.js';
 import usuariosRoutes from './usuariosRoutes.js';
+import amistadesRoutes from './amistadesRoutes.js';
 
 const router = Router();
 
@@ -15,6 +16,7 @@ router.use('/auth', authRoutes);
 router.use('/posts', postsRoutes); // muro (feed general) + reaccion/reportar/comentarios/moderar, comunes a toda seccion
 router.use('/quejas', quejasRoutes);
 router.use('/usuarios', usuariosRoutes); // bloqueos por ahora; perfil publico mas adelante
+router.use('/amistades', amistadesRoutes);
 
 // A medida que se implementen los modelos y controladores de cada seccion,
 // sus routers se importan y montan aqui.
@@ -25,7 +27,6 @@ router.use('/usuarios', usuariosRoutes); // bloqueos por ahora; perfil publico m
 // router.use('/tiempo', tiempoRoutes);
 // router.use('/empleo', empleoRoutes);
 // router.use('/negocios', negociosRoutes);
-// router.use('/amistades', amistadesRoutes);  // solicitudes de amistad (no confundir con /contactos-interes, la ficha estatica de Ayuntamiento/Policia/...)
 // router.use('/contactos-interes', contactosInteresRoutes);
 // router.use('/pagos', pagosRoutes);          // Stripe (checkout + webhook)
 
