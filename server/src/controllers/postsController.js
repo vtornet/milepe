@@ -1,6 +1,7 @@
 import Post, { ESTADOS_MODERACION } from '../models/Post.js';
 import Comentario from '../models/Comentario.js';
 import Reaccion, { TIPOS_REACCION } from '../models/Reaccion.js';
+import Bloqueo from '../models/Bloqueo.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 
 // Un post 'eliminado' es borrado logico: para cualquiera que no sea su
@@ -65,6 +66,10 @@ export const reaccionarPost = async (req, res, next) => {
     const post = await Post.findById(req.params.id);
     if (noEsVisible(post)) {
       throw new ErrorHttp(404, 'Publicacion no encontrada');
+    }
+
+    if (await Bloqueo.existeEntre(req.usuario._id, post.autor_id)) {
+      throw new ErrorHttp(403, 'No puedes reaccionar a esta publicacion');
     }
 
     const resultado = await Reaccion.alternar({ autor_id: req.usuario._id, tipo, post_id: post._id });
@@ -149,6 +154,10 @@ export const crearComentario = async (req, res, next) => {
     const post = await Post.findById(req.params.id);
     if (noEsVisible(post)) {
       throw new ErrorHttp(404, 'Publicacion no encontrada');
+    }
+
+    if (await Bloqueo.existeEntre(req.usuario._id, post.autor_id)) {
+      throw new ErrorHttp(403, 'No puedes comentar en esta publicacion');
     }
 
     const comentario = await Comentario.create({

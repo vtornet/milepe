@@ -162,6 +162,20 @@ unique index would collide across targets). It also keeps
 simple `Post.likes: [ObjectId]` array with a `Post.alternarLike()` toggle —
 that's gone, replaced entirely by this.
 
+### Blocking
+
+`Bloqueo` (`server/src/models/Bloqueo.js`, routes under `/api/usuarios`) is
+directional in storage (`bloqueador_id` blocked `bloqueado_id`) but
+`Bloqueo.existeEntre(a, b)` checks both directions — a block stops
+interaction between the two regardless of who blocked whom. It's wired into
+`postsController.crearComentario`/`reaccionarPost` today (403 if either has
+blocked the other); extend that same `existeEntre` check into any new
+interaction surface (messaging, contact requests) rather than reinventing
+the check. Note the naming: this is unrelated to `ContactoInteres` (the
+static Ayuntamiento/Policía/... directory) — a future friend-request system
+is planned as `Amistad`/`/api/amistades`, specifically to not collide with
+that name.
+
 ### Auth building blocks (routes not built yet)
 
 `Usuario.js` hashes `contraseña` via a `pre('save')` bcrypt hook, the field
