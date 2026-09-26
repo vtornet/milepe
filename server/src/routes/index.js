@@ -9,6 +9,7 @@ import subidasRoutes from './subidasRoutes.js';
 import fotosRoutes from './fotosRoutes.js';
 import eventosRoutes from './eventosRoutes.js';
 import negociosRoutes from './negociosRoutes.js';
+import turismoRoutes from './turismoRoutes.js';
 
 const router = Router();
 
@@ -27,11 +28,11 @@ router.use('/subidas', subidasRoutes); // generico: cualquier seccion sube image
 router.use('/fotos', fotosRoutes);
 router.use('/eventos', eventosRoutes);
 router.use('/negocios', negociosRoutes);
+router.use('/turismo', turismoRoutes);
 
 // A medida que se implementen los modelos y controladores de cada seccion,
 // sus routers se importan y montan aqui.
 //
-// router.use('/turismo', turismoRoutes);
 // router.use('/tiempo', tiempoRoutes);
 // router.use('/empleo', empleoRoutes);
 // router.use('/contactos-interes', contactosInteresRoutes);
