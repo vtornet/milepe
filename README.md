@@ -35,10 +35,12 @@ local hace falta un tunel SSH del propio Railway, en otra terminal aparte:
 
 ```
 railway link                                    # una vez, elige el proyecto de MiLepe
-railway connect MongoDB --tunnel-only --port 27018
+node scripts/vigilar-tunel.mjs                  # en vez de "railway connect" a pelo
 ```
 
-Deja esa segunda terminal abierta mientras desarrollas (el tunel se cierra
+El tunel se cae solo de vez en cuando (nada que ver con el codigo); el
+vigilante lo detecta y lo reinicia sin que tengas que hacer nada. Deja esa
+segunda terminal abierta mientras desarrollas (el tunel se cierra
 con Ctrl+C) y pon en `server/.env`:
 
 ```

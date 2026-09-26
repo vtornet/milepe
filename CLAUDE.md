@@ -50,13 +50,24 @@ Both are ESM (`"type": "module"` in both package.json files) — use
   that take a file path (like `ssh keys add -k`) want a Windows-style path
   (`C:\Users\...`), not the POSIX-style path Git Bash's `~` expands to.
 - That tunnel drops on its own occasionally (idle timeout / network blip),
-  independent of anything in the code. Symptom: a request that touches the
-  DB hangs for ~30s then the server logs `[db] Desconectado de MongoDB`
-  followed by `MongoServerSelectionError: read ECONNRESET`, and the response
-  is a 500 with that message. Fix: kill the stale `railway connect` process
-  and its child, then run the same `railway connect MongoDB --tunnel-only
-  --port 27018` again — no server restart needed, Mongoose reconnects to the
+  independent of anything in the code — happened repeatedly during
+  development. Symptom: a request that touches the DB hangs for ~30s then
+  the server logs `[db] Desconectado de MongoDB` followed by
+  `MongoServerSelectionError: read ECONNRESET` (or `connect ECONNREFUSED
+  127.0.0.1:27018` if it's fully dead), and the response is a 500 with that
+  message. No server restart needed either way — Mongoose reconnects to the
   same local port on its own once the tunnel is back.
+  Use `node scripts/vigilar-tunel.mjs [puerto]` (default 27018) instead of
+  a bare `railway connect` for local dev: it launches the tunnel and, every
+  15s, actually probes the port (not just "is the process still alive" —
+  the process can survive while the tunnel itself stops forwarding, so a
+  process-liveness check alone misses this) and kills+relaunches on
+  failure. Recovery isn't always instant: right after a kill, `railway
+  connect` can briefly fail with "Local port ... is already in use" because
+  the previous process hasn't released it yet — the watchdog's *next* cycle
+  (another ~15s) succeeds once it has. Confirmed self-healing end to end by
+  killing the tunnel's `ssh.exe` mid-session and watching it recover
+  unattended in about two cycles.
 - No test runner and no linter are configured yet. New Mongoose models have
   been verified during development with a throwaway script plus
   `npm install --no-save mongodb-memory-server` (spin up a real in-memory
