@@ -4,8 +4,10 @@ import api from '../../services/api.js';
 import { SECCIONES } from '../../router/secciones.js';
 
 // tipo de Post -> a que seccion enlazar desde el Muro. 'muro' no tiene
-// seccion propia (es contenido general), asi que no aparece aqui.
-const seccionPorTipo = Object.fromEntries(SECCIONES.filter((s) => s.tipo).map((s) => [s.tipo, s]));
+// seccion propia (es contenido general), asi que no aparece aqui. Empleo
+// aporta dos tipos (empleo_busco/empleo_ofrezco) a la misma seccion, de
+// ahi el flatMap en vez de un map 1 a 1.
+const seccionPorTipo = Object.fromEntries(SECCIONES.flatMap((s) => s.tipos.map((tipo) => [tipo, s])));
 
 function MuroPage() {
   const [posts, setPosts] = useState([]);
