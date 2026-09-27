@@ -11,13 +11,15 @@ Tiempo (weather widget, no user content), Empleo (Busco/Ofrezco), Negocios
 locales, and Contactos de interés. See `README.md` for the full pitch.
 
 Beyond that section-based content, MiLepe is being built out into a fuller
-social network — reactions, blocking, contacts (friend requests),
-notifications, private messaging, and a proper report+appeal moderation
-workflow with an audit log — modeled after a previous project
-(`E:/Piverse`, a Flask/SQLAlchemy/Jinja2 app for a different, unrelated
-community, not reused as code — see the "Reactions" section below for how
-that translation into this stack's conventions works in practice). Expect
-this feature set to keep growing in that direction.
+social network, modeled after a previous project (`E:/Piverse`, a Flask/
+SQLAlchemy/Jinja2 app for a different, unrelated community, not reused as
+code — see the "Reactions" section below for how that translation into
+this stack's conventions works in practice). Built so far: typed
+reactions, user blocking, friend requests (`Amistad`), notifications. Not
+yet built: private messaging and a proper report+appeal moderation
+workflow with an audit log (today's moderation is just `Post.reportar()` +
+auto-hide, no formal appeal). Expect the feature set to keep growing in
+that direction.
 
 Two independent apps, each with its own `package.json`/`node_modules` — there
 is no root package.json or workspace tooling:
@@ -84,6 +86,12 @@ Both are ESM (`"type": "module"` in both package.json files) — use
   MongoDB, exercise the model, assert behavior, then delete the script and
   `npm uninstall mongodb-memory-server` so it never lands in package.json).
   Follow that pattern for new models until a real test runner is set up.
+- Image uploads (see "Image uploads" below) need real
+  `CLOUDINARY_CLOUD_NAME`/`CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` in
+  `.env` — get them from the account's Dashboard, specifically the row
+  labeled **Root** if more than one API key pair is listed (a fresh account
+  can have a second, more restricted one named `moderation` that Cloudinary
+  adds on its own; that one is not what you want).
 
 ### Client (`cd client`)
 
@@ -103,10 +111,13 @@ Everything publishable lives in one central `posts` collection
 `turismo`, `foto`, `evento`, `empleo_busco`, `empleo_ofrezco`, `negocio`).
 `Post` only holds generic feed fields: `autor_id`, `tipo`, `titulo`,
 `contenido`, `imagenes`, `reacciones_resumen`, moderation state, `reportes`.
-Type-specific
-fields live in a separate `*_detalle` collection, linked back by a unique
-`post_id` (one-to-one): `QuejaDetalle`, `FotoDetalle`, `EmpleoDetalle`,
-`EventoDetalle`, `NegocioDetalle`.
+Type-specific fields live in a separate `*_detalle` collection, linked back
+by a unique `post_id` (one-to-one): `QuejaDetalle`, `FotoDetalle`,
+`EmpleoDetalle`, `EventoDetalle`, `NegocioDetalle`, `TurismoDetalle`. Every
+`tipo` now has its controller/routes built (`quejas`, `fotos`, `eventos`,
+`negocios`, `turismo`, `empleo` — see "Section controllers" below for what
+makes each one's listing/creation different from the others); only `tiempo`
+and a static `contactos-interes` remain unbuilt, plus Stripe (`pagos`).
 
 This means: the Muro feed is a plain `Post.find({ estado_moderacion:
 'publicado' })` with no joins at all, while a section view (e.g. `/quejas`)
@@ -114,14 +125,17 @@ additionally queries/populates the matching `*_detalle` by `post_id`. Adding
 a new section type means adding a new `tipo` enum value and a new
 `*_detalle` model — never new fields on `Post` itself.
 
-The one deliberate exception: `negociosController.listarNegocios` builds
-its aggregation starting from `NegocioDetalle`, not `Post` (every other
-section's listing starts from `Post`). Reason: MongoDB requires `$geoNear`
-to be the pipeline's first stage, and the 2dsphere-indexed `ubicacion`
-field lives on `NegocioDetalle`, not `Post` — so a `?lat=&lng=&radioKm=`
-"cerca de mí" search has to start there. Follow this same
-flip-the-starting-collection approach for Turismo if/when it gets a
-similar geo search; don't try to `$geoNear` from `Post`, it can't reach the
+The deliberate exception: `negociosController.listarNegocios` and
+`turismoController.listarTurismo` both build their aggregation starting
+from the `*_detalle` collection, not `Post` (every other section's listing
+starts from `Post`). Reason: MongoDB requires `$geoNear` to be the
+pipeline's first stage, and the 2dsphere-indexed `ubicacion` field lives on
+`NegocioDetalle`/`TurismoDetalle`, not `Post` — so a `?lat=&lng=&radioKm=`
+"cerca de mí" search has to start there. Both still work with no geo
+params (they just skip the `$geoNear` stage and sort some other way — see
+below), so this isn't a geo-only code path. Follow the same
+flip-the-starting-collection approach for any future section with a
+2dsphere field; don't try to `$geoNear` from `Post`, it can't reach the
 index.
 
 ### Naming and schema conventions
@@ -147,10 +161,11 @@ index.
 - Geolocation reuses one sub-schema, `server/src/models/schemas/
   puntoSchema.js` (GeoJSON `Point` with coordinate-range validation). Each
   parent schema embeds it and declares its own `2dsphere` index (the index
-  can't live on the shared sub-schema). Currently: `QuejaDetalle.ubicacion`
-  (required) and `NegocioDetalle.ubicacion` (required) and
-  `EventoDetalle.ubicacion` (optional — an event can be posted without a map
-  pin yet).
+  can't live on the shared sub-schema). Required on `QuejaDetalle` and
+  `NegocioDetalle` (a complaint or a business without a map pin defeats the
+  point); optional on `EventoDetalle` and `TurismoDetalle` (an event or a
+  gastronomy recommendation can be posted without one — a route or a beach
+  usually gets one, but the schema doesn't force it).
 - "Valid while a date is in the future" is the recurring pattern for
   Stripe-driven or time-limited state, instead of a boolean that something
   has to remember to flip off: `NegocioDetalle.destacado_hasta`,
@@ -233,17 +248,81 @@ check since they only need it once each. Adding a new trigger point
 anywhere else should follow this same explicit-call pattern, not add a new
 model hook.
 
-### Auth building blocks (routes not built yet)
+### Section controllers — what's different about each one
+
+All six built sections (`quejas`, `fotos`, `eventos`, `negocios`, `turismo`,
+`empleo`) follow the create-with-compensation / list-with-filters /
+get-by-id shape from "Post + `*_detalle`" above, plus get like/react/
+comment/moderate for free from the generic `postsController`. What's worth
+knowing per section, because it'd take reading every controller to
+re-derive otherwise:
+
+- **Quejas**: `ubicacion` required. `estado` (`pendiente`/`en_curso`/
+  `resuelto`) is tracked with a full `historial_estados` (who changed it and
+  when), separate from `Post.estado_moderacion` — moderating visibility and
+  tracking complaint progress are unrelated axes. Only `moderador`/`admin`
+  can change `estado` (`PATCH /:id/estado`).
+- **Fotos**: `imagenes` is required and non-empty at creation — the only
+  section where that's true, since a photo post without a photo makes no
+  sense. Client has to call `POST /api/subidas/imagenes` first and pass the
+  returned URLs; there's no way to create a Foto without doing that step.
+- **Eventos**: sorted by `fecha_inicio` ascending (soonest first), not by
+  `fecha_creacion` like every other section — it's an agenda, not a feed.
+  Hides anything already finished by default; `?incluirPasados=true` brings
+  the history back (and flips the sort to descending, most recent first).
+- **Negocios**: `ubicacion` required. Sorted destacado-first (via
+  `$addFields` computing `destacado_hasta > now` then `$sort`), then by
+  `fecha_creacion` — *unless* a geo search is active, in which case
+  distance wins and destacado status is ignored entirely (mixing "closest"
+  and "paid placement" ordering would defeat the geo search). Reviews
+  aren't a separate collection: a `Comentario` on a `negocio` post can carry
+  `valoracion` (1–5); the client only shows the star picker there
+  (`PanelInteraccion`'s `permitirValoracion` prop).
+- **Turismo**: same geo-search shape as Negocios (see the `$geoNear`
+  exception above) but no "destacado" concept — without geo params it's
+  just `fecha_creacion` descending, plain and simple.
+- **Empleo**: `modalidad` (`busco`/`ofrezco`) is a *required* query param on
+  `GET /api/empleo`, not an optional filter like `categoria` elsewhere — the
+  two shapes (candidate vs. job offer) are different enough that showing
+  them mixed wouldn't make sense to a client. `Post.tipo` is derived from
+  `modalidad` (`empleo_busco` / `empleo_ofrezco`) at creation, not passed
+  separately. Expired offers (`estado_oferta: 'caducada'`) are hidden by
+  default too (`?incluirCaducadas=true`), same pattern as Eventos' past
+  events. `PATCH /:id/republicar` is restricted to the post's own author
+  (403 otherwise) and only works on `'ofrezco'` (`EmpleoDetalle.republicar()`
+  itself throws on `'busco'`, the controller just forwards that as a 400).
+  `server/src/jobs/caducarEmpleos.js` is the cron that actually flips
+  `estado_oferta` to `'caducada'` once `fecha_caducidad` passes — daily at
+  03:00, registered in `server.js` via `iniciarCronCaducarEmpleos()` right
+  after `conectarDB()` resolves (confirmed in a real boot log: `[cron]
+  Caducidad de ofertas de empleo programada (diario, 03:00)`). It calls
+  `EmpleoDetalle.marcarCaducada()` per expired doc, the same method the
+  model already exposed — the cron only decides *when* to call it.
+
+### Auth
 
 `Usuario.js` hashes `contraseña` via a `pre('save')` bcrypt hook, the field
 is `select: false` (must `.select('+contraseña')` explicitly, e.g. for
 login), and `compararContraseña()` / `toJSON()` (strips the hash from any
-serialized response) are already in place. What's not built yet: the actual
-auth routes/controllers, JWT signing/verification middleware, and anything
-under `server/src/routes|controllers|middlewares|jobs|utils` beyond the
-`/api/health` check — those directories currently hold only placeholder
-files. `server/src/routes/index.js` has each future section's mount point
-already commented in, in the intended order.
+serialized response). `utils/jwt.js` signs/verifies a JWT whose payload is
+just `{ id: usuarioId }` — nothing else, so a role change takes effect
+immediately rather than waiting for the old token to expire.
+`middlewares/auth.js` exports `protegido` (requires a valid, non-expired
+token *and* re-checks `Usuario.activo` on every request — deactivating an
+account invalidates its already-issued tokens instantly, not just future
+logins) and `autorizar(...roles)` (403 unless `req.usuario.rol` is one of
+the given roles). `POST /api/auth/registro` destructures only the four
+expected fields from `req.body` before calling `Usuario.create()` — never
+passes `req.body` through directly, specifically so nobody can smuggle in
+`rol: 'admin'`. Login returns the same generic "Credenciales invalidas" for
+a wrong password, an unknown email, and a deactivated account — deliberately
+not distinguishing which. `utils/ErrorHttp.js` is the plain `{status,
+message}` error class every controller throws for expected failures (404,
+403, 400 with a specific message); the central handler in `app.js` also
+separately translates raw Mongoose `ValidationError` (400), duplicate-key
+`11000` (409), bad-ObjectId `CastError` (400), and `MulterError` (400) —
+so a controller only needs to construct `ErrorHttp` for cases Mongoose/
+multer don't already cover on their own.
 
 ### Image uploads
 
@@ -254,27 +333,87 @@ SDK this project uses. Instead: `middlewares/upload.js` (multer,
 subirImagen.js` (pipes the in-memory buffer to `cloudinary.uploader.
 upload_stream` via `streamifier`, no disk write ever). `POST /api/subidas/
 imagenes` (generic, not tied to any one section) wraps both and returns
-`secure_url`s. Any section that needs images (Fotos today; Turismo/
-Negocios later) calls that first, then creates its post with the returned
-URLs — same two-step client flow as `client/src/pages/Fotos/
-FotoFormulario.jsx`. `MulterError` (oversized file, too many files, wrong
-field name) is mapped to 400 in the central handler like every other
-error class. Needs real `CLOUDINARY_CLOUD_NAME`/`_API_KEY`/`_API_SECRET`
-in `.env` — nothing here works against `mongodb-memory-server`-style fakes,
+`secure_url`s. `MulterError` (oversized file, too many files, wrong field
+name) is mapped to 400 in the central handler like every other error
+class. Needs real `CLOUDINARY_CLOUD_NAME`/`_API_KEY`/`_API_SECRET` in
+`.env` — nothing here works against `mongodb-memory-server`-style fakes,
 there's no local Cloudinary stand-in.
+
+Every section's `Post` accepts `imagenes` (an array of already-uploaded
+URLs) at creation, but **only Fotos' client form actually calls the
+upload endpoint** (`client/src/pages/Fotos/FotoFormulario.jsx`: picks
+files → `POST /api/subidas/imagenes` → `POST /api/fotos` with the returned
+URLs). Turismo, Negocios, and Eventos' backends accept `imagenes` the same
+way, but their client forms (`TurismoFormulario`, `NegocioFormulario`,
+`EventoFormulario`) don't expose a file picker at all yet — an open gap,
+not a design decision, if asked to add photo upload to one of those.
 
 ### Client structure
 
+- `client/src/context/AuthContext.jsx` (wraps the whole app in `App.jsx`)
+  owns the session: `usuario`/`cargando` state plus `login`/`registro`/
+  `logout`, persisted to `localStorage` under `milepe_token`/
+  `milepe_usuario` (same `milepe_token` key `services/api.js`'s request
+  interceptor already reads). `useAuth()` throws if called outside the
+  provider — a deliberate loud failure over a silent `undefined`.
+  `api.js`'s response interceptor clears both keys on any 401 (expired/
+  invalid token, or a since-deactivated account), so a stale session
+  doesn't linger past its next failed request. `router/RutaProtegida.jsx`
+  wraps a whole route that requires a session (redirects to `/login`,
+  remembering `location.pathname` in nav state so login can return there);
+  none of the section pages use it today since they're public-readable
+  with only specific actions gated inline (a "inicia sesión para..."
+  message instead of hiding the button) — it's there for a future
+  session-only page (notifications, "mi perfil").
 - `client/src/router/secciones.js` is the single source of truth mapping
-  route path ↔ nav label ↔ the `Post.tipo` it corresponds to. Both
-  `AppRouter.jsx` and `NavBar.jsx` should read from it — don't hardcode a
-  new nav link without adding it here first.
-- One placeholder page component per section under `client/src/pages/
-  <Seccion>/<Seccion>Page.jsx`; none has real data-fetching yet.
+  route path ↔ nav label ↔ the `Post.tipo`(s) it corresponds to — `tipos`
+  is always an array, even for a section with just one, because Empleo
+  alone maps to two (`empleo_busco`/`empleo_ofrezco`) and a shared shape
+  means nothing downstream needs a special case for it. Both
+  `AppRouter.jsx` and `NavBar.jsx` read from it; `MuroPage.jsx` flattens it
+  into a `tipo -> seccion` lookup for the "which section does this Muro
+  post belong to" badge. Don't hardcode a new nav link without adding it
+  here first.
+- `client/src/components/PanelInteraccion.jsx` is the reactions+comments
+  block shared by every section's "tarjeta" component (`QuejaTarjeta`,
+  `FotoTarjeta`, `EventoTarjeta`, `NegocioTarjeta`, `TurismoTarjeta`,
+  `EmpleoTarjeta`) — they all talk to the same generic `/api/posts/:id/
+  reaccion` and `/comentarios`, so the block only needs `postId` and the
+  starting `reaccionesIniciales` as props. `permitirValoracion` (only
+  passed by `NegocioTarjeta`) turns on a 5-star picker when commenting and
+  renders stars on any existing comment that has a `valoracion`, without
+  changing anything for sections that don't pass it. Extracted after Fotos
+  needed the identical block Quejas already had — do the same rather than
+  copy-pasting a third time if a new section needs it.
+- `client/src/pages/Quejas/SelectorUbicacion.jsx` is the shared Leaflet
+  click-to-place-a-marker map (also used by `EventoFormulario` and
+  `NegocioFormulario` despite living under `pages/Quejas/` — it was built
+  there first). Ships its own marker icon fix (Leaflet's default icon
+  paths break under Vite's bundling) — reuse it rather than re-solving
+  that.
+- The create-a-post pattern repeats across every section's page component
+  (`QuejasPage`, `FotosPage`, `EventosPage`, `NegociosPage`, `TurismoPage`,
+  `EmpleoPage`): a "+ Nueva/o ..." button toggles a form component, the
+  form's `onCreado(nuevo)` callback prepends the result to local state and
+  closes the form. `EventosPage` deviates: it refetches the whole list
+  instead of prepending, because a freshly-created event might not actually
+  belong in the current filtered/sorted view (e.g. it could land outside
+  today's "próximos" window) — prefer refetch over prepend whenever
+  creation could produce something the current filter would legitimately
+  exclude. `EmpleoPage` prepends on creation like everything else, but its
+  *other* mutation, republishing an offer (`onRepublicado`), refetches
+  instead — same underlying reason (the offer's new `estado_oferta` might
+  no longer match the active filter), just triggered by a different action.
 - `client/src/services/api.js` is a single shared axios instance (base URL
-  from `VITE_API_URL`, JWT-from-`localStorage` request interceptor).
-  Section-specific API calls should import this instance, not create their
-  own `axios.create()`.
+  from `VITE_API_URL`, JWT-from-`localStorage` request interceptor, 401
+  response interceptor — see AuthContext above). Section-specific API
+  calls should import this instance, not create their own `axios.create()`.
+- `server/panel-pruebas/index.html`, served at `/panel` only when
+  `NODE_ENV !== 'production'`, is a zero-dependency manual test page
+  (register/login/create a queja/list) that talks to `/api` same-origin —
+  predates the real client UI and was the only way to test by hand before
+  it existed; still useful for a quick check without opening the full
+  React app.
 - PWA manifest/icons are configured in `client/vite.config.js`, but
   `icon-192.png`/`icon-512.png` referenced there don't exist yet (see
   `client/public/icons/README.md`) — only a placeholder SVG favicon does.
