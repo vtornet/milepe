@@ -185,6 +185,27 @@ form small {
   color: white;
 }
 
+/* Contactos de interes: los telefonos son el contenido principal de esa
+   ficha y casi siempre se consultan desde el movil, asi que se pintan
+   grandes y con area de toque amplia, no como un dato secundario. */
+.telefonos-contacto {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 8px 0 4px;
+}
+
+.telefonos-contacto a {
+  text-decoration: none;
+  font-weight: 600;
+  padding: 6px 0;
+}
+
+.telefonos-contacto .telefono-principal {
+  font-size: 20px;
+}
+
 .fila-fechas {
   display: flex;
   gap: 12px;

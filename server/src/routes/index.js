@@ -11,6 +11,7 @@ import eventosRoutes from './eventosRoutes.js';
 import negociosRoutes from './negociosRoutes.js';
 import turismoRoutes from './turismoRoutes.js';
 import empleoRoutes from './empleoRoutes.js';
+import contactosInteresRoutes from './contactosInteresRoutes.js';
 
 const router = Router();
 
@@ -31,12 +32,12 @@ router.use('/eventos', eventosRoutes);
 router.use('/negocios', negociosRoutes);
 router.use('/turismo', turismoRoutes);
 router.use('/empleo', empleoRoutes);
+router.use('/contactos-interes', contactosInteresRoutes); // ficha estatica (no es un Post), gestionada por admin
 
 // A medida que se implementen los modelos y controladores de cada seccion,
 // sus routers se importan y montan aqui.
 //
 // router.use('/tiempo', tiempoRoutes);
-// router.use('/contactos-interes', contactosInteresRoutes);
 // router.use('/pagos', pagosRoutes);          // Stripe (checkout + webhook)
 
 export default router;

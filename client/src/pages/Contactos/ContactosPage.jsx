@@ -1,13 +1,97 @@
-/**
- * Contactos de interes — placeholder de andamiaje.
- * Se implementara al construir esta seccion (fetch a la API, listado,
- * formulario de creacion, filtros propios de la seccion, etc.).
- */
+import { useEffect, useState } from 'react';
+import api from '../../services/api.js';
+
+// Mismo enum que server/src/models/ContactoInteres.js
+// (CATEGORIAS_CONTACTO). El orden de esta lista es el orden en que se
+// pintan los grupos en la ficha.
+const CATEGORIAS = [
+  { valor: 'otro', etiqueta: 'Emergencias', icono: '🚨' },
+  { valor: 'policia_local', etiqueta: 'Policía Local', icono: '👮' },
+  { valor: 'guardia_civil', etiqueta: 'Guardia Civil', icono: '🪖' },
+  { valor: 'proteccion_civil', etiqueta: 'Protección Civil', icono: '🦺' },
+  { valor: 'bomberos', etiqueta: 'Bomberos', icono: '🚒' },
+  { valor: 'centro_salud', etiqueta: 'Salud', icono: '🏥' },
+  { valor: 'ayuntamiento', etiqueta: 'Ayuntamiento', icono: '🏛️' },
+];
+
+// Para marcar desde el movil hay que quitarle al numero todo lo que no sea
+// digito o '+' (los espacios de "959 12 34 56" rompen el enlace tel:).
+const enlaceTelefono = (telefono) => `tel:${telefono.replace(/[^\d+]/g, '')}`;
+
 function ContactosPage() {
+  const [contactos, setContactos] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    api
+      .get('/contactos-interes')
+      .then(({ data }) => {
+        if (!cancelado) setContactos(data.contactos);
+      })
+      .catch(() => {
+        if (!cancelado) setError('No se pudieron cargar los contactos.');
+      })
+      .finally(() => {
+        if (!cancelado) setCargando(false);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  if (cargando) return <p>Cargando contactos...</p>;
+  if (error) return <p className="mensaje-error">{error}</p>;
+
   return (
     <section>
-      <h1>Contactos de interes</h1>
-      <p>Seccion en construccion.</p>
+      <h1>Contactos de interés</h1>
+
+      {contactos.length === 0 && (
+        <p>
+          Todavía no hay contactos publicados. Un administrador puede añadirlos (o ejecutar{' '}
+          <code>node scripts/sembrar-contactos.mjs</code> en el servidor).
+        </p>
+      )}
+
+      {CATEGORIAS.map((categoria) => {
+        const deEstaCategoria = contactos.filter((c) => c.categoria === categoria.valor);
+        if (deEstaCategoria.length === 0) return null;
+
+        return (
+          <div key={categoria.valor}>
+            <h2>
+              {categoria.icono} {categoria.etiqueta}
+            </h2>
+
+            {deEstaCategoria.map((contacto) => (
+              <article key={contacto._id} className="tarjeta">
+                <strong>{contacto.nombre}</strong>
+
+                <div className="telefonos-contacto">
+                  <a className="telefono-principal" href={enlaceTelefono(contacto.telefono)}>
+                    📞 {contacto.telefono}
+                  </a>
+                  {contacto.telefono_alternativo && (
+                    <a href={enlaceTelefono(contacto.telefono_alternativo)}>📞 {contacto.telefono_alternativo}</a>
+                  )}
+                  {contacto.whatsapp_url && (
+                    <a href={contacto.whatsapp_url} target="_blank" rel="noreferrer">
+                      💬 WhatsApp
+                    </a>
+                  )}
+                </div>
+
+                {contacto.direccion && <div className="tarjeta-meta">📍 {contacto.direccion}</div>}
+                {contacto.horario && <div className="tarjeta-meta">🕒 {contacto.horario}</div>}
+              </article>
+            ))}
+          </div>
+        );
+      })}
     </section>
   );
 }

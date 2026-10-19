@@ -116,8 +116,13 @@ by a unique `post_id` (one-to-one): `QuejaDetalle`, `FotoDetalle`,
 `EmpleoDetalle`, `EventoDetalle`, `NegocioDetalle`, `TurismoDetalle`. Every
 `tipo` now has its controller/routes built (`quejas`, `fotos`, `eventos`,
 `negocios`, `turismo`, `empleo` — see "Section controllers" below for what
-makes each one's listing/creation different from the others); only `tiempo`
-and a static `contactos-interes` remain unbuilt, plus Stripe (`pagos`).
+makes each one's listing/creation different from the others). Only `tiempo`
+(needs an OpenWeather/AEMET key nobody has yet) remains unbuilt, plus
+Stripe (`pagos`). Note that **Contactos de interés is deliberately not part
+of this pattern at all** — `ContactoInteres` is a standalone collection with
+no `Post`, no author, no moderation and no reactions, because it's a static
+directory an admin maintains, not something a neighbour publishes. Don't
+"regularize" it into a `tipo`.
 
 This means: the Muro feed is a plain `Post.find({ estado_moderacion:
 'publicado' })` with no joins at all, while a section view (e.g. `/quejas`)
@@ -299,6 +304,24 @@ re-derive otherwise:
   `EmpleoDetalle.marcarCaducada()` per expired doc, the same method the
   model already exposed — the cron only decides *when* to call it.
 
+`/api/contactos-interes` is the odd one out (see the note in "Post +
+`*_detalle`"): no `Post`, no author, no moderation. Reading is public and
+only returns `activo: true` rows; everything else (`POST`, `PATCH /:id`,
+`DELETE /:id`, plus `GET /todos`, which is the only way to see inactive
+ones so you can reactivate them) is `autorizar('admin')`. `activo: false`
+and `DELETE` mean different things on purpose: hide temporarily vs. it was
+a mistake / no longer exists. Create and update run `req.body` through a
+`CAMPOS_EDITABLES` whitelist, same discipline as `authController.registrar`.
+`scripts/sembrar-contactos.mjs` seeds the starting directory and is
+idempotent (`$setOnInsert` upsert keyed on `nombre`, so re-running never
+duplicates *and* never clobbers an admin's later edits). It seeds the
+nationally-standard Spanish numbers (112, 062, 061) as `activo: true`, but
+anything whose real local number isn't known — Ayuntamiento, Policía Local,
+Protección Civil de Lepe — is seeded with a placeholder and `activo: false`
+so it can't surface in the app, and the script prints which ones need a
+verified number. Keep that rule if you extend the seed: a wrong emergency
+number published is worse than no number.
+
 ### Auth
 
 `Usuario.js` hashes `contraseña` via a `pre('save')` bcrypt hook, the field
@@ -426,3 +449,13 @@ conflicts — don't "helpfully" downgrade these: Vite 8, `@vitejs/plugin-
 react` 6, `vite-plugin-pwa` 1.x, `react-router-dom` 7, `node-cron` 4,
 `multer` 2. ESLint is intentionally pinned to 9.x (not 10) because
 `eslint-plugin-react-hooks` doesn't yet declare 10 as a supported peer.
+
+`npm audit` in `server/` reports 3 high-severity findings (`braces` →
+`chokidar` → `nodemon`). **Leave them.** The advisory's affected range is
+`*` — no patched `braces` exists to pin via `overrides` — and the only fix
+npm offers is `nodemon@1.14.10`, a 2018 major downgrade. `nodemon` is in
+`devDependencies` and never runs in production (`npm start` is plain
+`node src/server.js`), and the vulnerability needs attacker-controlled glob
+patterns, which here only come from our own watch config. Re-check whether
+upstream has shipped a fix before touching it; don't run `npm audit fix
+--force`.
