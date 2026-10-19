@@ -116,13 +116,15 @@ by a unique `post_id` (one-to-one): `QuejaDetalle`, `FotoDetalle`,
 `EmpleoDetalle`, `EventoDetalle`, `NegocioDetalle`, `TurismoDetalle`. Every
 `tipo` now has its controller/routes built (`quejas`, `fotos`, `eventos`,
 `negocios`, `turismo`, `empleo` — see "Section controllers" below for what
-makes each one's listing/creation different from the others). Only `tiempo`
-(needs an OpenWeather/AEMET key nobody has yet) remains unbuilt, plus
-Stripe (`pagos`). Note that **Contactos de interés is deliberately not part
-of this pattern at all** — `ContactoInteres` is a standalone collection with
-no `Post`, no author, no moderation and no reactions, because it's a static
-directory an admin maintains, not something a neighbour publishes. Don't
-"regularize" it into a `tipo`.
+makes each one's listing/creation different from the others). Only Stripe
+(`pagos`) is still unbuilt.
+
+Two of the nine sections are deliberately **not** part of this pattern, and
+shouldn't be "regularized" into a `tipo`: **Contactos de interés**
+(`ContactoInteres` — a standalone collection with no `Post`, no author, no
+moderation, no reactions, because it's a static directory an admin
+maintains rather than something a neighbour publishes) and **El Tiempo**
+(no model at all — it never touches Mongo; see "El Tiempo" below).
 
 This means: the Muro feed is a plain `Post.find({ estado_moderacion:
 'publicado' })` with no joins at all, while a section view (e.g. `/quejas`)
@@ -321,6 +323,31 @@ Protección Civil de Lepe — is seeded with a placeholder and `activo: false`
 so it can't surface in the app, and the script prints which ones need a
 verified number. Keep that rule if you extend the seed: a wrong emergency
 number published is worse than no number.
+
+### El Tiempo
+
+`GET /api/tiempo` (`tiempoController.js`) is the only endpoint in the app
+that touches no model and no database — it's a cached proxy to OpenWeather
+for Lepe's fixed coordinates. The proxy exists for two reasons, not one:
+`OPENWEATHER_API_KEY` never reaches the browser, *and* the whole town looks
+at the same municipality, so one upstream call serves everybody. The
+in-memory cache (TTL from `TIEMPO_CACHE_MS`, default 10 min, read per
+request so it can be changed without a restart — and so tests can shorten
+it) is what keeps a free-tier quota, which counts calls rather than users,
+from being burned by page refreshes. Three failure modes are handled on
+purpose and each is covered by a test: no key configured → 503 (not a
+confusing 500); upstream fails but cache is still valid → the outage is
+invisible; upstream fails and cache has expired → the last good data is
+served with `obsoleto: true` rather than breaking the page, and only a cold
+cache with a failing upstream produces a 502 (with OpenWeather's own
+`message` propagated, which is what tells you "invalid key" from "key not
+activated yet" from "quota exceeded"). OpenWeather's response shape is
+translated into our own in `formatearActual`/`formatearPrevision` (same
+reasoning as `geo.js` with GeoJSON: swapping provider or moving to AEMET
+should touch only this file, not the client) — including turning the
+`/forecast` endpoint's 40 three-hour slots into per-day min/max, where the
+day's icon comes from the slot nearest midday, not the first one, which
+would otherwise show a moon for every day.
 
 ### Auth
 

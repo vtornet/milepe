@@ -185,6 +185,46 @@ form small {
   color: white;
 }
 
+/* El Tiempo */
+.tiempo-actual {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tiempo-temperatura {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tiempo-descripcion {
+  text-transform: capitalize;
+  margin: 2px 0 4px;
+}
+
+.tiempo-dias {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.tiempo-dia {
+  flex: 0 0 auto;
+  width: 120px;
+  text-align: center;
+}
+
+.tiempo-dia img {
+  display: block;
+  margin: 0 auto;
+}
+
+.tiempo-dia .tarjeta-meta {
+  text-transform: capitalize;
+}
+
 /* Contactos de interes: los telefonos son el contenido principal de esa
    ficha y casi siempre se consultan desde el movil, asi que se pintan
    grandes y con area de toque amplia, no como un dato secundario. */
