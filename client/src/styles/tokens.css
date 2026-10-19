@@ -3,36 +3,51 @@
    componente necesita un color nuevo, se añade aquí, no se escribe un
    hexadecimal suelto: así el modo oscuro funciona sin tocar cada archivo.
 
-   El verde es el de siempre (era #1e6f5c), pero convertido en una escala
-   completa en vez de dos tonos: con un solo color no se puede distinguir
-   un botón normal de uno pulsado, ni un fondo tenue de un borde. */
-:root {
-  /* Marca */
-  --verde-50: #eaf4f1;
-  --verde-100: #cfe6e0;
-  --verde-200: #a3cfc4;
-  --verde-300: #6fb3a3;
-  --verde-400: #3f9280;
-  --verde-500: #1e6f5c;
-  --verde-600: #185a4b;
-  --verde-700: #13483c;
-  --verde-800: #0e352c;
+   Los azules salen del logo (logo.jpg), muestreados del propio dibujo: el
+   azul marino del pin (#033263), el cian de su borde (#0dd4dc) y el
+   naranja del sol (#fb7126). La interfaz era verde de antes de que
+   existiera el logo; con el logo puesto, un verde al lado de un pin azul
+   se ve accidental, como si la marca y la aplicación fueran de dos
+   proyectos distintos.
 
-  /* Neutros. Cálidos a propósito (una pizca de amarillo): un gris puro
-     junto al verde se ve azulado y frío, y esto es un pueblo del sur. */
+   La escala va de 50 a 800 y no son dos tonos sueltos: con un solo color
+   no se puede distinguir un botón normal de uno pulsado, ni un fondo
+   tenue de un borde. */
+:root {
+  /* Marca: el azul del logo */
+  --azul-50: #eaf3fa;
+  --azul-100: #cbe3f3;
+  --azul-200: #9bc9e7;
+  --azul-300: #5cacd9;
+  --azul-400: #1f8bc4;
+  --azul-500: #0f6aa6;
+  --azul-600: #0b5285;
+  --azul-700: #073a61;
+  --azul-800: #052740;
+
+  /* Acento: el naranja del sol del logo. Se reserva para lo que es
+     realmente excepcional en la pantalla (un negocio destacado, un evento
+     patrocinado); si se usa para más cosas deja de destacar nada. */
+  --naranja-50: #fff2e4;
+  --naranja-400: #fb9d25;
+  --naranja-500: #f57a1f;
+  --naranja-600: #d35f10;
+
+  /* Neutros, ligeramente fríos para acompañar al azul del logo: un gris
+     cálido al lado de este azul se ve sucio, amarillento. */
   --gris-0: #ffffff;
-  --gris-25: #fbfbfa;
-  --gris-50: #f6f6f4;
-  --gris-100: #eeeeea;
-  --gris-200: #e0e0db;
-  --gris-300: #c8c8c1;
-  --gris-400: #a3a39b;
-  --gris-500: #7a7a72;
-  --gris-600: #5c5c55;
-  --gris-700: #42423d;
-  --gris-800: #2a2a26;
-  --gris-900: #1a1a17;
-  --gris-950: #111110;
+  --gris-25: #fafbfc;
+  --gris-50: #f4f6f8;
+  --gris-100: #e9edf1;
+  --gris-200: #dbe1e7;
+  --gris-300: #c2cad3;
+  --gris-400: #9aa3ae;
+  --gris-500: #6f7883;
+  --gris-600: #525a64;
+  --gris-700: #3a4149;
+  --gris-800: #242a30;
+  --gris-900: #161b20;
+  --gris-950: #0e1216;
 
   /* Semánticos */
   --rojo-400: #e06a62;
@@ -41,8 +56,6 @@
   --rojo-50: #fdeeec;
   --ambar-500: #b8860b;
   --ambar-50: #fdf6e3;
-  --azul-500: #2f6f9f;
-  --azul-50: #eaf2f8;
 
   /* --- Papeles semánticos (lo que usan los componentes) --- */
   --fondo: var(--gris-50);
@@ -59,16 +72,19 @@
   --borde: var(--gris-200);
   --borde-fuerte: var(--gris-300);
 
-  --marca: var(--verde-500);
-  --marca-fuerte: var(--verde-600);
-  --marca-tenue: var(--verde-50);
-  --marca-borde: var(--verde-200);
+  --marca: var(--azul-500);
+  --marca-fuerte: var(--azul-600);
+  --marca-tenue: var(--azul-50);
+  --marca-borde: var(--azul-200);
+
+  --acento: var(--naranja-500);
+  --acento-tenue: var(--naranja-50);
 
   --peligro: var(--rojo-500);
   --peligro-tenue: var(--rojo-50);
   --aviso: var(--ambar-500);
   --aviso-tenue: var(--ambar-50);
-  --info: var(--azul-500);
+  --info: var(--azul-400);
   --info-tenue: var(--azul-50);
 
   /* Escala de espacios de 4 px. Usar la escala y no números a ojo es lo
@@ -91,10 +107,10 @@
 
   /* Sombras cortas y de poca opacidad: una sombra marcada es lo que hace
      que una interfaz parezca de 2012. */
-  --sombra-1: 0 1px 2px rgba(17, 17, 16, 0.05);
-  --sombra-2: 0 1px 3px rgba(17, 17, 16, 0.07), 0 1px 2px rgba(17, 17, 16, 0.04);
-  --sombra-3: 0 4px 12px rgba(17, 17, 16, 0.08), 0 1px 3px rgba(17, 17, 16, 0.05);
-  --sombra-4: 0 12px 32px rgba(17, 17, 16, 0.14), 0 2px 8px rgba(17, 17, 16, 0.06);
+  --sombra-1: 0 1px 2px rgba(14, 18, 22, 0.05);
+  --sombra-2: 0 1px 3px rgba(14, 18, 22, 0.07), 0 1px 2px rgba(14, 18, 22, 0.04);
+  --sombra-3: 0 4px 12px rgba(14, 18, 22, 0.08), 0 1px 3px rgba(14, 18, 22, 0.05);
+  --sombra-4: 0 12px 32px rgba(14, 18, 22, 0.14), 0 2px 8px rgba(14, 18, 22, 0.06);
 
   /* Tipografía del sistema: nada de Google Fonts. Esto es una PWA que debe
      abrir al instante y funcionar sin red, y una fuente remota es una
@@ -146,16 +162,20 @@
     --texto-suave: var(--gris-300);
     --texto-tenue: var(--gris-400);
 
-    --borde: #2e2e2a;
-    --borde-fuerte: #41413b;
+    --borde: #2a3038;
+    --borde-fuerte: #3b434c;
 
-    /* En oscuro el verde 500 queda apagado: se sube un par de pasos para
-       que siga leyéndose como color de acción. */
-    --marca: var(--verde-300);
-    --marca-fuerte: var(--verde-200);
-    --marca-tenue: rgba(111, 179, 163, 0.12);
-    --marca-borde: rgba(111, 179, 163, 0.3);
-    --texto-sobre-marca: var(--verde-800);
+    /* En oscuro el azul 500 queda apagado y no se lee sobre fondo oscuro:
+       se sube un par de pasos, hacia el cian del borde del pin, para que
+       siga leyéndose como color de acción. */
+    --marca: var(--azul-300);
+    --marca-fuerte: var(--azul-200);
+    --marca-tenue: rgba(92, 172, 217, 0.14);
+    --marca-borde: rgba(92, 172, 217, 0.32);
+    --texto-sobre-marca: var(--azul-800);
+
+    --acento: var(--naranja-400);
+    --acento-tenue: rgba(251, 157, 37, 0.14);
 
     --peligro: var(--rojo-400);
     --peligro-tenue: rgba(224, 106, 98, 0.12);
@@ -182,14 +202,17 @@
   --texto-suave: var(--gris-300);
   --texto-tenue: var(--gris-400);
 
-  --borde: #2e2e2a;
-  --borde-fuerte: #41413b;
+  --borde: #2a3038;
+  --borde-fuerte: #3b434c;
 
-  --marca: var(--verde-300);
-  --marca-fuerte: var(--verde-200);
-  --marca-tenue: rgba(111, 179, 163, 0.12);
-  --marca-borde: rgba(111, 179, 163, 0.3);
-  --texto-sobre-marca: var(--verde-800);
+  --marca: var(--azul-300);
+  --marca-fuerte: var(--azul-200);
+  --marca-tenue: rgba(92, 172, 217, 0.14);
+  --marca-borde: rgba(92, 172, 217, 0.32);
+  --texto-sobre-marca: var(--azul-800);
+
+  --acento: var(--naranja-400);
+  --acento-tenue: rgba(251, 157, 37, 0.14);
 
   --peligro: var(--rojo-400);
   --peligro-tenue: rgba(224, 106, 98, 0.12);

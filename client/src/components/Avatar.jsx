@@ -1,8 +1,12 @@
-// Ocho fondos de la misma familia, todos con suficiente contraste para
-// texto blanco encima. Se elige por el nombre y no al azar para que el
-// mismo vecino tenga siempre el mismo color: parte de reconocer a alguien
-// en un feed es reconocer su mancha de color antes de leer su nombre.
-const FONDOS = ['#1e6f5c', '#2f6f9f', '#8c5a2b', '#7a4b8c', '#a33b4d', '#3f7a3f', '#9c6b1f', '#3c6f72'];
+// Ocho fondos, todos con suficiente contraste para texto blanco encima. Se
+// elige por el nombre y no al azar para que el mismo vecino tenga siempre
+// el mismo color: parte de reconocer a alguien en un feed es reconocer su
+// mancha de color antes de leer su nombre.
+//
+// Van en una gama amplia a proposito, no en los azules del logo: si todos
+// los avatares fueran del color de la marca no se distinguirian entre si,
+// que es justo para lo que estan.
+const FONDOS = ['#0f6aa6', '#7a4b8c', '#a33b4d', '#8c5a2b', '#3f7a3f', '#9c6b1f', '#2a6f72', '#4a5a9c'];
 
 // Suma de códigos de carácter: no necesita ser un hash bueno, solo
 // estable y repartido.

@@ -59,6 +59,9 @@ function RegistroPage() {
 
   return (
     <section className="formulario-auth">
+      {/* Aqui si cabe el logo entero: es la primera pantalla que ve quien
+          llega, y el pin solo no dice el nombre del sitio. */}
+      <img className="marca-auth" src="/icons/marca.png" alt="MiLepe" width={56} height={56} />
       <h1>Crear cuenta</h1>
       <p className="formulario-auth-sub">Para publicar, comentar y hablar con otros vecinos.</p>
 

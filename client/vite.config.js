@@ -8,13 +8,16 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/favicon.svg'],
+      includeAssets: ['icons/favicon-32.png', 'icons/apple-touch-icon.png'],
       manifest: {
         name: 'MiLepe',
         short_name: 'MiLepe',
         description: 'Red social hiperlocal de Lepe (Huelva)',
-        theme_color: '#1e6f5c',
-        background_color: '#ffffff',
+        // Los dos del logo: el negro sobre el que esta dibujado es el
+        // fondo de la pantalla de arranque en Android, y asi el icono no
+        // aparece recortado sobre un cuadro blanco al abrir la app.
+        theme_color: '#0f6aa6',
+        background_color: '#000000',
         display: 'standalone',
         start_url: '/',
         icons: [

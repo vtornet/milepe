@@ -35,6 +35,9 @@ function LoginPage() {
 
   return (
     <section className="formulario-auth">
+      {/* Aqui si cabe el logo entero: es la primera pantalla que ve quien
+          llega, y el pin solo no dice el nombre del sitio. */}
+      <img className="marca-auth" src="/icons/marca.png" alt="MiLepe" width={56} height={56} />
       <h1>Entrar en MiLepe</h1>
       <p className="formulario-auth-sub">La red de los vecinos de Lepe.</p>
 

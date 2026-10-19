@@ -31,9 +31,9 @@ function BarraSuperior({ pendientesModeracion = 0 }) {
     <header className="barra">
       <div className="barra-interior">
         <Link to="/" className="marca">
-          <span className="marca-logo" aria-hidden="true">
-            ML
-          </span>
+          {/* El pin del logo, sin la palabra "Mi Lepe": a 30 px esa palabra
+              no se leería, y además ya va escrita al lado. */}
+          <img className="marca-logo" src="/icons/marca.png" alt="" width={30} height={30} />
           MiLepe
         </Link>
 

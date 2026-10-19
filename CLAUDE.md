@@ -577,10 +577,16 @@ The order matters: components consume the tokens, and overriding the base.
 dark mode silently breaks in that one place.
 
 - `tokens.css` holds every colour, space, radius, shadow and type size.
-  The brand green is the original `#1e6f5c`, but expanded into a full
-  scale: with two shades you can't tell a resting button from a pressed
-  one, or a tinted background from a border. Neutrals are deliberately
-  *warm* — a pure grey next to this green reads cold and blue.
+  The palette is sampled from the real logo (`logo.jpg` at the repo root):
+  the pin's navy `#033263`, its cyan edge `#0dd4dc`, and the sun's orange
+  `#fb7126`. The UI was green before the logo existed; a green interface
+  beside a blue logo reads as an accident, like the brand and the app came
+  from two different projects. Each hue is a full 50–800 scale, because
+  with two shades you can't tell a resting button from a pressed one, or a
+  tinted background from a border. Neutrals are slightly *cool* to sit with
+  the blue. `--acento` (the orange) is reserved for what's genuinely
+  exceptional on screen — a featured business, a sponsored event; spend it
+  on anything else and it stops highlighting anything.
 - Dark mode is three rules, not one: `@media (prefers-color-scheme: dark)`
   guarded by `:root:not([data-tema='claro'])`, plus `:root[data-tema=
   'oscuro']`. That guard is what lets someone whose phone is in dark mode
@@ -639,9 +645,14 @@ Shared components worth knowing before writing a new page:
   and reads as a system error; "inicia sesión para reaccionar" now appears
   inside the card.
 
-PWA icons exist now (`client/public/icons/`), including a `maskable` one —
-see that folder's README for how they were generated and why the maskable
-variant is full-bleed with the lettering inside the central 80%.
+Every icon in `client/public/icons/` is generated from `logo.jpg` — see
+that folder's README for the full list and why each exists. Two things
+worth knowing before touching them: the **black background is part of the
+artwork** (the sun and waves are knocked out inside the pin's circle, so
+stripping it would leave the sun floating on white), and the icons use the
+**pin only, without the "Mi Lepe" wordmark**, which is illegible below
+about 64px. The top bar and the auth pages use `marca.png`; the browser
+tab, iOS home screen and the manifest each have their own size.
 
 ### Client structure
 

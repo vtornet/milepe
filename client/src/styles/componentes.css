@@ -463,7 +463,7 @@ input[type='radio'] {
 .pub-medios-1 img {
   max-height: 520px;
   object-fit: contain;
-  background: var(--gris-900);
+  background: var(--gris-950);
 }
 
 .pub-medios-3 img:first-child {
@@ -520,8 +520,9 @@ a.insignia:hover {
 }
 
 .insignia-destacado {
-  background: linear-gradient(135deg, #f6d365, #d4a017);
-  color: #4a3505;
+  background: var(--acento-tenue);
+  color: var(--naranja-600);
+  border: 1px solid color-mix(in srgb, var(--acento) 35%, transparent);
 }
 
 .punto-separador::before {
@@ -718,7 +719,7 @@ a.insignia:hover {
 }
 
 .estrellas {
-  color: #d4a017;
+  color: var(--acento);
   letter-spacing: 1px;
 }
 
@@ -732,7 +733,7 @@ a.insignia:hover {
   cursor: pointer;
   padding: 2px;
   font-size: 18px;
-  color: #d4a017;
+  color: var(--acento);
   line-height: 1;
 }
 
@@ -1532,4 +1533,17 @@ button:not([class]):disabled {
   border-radius: var(--r-sm);
   background: var(--marca-tenue);
   color: var(--marca);
+}
+
+/* Logo de las pantallas de entrada y registro. */
+.marca-auth {
+  display: block;
+  margin: 0 auto var(--e-4);
+  border-radius: var(--r-md);
+  box-shadow: var(--sombra-2);
+}
+
+.formulario-auth h1,
+.formulario-auth .formulario-auth-sub {
+  text-align: center;
 }
