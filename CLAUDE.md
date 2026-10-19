@@ -15,8 +15,8 @@ social network, modeled after a previous project (`E:/Piverse`, a Flask/
 SQLAlchemy/Jinja2 app for a different, unrelated community, not reused as
 code — see the "Reactions" section below for how that translation into
 this stack's conventions works in practice). Built so far: typed
-reactions, user blocking, friend requests (`Amistad`), notifications. Not
-yet built: private messaging and a proper report+appeal moderation
+reactions, user blocking, friend requests (`Amistad`), notifications,
+private messaging. Not yet built: a proper report+appeal moderation
 workflow with an audit log (today's moderation is just `Post.reportar()` +
 auto-hide, no formal appeal). Expect the feature set to keep growing in
 that direction.
@@ -126,6 +126,12 @@ moderation, no reactions, because it's a static directory an admin
 maintains rather than something a neighbour publishes) and **El Tiempo**
 (no model at all — it never touches Mongo; see "El Tiempo" below).
 
+Features from the wider social network sit outside the pattern too, for a
+different reason: a reaction, a block, a friend request, a notification or
+a private message isn't *publishable content*, so none of them gets a
+`tipo`. `Conversacion`/`Mensaje` are the clearest case — see "Private
+messaging" below.
+
 This means: the Muro feed is a plain `Post.find({ estado_moderacion:
 'publicado' })` with no joins at all, while a section view (e.g. `/quejas`)
 additionally queries/populates the matching `*_detalle` by `post_id`. Adding
@@ -221,10 +227,16 @@ that's gone, replaced entirely by this.
 directional in storage (`bloqueador_id` blocked `bloqueado_id`) but
 `Bloqueo.existeEntre(a, b)` checks both directions — a block stops
 interaction between the two regardless of who blocked whom. It's wired into
-`postsController.crearComentario`/`reaccionarPost` today (403 if either has
-blocked the other); extend that same `existeEntre` check into any new
-interaction surface (messaging, contact requests) rather than reinventing
-the check. Note the naming: this is unrelated to `ContactoInteres` (the
+`postsController.crearComentario`/`reaccionarPost` and into both
+`conversacionesController.abrirConversacion`/`enviarMensaje` today (403 if
+either has blocked the other); extend that same `existeEntre` check into
+any new interaction surface rather than reinventing the check. Messaging
+checks it *twice* on purpose — opening a thread and sending into an
+already-open one — because a thread can be months old and the block from
+yesterday; a one-time check at creation would leak a permanent channel.
+`usuariosController.buscarUsuarios` also filters blocked users out of its
+results, on the reasoning that surfacing someone you can't write to only
+leads to a 403. Note the naming: this is unrelated to `ContactoInteres` (the
 static Ayuntamiento/Policía/... directory) — a friend-request system already exists as
 `Amistad`/`/api/amistades`, specifically named to not collide with that.
 `Amistad.existeEntre(a, b)` is the same "check both directions of a
@@ -241,19 +253,89 @@ again after a rejection.
 `/api/notificaciones`) stores an already-rendered `mensaje` string (not
 pieces to assemble client-side — server and client can't disagree on
 wording that way) plus a polymorphic `referencia_id`/`referencia_tipo`
-(`'post' | 'comentario' | 'amistad'`) pair for where to navigate on click,
-since there's no single `ref` a Mongoose populate could use across three
-unrelated collections. There is no model-level hook creating these (unlike
+(`'post' | 'comentario' | 'amistad' | 'conversacion'`) pair for where to
+navigate on click, since there's no single `ref` a Mongoose populate could
+use across four unrelated collections. There is no model-level hook creating these (unlike
 `num_comentarios`/`reacciones_resumen`, which are hooked because they're
 data-integrity counters) — every trigger point calls `Notificacion.create()`
 explicitly from the controller, currently: new comment, new/changed
-reaction (never on removing one), a friend request sent, one accepted, and
-a queja's `estado` changing. `postsController.notificarSiNoEsUnoMismo()` is
+reaction (never on removing one), a friend request sent, one accepted, a
+queja's `estado` changing, and a private message received.
+`postsController.notificarSiNoEsUnoMismo()` is
 the shared "skip if you're notifying yourself" helper for the three post/
 comment triggers; the friend and queja triggers inline the same one-line
 check since they only need it once each. Adding a new trigger point
 anywhere else should follow this same explicit-call pattern, not add a new
 model hook.
+
+### Private messaging
+
+`Conversacion` + `Mensaje` (`server/src/models/`, routes under
+`/api/conversaciones`) are the one feature that exists entirely outside the
+Post + `*_detalle` world — a private message is not publishable content, so
+it gets its own two collections and never touches `posts`. Deliberately
+1-to-1, no group threads: `participantes` is an embedded array validated to
+exactly two distinct users in `pre('validate')` (Piverse needed a
+`ConversationParticipant` join table for this; that was a SQL necessity,
+not a design to carry over).
+
+The non-obvious parts:
+
+- **`clave_par`** is the two participant ids sorted and joined
+  (`"menor_mayor"`), carrying a unique index. It exists *only* so Mongo can
+  enforce "one thread per pair": a unique index can't do that on an array
+  of participants, and without the guarantee two simultaneous clicks on
+  "escribir a X" create two duplicate threads that then show as separate
+  conversations. `Conversacion.obtenerOCrear()` is the only way to open
+  one — it does find-then-create and, on an `E11000` from the race,
+  re-reads the one the other request just created instead of throwing.
+  Verified with two genuinely concurrent `obtenerOCrear` calls.
+- **`ultimo_mensaje`** (text + author + date) is denormalized onto
+  `Conversacion` for the inbox preview, maintained by a `post('save')` hook
+  on `Mensaje` — same reasoning as `num_comentarios`/`reacciones_resumen`:
+  it's a data-integrity summary, so it's hooked rather than left to each
+  controller. That hook also touches `fecha_actualizacion`, which is what
+  the inbox sorts by, so a new message bumps its thread to the top.
+- **`Mensaje.leido_en` is a date, not a boolean** — a boolean can't render
+  "visto a las 20:14" and going from one to the other later would be a
+  migration, while ignoring the date and drawing a plain tick costs
+  nothing. `marcarLeidos()` only marks messages the *other* person sent
+  (reading is not mutual) and returns how many it marked, which is exactly
+  what the client needs to clear its badge without a second request.
+- **`cargarConversacionPropia()`** is the security-critical helper: every
+  message route loads the thread through it, and it filters by
+  `participantes: usuarioId` so a non-participant can't read, write to, or
+  mark someone else's thread. It answers **404, not 403**, on purpose — a
+  stranger isn't even told the thread exists. The smoke test covers all
+  three verbs for an outsider; keep those cases if this is ever
+  refactored.
+- **One notification per unread run**: `notificarMensajeNuevo()` skips
+  creating a `'mensaje_nuevo'` notification if the recipient already has an
+  unread one for that same conversation, so a twenty-message exchange
+  doesn't bury the notifications panel under twenty rows that say the same
+  thing. `PATCH /:id/leida` marks the messages read *and* clears those
+  notifications, which is what re-arms the next one.
+- **`:id` means two different things** in this router, so `POST
+  /con/:id` (the other **user's** id — the client knows who it wants to
+  write to, not the thread id, same as `/api/amistades/:id`) is spelled
+  with `/con/` precisely so the difference is visible in the URL instead of
+  two indistinguishable kinds of id in the same position. Every other route
+  takes the **conversation** id.
+- Messages paginate backwards with `?antes=<ISO date>`, 50 per page: the
+  query sorts descending and the controller reverses the array before
+  responding, because what you need on opening a chat is the end of the
+  conversation, not the beginning.
+- `GET /:id/mensajes` also returns `con` (the other participant) and not
+  just the messages, because a freshly opened thread has no message to
+  derive the header name from.
+
+`usuariosController.buscarUsuarios` (`GET /api/usuarios/buscar?q=`) was
+added alongside this, not as part of it: messaging needed *some* way to
+start a conversation and there's no profile page yet. Min 2 characters,
+max 10 results, public fields only, excludes you and anyone a block
+touches. It escapes the query before building the `RegExp` — an unbalanced
+`(` typed into a search box is not an exotic search, it's a thrown
+exception and a 500. The friends UI will want this same endpoint.
 
 ### Section controllers — what's different about each one
 
@@ -420,11 +502,23 @@ not a design decision, if asked to add photo upload to one of those.
   invalid token, or a since-deactivated account), so a stale session
   doesn't linger past its next failed request. `router/RutaProtegida.jsx`
   wraps a whole route that requires a session (redirects to `/login`,
-  remembering `location.pathname` in nav state so login can return there);
-  none of the section pages use it today since they're public-readable
-  with only specific actions gated inline (a "inicia sesión para..."
-  message instead of hiding the button) — it's there for a future
-  session-only page (notifications, "mi perfil").
+  remembering `location.pathname` in nav state so login can return there).
+  Only `/mensajes` and `/mensajes/:id` use it: every section page is
+  public-readable with specific actions gated inline instead (a "inicia
+  sesión para..." message rather than a hidden button), whereas a private
+  thread can't even be listed without knowing who you are.
+- `client/src/pages/Mensajes/` is the only client area deliberately *not*
+  in `secciones.js`: messaging has no `Post.tipo`, never appears in the
+  Muro, and only exists with a session, so its nav link lives in `NavBar`'s
+  `navbar-sesion` block next to logout rather than among the sections.
+  `MensajesPage` is the inbox (plus the vecino search that starts a
+  thread); `ConversacionPage` is one thread. The latter re-polls every 10s
+  while open — there are no websockets or push here yet — and merges the
+  fetched page into what it already has by `_id` (`combinarMensajes`)
+  rather than replacing it, since the poll always asks for the *latest* 50
+  and a plain replace would wipe out any older pages the reader had loaded
+  by scrolling up. The interval is cleared on unmount, so it doesn't keep
+  polling in the background.
 - `client/src/router/secciones.js` is the single source of truth mapping
   route path ↔ nav label ↔ the `Post.tipo`(s) it corresponds to — `tipos`
   is always an array, even for a section with just one, because Empleo

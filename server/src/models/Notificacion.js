@@ -11,6 +11,7 @@ export const TIPOS_NOTIFICACION = [
   'amistad_aceptada',
   'cambio_estado_queja',
   'moderacion',
+  'mensaje_nuevo',
 ];
 
 const notificacionSchema = new Schema(
@@ -40,14 +41,15 @@ const notificacionSchema = new Schema(
     },
     // A que ir cuando se pulsa la notificacion. referencia_tipo dice que
     // coleccion consultar con referencia_id (no hay un ref fijo posible:
-    // puede apuntar a Post, Comentario o Amistad segun el tipo).
+    // puede apuntar a Post, Comentario, Amistad o Conversacion segun el
+    // tipo).
     referencia_id: {
       type: Schema.Types.ObjectId,
       default: null,
     },
     referencia_tipo: {
       type: String,
-      enum: ['post', 'comentario', 'amistad', null],
+      enum: ['post', 'comentario', 'amistad', 'conversacion', null],
       default: null,
     },
     leida: {

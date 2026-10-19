@@ -29,6 +29,10 @@ function NavBar() {
       <span className="navbar-sesion">
         {!cargando && usuario && (
           <>
+            {/* Mensajes no esta en SECCIONES: no es contenido del Muro ni
+                tiene un Post.tipo, y solo existe con la sesion abierta.
+                Por eso va en el bloque de sesion, no entre las secciones. */}
+            <NavLink to="/mensajes">Mensajes</NavLink>
             <span>Hola, {usuario.nombre_usuario}</span>
             <button type="button" onClick={manejarLogout}>
               Cerrar sesión
