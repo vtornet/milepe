@@ -21,32 +21,9 @@ export const TIPOS_POST = [
 // Post-moderacion con reportes: se publica al instante y solo se revisa si
 // alguien reporta. 'eliminado' es un borrado logico (nunca se borra el
 // documento) para conservar el historial y las referencias de comentarios.
+// El circuito completo -reportes, acciones del moderador, apelaciones y
+// auditoria- esta en Reporte.js, Apelacion.js y RegistroModeracion.js.
 export const ESTADOS_MODERACION = ['publicado', 'oculto', 'eliminado'];
-
-// A partir de este numero de reportes distintos, el post se oculta solo en
-// espera de revision manual del moderador (no se borra).
-const UMBRAL_REPORTES_AUTO_OCULTAR = 3;
-
-const reporteSchema = new Schema(
-  {
-    usuario_id: {
-      type: Schema.Types.ObjectId,
-      ref: 'Usuario',
-      required: true,
-    },
-    motivo: {
-      type: String,
-      required: [true, 'El motivo del reporte es obligatorio'],
-      trim: true,
-      maxlength: 300,
-    },
-    fecha: {
-      type: Date,
-      default: Date.now,
-    },
-  },
-  { _id: false },
-);
 
 const postSchema = new Schema(
   {
@@ -103,16 +80,16 @@ const postSchema = new Schema(
       enum: ESTADOS_MODERACION,
       default: 'publicado',
     },
-    // Quien tomo la ultima accion de moderacion sobre este post (ocultar,
-    // eliminar, restaurar). null mientras nadie haya moderado el post.
+    // Quien tomo la ULTIMA accion de moderacion sobre este post (ocultar,
+    // eliminar, restaurar); null mientras nadie lo haya moderado. Es solo
+    // un atajo para pintar "moderado por" sin otra consulta: el historial
+    // completo -todas las acciones, con su motivo y su fecha- esta en
+    // RegistroModeracion, que es lo que hay que consultar para saber por
+    // que algo esta como esta.
     moderador_id: {
       type: Schema.Types.ObjectId,
       ref: 'Usuario',
       default: null,
-    },
-    reportes: {
-      type: [reporteSchema],
-      default: [],
     },
   },
   {
@@ -134,24 +111,9 @@ postSchema.index({ titulo: 'text', contenido: 'text' });
 // al dia. Vive en su propio modelo porque tambien reacciona a comentarios,
 // no solo a posts.
 
-// Registra el reporte de un usuario. Un mismo usuario no puede reportar el
-// mismo post dos veces. Si se alcanza el umbral, el post se oculta solo en
-// espera de que un moderador lo revise. No persiste el cambio: el
-// controlador debe llamar a post.save() despues.
-postSchema.methods.reportar = function reportar(usuarioId, motivo) {
-  const yaReportado = this.reportes.some((reporte) => reporte.usuario_id.equals(usuarioId));
-
-  if (yaReportado) {
-    throw new Error('Este usuario ya ha reportado esta publicacion');
-  }
-
-  this.reportes.push({ usuario_id: usuarioId, motivo });
-
-  if (this.estado_moderacion === 'publicado' && this.reportes.length >= UMBRAL_REPORTES_AUTO_OCULTAR) {
-    this.estado_moderacion = 'oculto';
-  }
-
-  return this;
-};
+// Reportar tampoco es ya un metodo de Post, por el mismo motivo que
+// reaccionar: los reportes viven en su propia coleccion (Reporte), se
+// resuelven, y valen igual para un post que para un comentario.
+// Reporte.registrar() es quien aplica el umbral de auto-ocultado.
 
 export default model('Post', postSchema);

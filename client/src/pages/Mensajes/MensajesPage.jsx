@@ -76,7 +76,7 @@ function MensajesPage() {
       const { data } = await api.post(`/conversaciones/con/${usuario._id}`);
       navigate(`/mensajes/${data.conversacion._id}`);
     } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo abrir la conversación.');
+      setError(err.response?.data?.mensaje || 'No se pudo abrir la conversación.');
       setAbriendo(false);
     }
   };

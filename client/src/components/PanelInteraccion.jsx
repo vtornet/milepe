@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import BotonReportar from './BotonReportar.jsx';
 
 const EMOJI_REACCION = { me_gusta: '👍', me_encanta: '❤️', apoyo: '🙌', triste: '😢' };
 
@@ -69,6 +70,7 @@ function PanelInteraccion({ postId, reaccionesIniciales, permitirValoracion = fa
         <button type="button" onClick={alternarComentarios}>
           💬 {comentarios !== null ? 'Ocultar' : permitirValoracion ? 'Ver reseñas' : 'Ver comentarios'}
         </button>
+        <BotonReportar contenidoTipo="post" contenidoId={postId} />
       </div>
 
       {comentarios !== null && (
@@ -78,7 +80,8 @@ function PanelInteraccion({ postId, reaccionesIniciales, permitirValoracion = fa
             <p key={c._id} className="comentario">
               <strong>{c.autor_id?.nombre_usuario}:</strong>{' '}
               {c.valoracion ? <span title={`${c.valoracion} de 5`}>{'★'.repeat(c.valoracion)}{'☆'.repeat(5 - c.valoracion)} </span> : null}
-              {c.texto}
+              {c.texto}{' '}
+              <BotonReportar contenidoTipo="comentario" contenidoId={c._id} compacto />
             </p>
           ))}
           {usuario ? (

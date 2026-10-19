@@ -16,10 +16,10 @@ SQLAlchemy/Jinja2 app for a different, unrelated community, not reused as
 code — see the "Reactions" section below for how that translation into
 this stack's conventions works in practice). Built so far: typed
 reactions, user blocking, friend requests (`Amistad`), notifications,
-private messaging. Not yet built: a proper report+appeal moderation
-workflow with an audit log (today's moderation is just `Post.reportar()` +
-auto-hide, no formal appeal). Expect the feature set to keep growing in
-that direction.
+private messaging, and the report + appeal + audit-log moderation workflow.
+That completes the feature set this project set out to translate from
+Piverse; Stripe (`/api/pagos`) is the only thing left from the original
+brief. Expect the feature set to keep growing beyond it.
 
 Two independent apps, each with its own `package.json`/`node_modules` — there
 is no root package.json or workspace tooling:
@@ -189,16 +189,93 @@ index.
 
 ### Moderation
 
-Post-moderation, not pre-moderation: a post is visible the instant it's
-created (`estado_moderacion` defaults to `'publicado'`). `Post.reportar
-(usuarioId, motivo)` records a report (a user can't report the same post
-twice) and auto-hides the post once reports reach `UMBRAL_REPORTES_AUTO_
-OCULTAR` (3, defined in `Post.js`) — it does not delete it.
-`estado_moderacion: 'eliminado'` is a soft delete; documents are never
-actually removed. `moderador_id` on `Post` tracks who last acted on it.
-`Usuario.rol` (`usuario`/`moderador`/`admin`) is designed so new moderators
-can be added later by editing one field on an existing document — no
-migration.
+Post-moderation, not pre-moderation: content is visible the instant it's
+created (`estado_moderacion` defaults to `'publicado'`), and
+`'eliminado'` is a soft delete — documents are never actually removed, so
+comment references and history survive. `Usuario.rol`
+(`usuario`/`moderador`/`admin`) is designed so new moderators can be added
+by editing one field on an existing document — no migration.
+
+Everything else runs through four collections and one controller
+(`moderacionController` + `/api/moderacion`), all of it **generic over
+`contenido_tipo`** (`'post' | 'comentario'`). `utils/contenidoModerable.js`
+is the only place that maps a `contenido_tipo` to its model, and the thing
+that makes the genericity work is that `Post` and `Comentario` already
+share the three fields moderation cares about: `autor_id`,
+`estado_moderacion`, `moderador_id`. A side effect worth knowing: a
+comment can now be reported on its own, which was impossible before (you
+had to report the whole post containing it).
+
+- **`Reporte`** replaced the old embedded `Post.reportes` array, which
+  couldn't be resolved (no reviewer, no timestamp, no state), couldn't be
+  listed as a queue without scanning every post, and didn't cover comments
+  at all. `motivo` is a closed enum (`MOTIVOS_REPORTE` in
+  `models/constantes.js`) rather than free text, so the queue can be
+  grouped and prioritised — a free-text `detalle` is still there, optional,
+  for whatever the enum doesn't capture. A unique index on
+  `{reportante_id, contenido_tipo, contenido_id}` is what now enforces "you
+  can't report the same thing twice" (the array did it by scanning, which
+  two simultaneous requests could slip past).
+- **`Reporte.registrar()`** is the only way to create one, because three
+  things have to happen together: save the report, check the threshold
+  (`UMBRAL_REPORTES_AUTO_OCULTAR` = 3, moved here from `Post.js` since it's
+  a rule about reports, not posts), and if it's reached, hide the content
+  **and** write the audit entry. That last pairing is why this lives in the
+  model: the invariant "anything hidden has a log entry saying why" can't
+  depend on each caller remembering. Only **pending** reports count toward
+  the threshold — if a moderator already dismissed three reports on
+  something, the fourth shouldn't re-hide it by leaning on the discarded
+  ones.
+- **`RegistroModeracion`** is the audit log: who did what, to what, when
+  and why. It's what `Post.moderador_id` could never be — that's a single
+  field overwritten on every action, so only the last one survived; it
+  stays as a shortcut for rendering "moderated by" without another query.
+  The log is **append-only, enforced in the schema**: `pre('save')` throws
+  on a non-new document and query middleware throws on every update and
+  delete. That's an application-level barrier, not a database one (direct
+  Mongo access can still do anything), but it rules out the real risk here,
+  which is erasing it accidentally from the code. `moderador_id: null`
+  means the threshold did it, not a person — that null is information, not
+  a gap. `autor_contenido_id` is copied onto each entry so "what has been
+  done to this neighbour" is one indexed query instead of a cross-collection
+  join, and stays readable even if content is ever purged.
+- **`Apelacion`** points at the **content**, not at the report that
+  triggered the action: something can be hidden with no particular report
+  behind it (a moderator acting on their own, or the automatic threshold
+  summing several), so what the author is appealing is "my post is hidden",
+  not "report number three". One appeal per content per author, enforced by
+  a plain (not partial) unique index: the resolution is final and can't be
+  re-litigated by resending. Resolving one is **admin-only**, and the
+  controller additionally refuses to let anyone resolve the appeal against
+  **their own** decision — it finds out who acted by reading the audit log,
+  which is a good illustration of why the log exists. Without that rule,
+  appealing would be asking the same moderator to overrule themselves.
+- `aplicarAccion()` in the controller is the single path through which
+  `estado_moderacion` changes by hand: it writes the log entry and notifies
+  the author in one place. Changing the field directly anywhere else
+  silently breaks the "every action is logged" invariant.
+- Two consequences of the above that are easy to get wrong and are covered
+  by tests: **dismissing** the last pending report on content the threshold
+  had auto-hidden republishes it (otherwise "report rejected" would leave
+  the punishment in place), and **accepting** an appeal also discards any
+  still-pending reports on that content (otherwise the threshold would
+  immediately re-hide what was just restored).
+- The author's side is `GET /api/moderacion/mi-contenido-moderado`, which
+  exists because the Muro and the sections only show `publicado` content —
+  without it a hidden post simply vanishes and its author has no way to
+  learn why or anywhere to appeal from. It returns the **reason** for the
+  last action but deliberately not **who** took it: knowing which moderator
+  it was doesn't help them argue their case and does invite taking it out
+  on the person.
+- `POST /api/posts/:id/reportar` and `PATCH /api/posts/:id/moderar` still
+  exist and still work; they're now three-line adapters in `postsController`
+  that fill in `contenido_tipo: 'post'` and hand off to the generic
+  controller. Kept because `/api/posts/:id/...` is where you'd look for
+  them, but there's no logic in them — don't add any there.
+
+The embedded-array-to-collection switch needed no data migration: the live
+database was checked first and held 0 embedded reports (3 posts, none
+moderated), so nothing was lost by dropping the field.
 
 ### Reactions
 
@@ -260,8 +337,9 @@ use across four unrelated collections. There is no model-level hook creating the
 data-integrity counters) — every trigger point calls `Notificacion.create()`
 explicitly from the controller, currently: new comment, new/changed
 reaction (never on removing one), a friend request sent, one accepted, a
-queja's `estado` changing, and a private message received.
-`postsController.notificarSiNoEsUnoMismo()` is
+queja's `estado` changing, a private message received, and every
+moderation action on your content (hidden, removed, restored, appeal
+resolved). `postsController.notificarSiNoEsUnoMismo()` is
 the shared "skip if you're notifying yourself" helper for the three post/
 comment triggers; the friend and queja triggers inline the same one-line
 check since they only need it once each. Adding a new trigger point
@@ -503,10 +581,18 @@ not a design decision, if asked to add photo upload to one of those.
   doesn't linger past its next failed request. `router/RutaProtegida.jsx`
   wraps a whole route that requires a session (redirects to `/login`,
   remembering `location.pathname` in nav state so login can return there).
-  Only `/mensajes` and `/mensajes/:id` use it: every section page is
-  public-readable with specific actions gated inline instead (a "inicia
-  sesión para..." message rather than a hidden button), whereas a private
-  thread can't even be listed without knowing who you are.
+  `/mensajes`, `/mensajes/:id` and `/mi-contenido` use it: every section
+  page is public-readable with specific actions gated inline instead (a
+  "inicia sesión para..." message rather than a hidden button), whereas a
+  private thread or your own moderated content can't even be listed
+  without knowing who you are. `router/RutaRol.jsx` is the same thing plus
+  a role check, used only by `/moderacion`; it redirects a signed-in
+  non-moderator to the Muro rather than showing "not authorised", since
+  for a normal neighbour that page doesn't exist rather than being
+  forbidden. It's navigation convenience, not security — `autorizar()` on
+  the server routes is what actually enforces it, and faking the role in
+  `localStorage` gets you an empty panel whose every request answers 403
+  (verified against the running server for all three roles).
 - `client/src/pages/Mensajes/` is the only client area deliberately *not*
   in `secciones.js`: messaging has no `Post.tipo`, never appears in the
   Muro, and only exists with a session, so its nav link lives in `NavBar`'s
@@ -519,6 +605,26 @@ not a design decision, if asked to add photo upload to one of those.
   and a plain replace would wipe out any older pages the reader had loaded
   by scrolling up. The interval is cleared on unmount, so it doesn't keep
   polling in the background.
+- `client/src/pages/Moderacion/` holds both sides of moderation and, like
+  Mensajes, is not in `secciones.js`. `ModeracionPage` is the team panel
+  (three tabs — report queue, appeal queue, audit log — in one route
+  because they're worked together: resolve a report, check that
+  neighbour's history, back to the queue); `MiContenidoModeradoPage`
+  (`/mi-contenido`) is the author's view and the only place an appeal can
+  be filed from. `components/BotonReportar.jsx` sits inside
+  `PanelInteraccion`, which is what gets reporting into all six sections at
+  once — and, in its `compacto` form, onto each individual comment.
+  `NavBar` shows "Moderación" (with the pending count) only to the team,
+  and "Mi contenido" only when `GET /moderacion/mi-contenido-moderado`
+  comes back non-empty: that's one extra request per app load for a link
+  most people never see, accepted over putting a permanent, unpleasantly
+  named link in everyone's navbar.
+- The server's error handler returns `{ ok: false, mensaje }` — **`mensaje`,
+  not `message`**. Client code reading `err.response?.data?.message` gets
+  `undefined` and silently falls back to its generic text, which is exactly
+  what happened to the first versions of the Mensajes and Moderación
+  components; the server's specific message ("Ya habías reportado este
+  contenido") never reached the screen. Always read `data?.mensaje`.
 - `client/src/router/secciones.js` is the single source of truth mapping
   route path ↔ nav label ↔ the `Post.tipo`(s) it corresponds to — `tipos`
   is always an array, even for a section with just one, because Empleo

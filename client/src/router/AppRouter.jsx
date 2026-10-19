@@ -12,7 +12,10 @@ import NegociosPage from '../pages/Negocios/NegociosPage.jsx';
 import ContactosPage from '../pages/Contactos/ContactosPage.jsx';
 import MensajesPage from '../pages/Mensajes/MensajesPage.jsx';
 import ConversacionPage from '../pages/Mensajes/ConversacionPage.jsx';
+import ModeracionPage from '../pages/Moderacion/ModeracionPage.jsx';
+import MiContenidoModeradoPage from '../pages/Moderacion/MiContenidoModeradoPage.jsx';
 import RutaProtegida from './RutaProtegida.jsx';
+import RutaRol from './RutaRol.jsx';
 
 function AppRouter() {
   return (
@@ -45,6 +48,25 @@ function AppRouter() {
         element={
           <RutaProtegida>
             <ConversacionPage />
+          </RutaProtegida>
+        }
+      />
+
+      {/* El panel del equipo exige rol; la vista del autor sancionado solo
+          sesion, porque cualquiera puede tener algo oculto que apelar. */}
+      <Route
+        path="/moderacion"
+        element={
+          <RutaRol roles={['moderador', 'admin']}>
+            <ModeracionPage />
+          </RutaRol>
+        }
+      />
+      <Route
+        path="/mi-contenido"
+        element={
+          <RutaProtegida>
+            <MiContenidoModeradoPage />
           </RutaProtegida>
         }
       />

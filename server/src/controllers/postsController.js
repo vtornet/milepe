@@ -1,9 +1,10 @@
-import Post, { ESTADOS_MODERACION } from '../models/Post.js';
+import Post from '../models/Post.js';
 import Comentario from '../models/Comentario.js';
 import Reaccion, { TIPOS_REACCION } from '../models/Reaccion.js';
 import Bloqueo from '../models/Bloqueo.js';
 import Notificacion from '../models/Notificacion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
+import { crearReporte, moderarContenido } from './moderacionController.js';
 
 // Un post 'eliminado' es borrado logico: para cualquiera que no sea su
 // autor o un moderador, se comporta como si no existiera.
@@ -103,53 +104,20 @@ export const reaccionarPost = async (req, res, next) => {
   }
 };
 
-export const reportarPost = async (req, res, next) => {
-  try {
-    const { motivo } = req.body;
-
-    if (!motivo) {
-      throw new ErrorHttp(400, 'El motivo del reporte es obligatorio');
-    }
-
-    const post = await Post.findById(req.params.id);
-
-    if (noEsVisible(post)) {
-      throw new ErrorHttp(404, 'Publicacion no encontrada');
-    }
-
-    post.reportar(req.usuario._id, motivo);
-    await post.save();
-
-    res.json({ ok: true, estado_moderacion: post.estado_moderacion });
-  } catch (error) {
-    next(error);
-  }
+// Reportar y moderar son ahora genericos (valen igual para un post que
+// para un comentario) y viven en moderacionController. Estas dos rutas se
+// mantienen porque /api/posts/:id/... es donde tiene sentido buscarlas, y
+// se limitan a rellenar el contenido_tipo/contenido_id que el controlador
+// generico espera en el cuerpo. Toda la logica -umbral de auto-ocultado,
+// registro de auditoria, aviso al autor- esta alli, en un solo sitio.
+export const reportarPost = (req, res, next) => {
+  req.body = { ...req.body, contenido_tipo: 'post', contenido_id: req.params.id };
+  return crearReporte(req, res, next);
 };
 
-// Accion de moderacion generica: vale para cualquier tipo de post, por eso
-// vive aqui y no repetida en cada seccion. Solo moderador/admin (lo exige
-// la ruta con autorizar(), no este controlador).
-export const moderarPost = async (req, res, next) => {
-  try {
-    const { estado_moderacion } = req.body;
-
-    if (!ESTADOS_MODERACION.includes(estado_moderacion)) {
-      throw new ErrorHttp(400, `estado_moderacion debe ser uno de: ${ESTADOS_MODERACION.join(', ')}`);
-    }
-
-    const post = await Post.findById(req.params.id);
-    if (!post) {
-      throw new ErrorHttp(404, 'Publicacion no encontrada');
-    }
-
-    post.estado_moderacion = estado_moderacion;
-    post.moderador_id = req.usuario._id;
-    await post.save();
-
-    res.json({ ok: true, post });
-  } catch (error) {
-    next(error);
-  }
+export const moderarPost = (req, res, next) => {
+  req.body = { ...req.body, contenido_tipo: 'post', contenido_id: req.params.id };
+  return moderarContenido(req, res, next);
 };
 
 export const listarComentarios = async (req, res, next) => {

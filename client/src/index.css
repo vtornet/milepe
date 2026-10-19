@@ -409,3 +409,94 @@ a.tarjeta.hilo .tarjeta-meta {
   background: #999;
   cursor: not-allowed;
 }
+
+/* --- Moderacion --- */
+.lista-filtros button.activa {
+  background: var(--color-primario);
+  color: white;
+}
+
+.filtro-casilla {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-weight: 400;
+  font-size: 13px;
+}
+
+.filtro-casilla input {
+  width: auto;
+}
+
+/* El contenido reportado se enmarca para que se distinga de un golpe de
+   vista del reporte que habla de el: en una cola de moderacion lo peor es
+   confundir la denuncia con lo denunciado. */
+.contenido-moderado {
+  border-left: 3px solid var(--color-borde);
+  padding-left: 10px;
+  margin: 10px 0;
+}
+
+.contenido-moderado-texto {
+  margin: 4px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.reporte-detalle {
+  font-style: italic;
+  color: #444;
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+
+.formulario-reporte,
+.formulario-resolucion {
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  background: #fafaf8;
+}
+
+.formulario-reporte-acciones {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.formulario-reporte-acciones button[type='submit'] {
+  margin-top: 0;
+  background: var(--color-primario);
+  color: white;
+  padding: 8px 14px;
+}
+
+.formulario-reporte-acciones button[type='submit']:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+
+.formulario-reporte-acciones button[type='button'] {
+  background: #eee;
+  padding: 8px 14px;
+}
+
+/* Reportar un comentario va dentro del propio parrafo del comentario, asi
+   que tiene que ocupar lo minimo y no romper la linea. */
+.boton-reportar-compacto {
+  background: none;
+  padding: 0 2px;
+  font-size: 12px;
+  opacity: 0.55;
+}
+
+.boton-reportar-compacto:hover {
+  opacity: 1;
+}
+
+.entrada-registro {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}

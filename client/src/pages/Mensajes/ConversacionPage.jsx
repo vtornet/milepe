@@ -139,7 +139,7 @@ function ConversacionPage() {
       setMensajes((previos) => combinarMensajes(previos, [data.mensaje]));
       setTexto('');
     } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo enviar el mensaje.');
+      setError(err.response?.data?.mensaje || 'No se pudo enviar el mensaje.');
     } finally {
       setEnviando(false);
     }

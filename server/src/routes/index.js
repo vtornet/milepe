@@ -6,6 +6,7 @@ import usuariosRoutes from './usuariosRoutes.js';
 import amistadesRoutes from './amistadesRoutes.js';
 import notificacionesRoutes from './notificacionesRoutes.js';
 import conversacionesRoutes from './conversacionesRoutes.js';
+import moderacionRoutes from './moderacionRoutes.js';
 import subidasRoutes from './subidasRoutes.js';
 import fotosRoutes from './fotosRoutes.js';
 import eventosRoutes from './eventosRoutes.js';
@@ -29,6 +30,7 @@ router.use('/usuarios', usuariosRoutes); // bloqueos por ahora; perfil publico m
 router.use('/amistades', amistadesRoutes);
 router.use('/notificaciones', notificacionesRoutes);
 router.use('/conversaciones', conversacionesRoutes); // mensajeria privada; la unica seccion sin nada publico
+router.use('/moderacion', moderacionRoutes); // reportes, acciones, apelaciones y auditoria (vale para post y comentario)
 router.use('/subidas', subidasRoutes); // generico: cualquier seccion sube imagenes por aqui antes de crear su post
 router.use('/fotos', fotosRoutes);
 router.use('/eventos', eventosRoutes);
