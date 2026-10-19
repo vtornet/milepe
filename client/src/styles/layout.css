@@ -70,18 +70,16 @@
   text-decoration: none;
 }
 
-/* El logo de verdad (public/icons/marca.png: el pin del logotipo, recortado
-   sin la palabra "Mi Lepe", que a este tamaño no se leería). Viene sobre
-   negro porque el negro es parte del dibujo -el sol y las olas se recortan
-   dentro del círculo-, así que el cuadrado se redondea aquí en vez de
-   intentar quitarle el fondo. */
+/* El pin del logotipo, recortado sin la palabra "Mi Lepe" (que a este
+   tamaño no se leería, y además ya va escrita al lado). Es transparente,
+   así que se apoya directamente sobre la barra y funciona igual en claro
+   que en oscuro: nada de recuadro ni de sombra, que es lo que delata un
+   logo pegado encima en vez de formar parte de la interfaz. */
 .marca-logo {
   width: 30px;
   height: 30px;
   flex-shrink: 0;
-  border-radius: 9px;
-  box-shadow: var(--sombra-2);
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .barra-acciones {

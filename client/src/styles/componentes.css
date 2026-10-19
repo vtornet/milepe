@@ -1535,12 +1535,12 @@ button:not([class]):disabled {
   color: var(--marca);
 }
 
-/* Logo de las pantallas de entrada y registro. */
+/* Logo de las pantallas de entrada y registro. Transparente, sin recuadro:
+   se apoya sobre la tarjeta. */
 .marca-auth {
   display: block;
   margin: 0 auto var(--e-4);
-  border-radius: var(--r-md);
-  box-shadow: var(--sombra-2);
+  object-fit: contain;
 }
 
 .formulario-auth h1,

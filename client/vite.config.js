@@ -13,11 +13,12 @@ export default defineConfig({
         name: 'MiLepe',
         short_name: 'MiLepe',
         description: 'Red social hiperlocal de Lepe (Huelva)',
-        // Los dos del logo: el negro sobre el que esta dibujado es el
-        // fondo de la pantalla de arranque en Android, y asi el icono no
-        // aparece recortado sobre un cuadro blanco al abrir la app.
+        // background_color es el fondo de la pantalla de arranque en
+        // Android: tiene que coincidir con el fondo sobre el que estan
+        // compuestos los iconos (blanco) o el icono aparece recortado
+        // sobre otro color al abrir la app.
         theme_color: '#0f6aa6',
-        background_color: '#000000',
+        background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
         icons: [

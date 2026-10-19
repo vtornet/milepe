@@ -577,7 +577,7 @@ The order matters: components consume the tokens, and overriding the base.
 dark mode silently breaks in that one place.
 
 - `tokens.css` holds every colour, space, radius, shadow and type size.
-  The palette is sampled from the real logo (`logo.jpg` at the repo root):
+  The palette is sampled from the real logo (`logo.png` at the repo root):
   the pin's navy `#033263`, its cyan edge `#0dd4dc`, and the sun's orange
   `#fb7126`. The UI was green before the logo existed; a green interface
   beside a blue logo reads as an accident, like the brand and the app came
@@ -645,14 +645,26 @@ Shared components worth knowing before writing a new page:
   and reads as a system error; "inicia sesión para reaccionar" now appears
   inside the card.
 
-Every icon in `client/public/icons/` is generated from `logo.jpg` — see
-that folder's README for the full list and why each exists. Two things
-worth knowing before touching them: the **black background is part of the
-artwork** (the sun and waves are knocked out inside the pin's circle, so
-stripping it would leave the sun floating on white), and the icons use the
-**pin only, without the "Mi Lepe" wordmark**, which is illegible below
-about 64px. The top bar and the auth pages use `marca.png`; the browser
-tab, iOS home screen and the manifest each have their own size.
+Every icon in `client/public/icons/` is generated from `logo.png` at the
+repo root — the transparent version of the logo. (`logo.jpg`, the earlier
+one on a black background, is still in the repo but is no longer the
+source for anything.) See that folder's README for the full list.
+
+Three things worth knowing before touching them:
+
+- They use the **pin only, without the "Mi Lepe" wordmark**, which is
+  illegible below about 64px — and where the small mark appears (the top
+  bar) the name is already written beside it.
+- `marca.png` is **transparent**, so it sits on whatever background it
+  lands on and works in light and dark alike. It carries no tile or shadow:
+  that's what makes a logo look stuck on top of an interface rather than
+  part of it.
+- Every *system* icon is composited **on white** rather than left
+  transparent. iOS composites transparency onto black by itself, and this
+  logo is drawn for a light background — the pin's inner circle is a hole,
+  not a dark area. The manifest's `background_color` is white for the same
+  reason: it's Android's splash background and has to match what the icons
+  sit on.
 
 ### Client structure
 
