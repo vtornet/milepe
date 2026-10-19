@@ -78,7 +78,22 @@ const formatearPrevision = (datos) => {
     dia.tramos.push(tramo);
   }
 
-  return [...porDia.values()].map((dia) => {
+  const dias = [...porDia.values()];
+
+  // El ultimo dia que devuelve /forecast casi siempre viene cortado: con
+  // datos reales se ha visto llegar solo con los tramos de 00:00 a 09:00,
+  // de modo que su "maxima" era en realidad la temperatura de primera
+  // hora de la mañana (14C junto a dias de 25C: parece que va a hacer
+  // frio, y es falso). Si al ultimo dia no le queda ningun tramo de
+  // mediodia o tarde, su maxima no significa nada y es mejor no enseñarlo.
+  // Al primero no se le aplica esto: "hoy" si suele traer la tarde, y
+  // ademas es normal que vaya empezado.
+  const ultimo = dias.at(-1);
+  if (dias.length > 1 && ultimo && !ultimo.tramos.some((t) => Number(t.dt_txt.slice(11, 13)) >= 12)) {
+    dias.pop();
+  }
+
+  return dias.map((dia) => {
     // Como icono/descripcion del dia se usa el tramo mas cercano al
     // mediodia: es lo que la gente entiende por "que tiempo hace hoy",
     // mejor que el primer tramo disponible (que de madrugada seria

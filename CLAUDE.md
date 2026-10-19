@@ -349,6 +349,16 @@ should touch only this file, not the client) — including turning the
 day's icon comes from the slot nearest midday, not the first one, which
 would otherwise show a moon for every day.
 
+Two things about that per-day grouping that only showed up against the
+real API, so don't "simplify" them away: `/forecast` spans 6 calendar days,
+not 5, because it starts at the current time — and the **last** day arrives
+truncated. Observed live: the final day held only the 00:00–09:00 slots, so
+its "máxima" was really the early-morning temperature — 14 °C sitting next
+to days of 25 °C, which reads as a cold snap that isn't coming. So a
+trailing day with no slot at or after 12:00 is dropped (leaving 5). The
+*first* day is deliberately exempt from that rule: it's "hoy", it's
+legitimately partial, and it does include the afternoon.
+
 ### Auth
 
 `Usuario.js` hashes `contraseña` via a `pre('save')` bcrypt hook, the field
