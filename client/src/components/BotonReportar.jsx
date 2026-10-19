@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import Icono from './Icono.jsx';
 
 // Mismos valores que MOTIVOS_REPORTE en server/src/models/constantes.js.
 // Se repiten aquí con su etiqueta en castellano porque el enum del
@@ -57,17 +58,29 @@ function BotonReportar({ contenidoTipo, contenidoId, compacto = false }) {
     }
   };
 
-  if (resultado) return <span className="tarjeta-meta">{resultado}</span>;
+  if (resultado) {
+    return (
+      <span className="tarjeta-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <Icono nombre="comprobado" tam={14} />
+        {resultado}
+      </span>
+    );
+  }
 
   return (
     <>
+      {/* Un emoji 🚩 en medio de un juego de iconos de trazo canta, y
+          ademas sale rojo y llama mas la atencion que el propio contenido.
+          Con el icono hereda el color de su contexto y se queda donde
+          tiene que estar: disponible, pero discreto. */}
       <button
         type="button"
         onClick={() => setAbierto(!abierto)}
-        className={compacto ? 'boton-reportar-compacto' : undefined}
+        className={compacto ? 'boton-reportar-compacto' : 'btn btn-plano btn-sm'}
         title="Reportar a los moderadores"
       >
-        🚩{compacto ? '' : ' Reportar'}
+        <Icono nombre="bandera" tam={compacto ? 15 : 17} />
+        {!compacto && ' Reportar'}
       </button>
 
       {abierto && (

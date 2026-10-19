@@ -1,0 +1,1535 @@
+/* Componentes de interfaz. Las clases antiguas (.tarjeta, .insignia,
+   .tarjeta-meta, .mensaje-error...) se conservan y se rediseñan en vez de
+   renombrarse: están repartidas por las seis secciones y renombrarlas
+   obligaría a tocar todas las páginas para no ganar nada. */
+
+/* ---------------- Botones ---------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-2);
+  /* 36 px de alto mínimo: por debajo de eso falla el dedo en el móvil. */
+  min-height: 36px;
+  padding: var(--e-2) var(--e-4);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: var(--superficie-activa);
+  color: var(--texto);
+  font-size: var(--t-base);
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transicion), border-color var(--transicion), color var(--transicion),
+    transform var(--transicion);
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--borde);
+}
+
+/* Un hundimiento de 1 px al pulsar: es la señal táctil más barata de que
+   el botón ha recibido el clic. */
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primario {
+  background: var(--marca);
+  color: var(--texto-sobre-marca);
+  box-shadow: var(--sombra-1);
+}
+
+.btn-primario:hover:not(:disabled) {
+  background: var(--marca-fuerte);
+}
+
+.btn-contorno {
+  background: transparent;
+  border-color: var(--borde-fuerte);
+  color: var(--texto);
+}
+
+.btn-contorno:hover:not(:disabled) {
+  background: var(--superficie-hover);
+  border-color: var(--texto-tenue);
+}
+
+.btn-plano {
+  background: transparent;
+  color: var(--texto-suave);
+  font-weight: 500;
+}
+
+.btn-plano:hover:not(:disabled) {
+  background: var(--superficie-hover);
+  color: var(--texto);
+}
+
+.btn-peligro {
+  background: transparent;
+  border-color: var(--borde);
+  color: var(--peligro);
+}
+
+.btn-peligro:hover:not(:disabled) {
+  background: var(--peligro-tenue);
+  border-color: var(--peligro);
+}
+
+.btn-sm {
+  min-height: 30px;
+  padding: var(--e-1) var(--e-3);
+  font-size: var(--t-sm);
+}
+
+.btn-lg {
+  min-height: 44px;
+  padding: var(--e-3) var(--e-5);
+  font-size: var(--t-md);
+}
+
+.btn-bloque {
+  width: 100%;
+}
+
+/* Botón de solo icono, cuadrado. */
+.btn-icono {
+  min-height: 36px;
+  width: 36px;
+  padding: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--texto-suave);
+  border: 1px solid transparent;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background var(--transicion), color var(--transicion);
+}
+
+.btn-icono:hover:not(:disabled) {
+  background: var(--superficie-hover);
+  color: var(--texto);
+}
+
+.btn-icono-aviso {
+  position: relative;
+}
+
+.btn-icono-aviso[data-pendientes]::after {
+  content: attr(data-pendientes);
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--r-full);
+  background: var(--peligro);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  border: 2px solid var(--superficie);
+}
+
+/* Grupo de botones que actúan como pestañas o filtros excluyentes. */
+.grupo-segmentado {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--superficie-activa);
+  border-radius: var(--r-sm);
+}
+
+.grupo-segmentado button {
+  border: none;
+  background: transparent;
+  color: var(--texto-suave);
+  padding: var(--e-2) var(--e-4);
+  border-radius: 6px;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transicion), color var(--transicion);
+}
+
+.grupo-segmentado button:hover {
+  color: var(--texto);
+}
+
+.grupo-segmentado button.activa {
+  background: var(--superficie);
+  color: var(--texto);
+  box-shadow: var(--sombra-1);
+}
+
+/* ---------------- Campos ---------------- */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-1);
+  margin-bottom: var(--e-4);
+}
+
+.campo > label,
+label.etiqueta {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.campo-pista,
+form small {
+  font-size: var(--t-xs);
+  color: var(--texto-tenue);
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: var(--e-2) var(--e-3);
+  min-height: 38px;
+  background: var(--superficie);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--r-sm);
+  font-size: var(--t-base);
+  color: var(--texto);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--texto-tenue);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--marca);
+  /* Anillo en box-shadow y no en outline para que siga el radio del campo. */
+  box-shadow: 0 0 0 3px var(--marca-tenue);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: var(--alto-linea);
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237a7a72' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--e-3) center;
+  padding-right: var(--e-8);
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  width: auto;
+  min-height: 0;
+  accent-color: var(--marca);
+}
+
+/* Barra de búsqueda de la cabecera. */
+.buscador {
+  position: relative;
+  flex: 1;
+  max-width: 380px;
+  display: none;
+}
+
+@media (min-width: 720px) {
+  .buscador {
+    display: block;
+  }
+}
+
+.buscador input {
+  padding-left: var(--e-8);
+  background: var(--superficie-activa);
+  border-color: transparent;
+  border-radius: var(--r-full);
+}
+
+.buscador input:focus {
+  background: var(--superficie);
+  border-color: var(--marca);
+}
+
+.buscador-icono {
+  position: absolute;
+  left: var(--e-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--texto-tenue);
+  pointer-events: none;
+}
+
+/* ---------------- Tarjetas ---------------- */
+
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-md);
+  padding: var(--e-4);
+  margin-bottom: var(--e-3);
+  box-shadow: var(--sombra-1);
+}
+
+.tarjeta-pulsable {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--transicion), box-shadow var(--transicion), transform var(--transicion);
+}
+
+.tarjeta-pulsable:hover {
+  text-decoration: none;
+  border-color: var(--borde-fuerte);
+  box-shadow: var(--sombra-3);
+}
+
+.tarjeta-meta {
+  font-size: var(--t-sm);
+  color: var(--texto-tenue);
+  margin: 0;
+}
+
+.panel {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.panel-titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  padding: var(--e-3) var(--e-4);
+  font-size: var(--t-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texto-tenue);
+  border-bottom: 1px solid var(--borde);
+}
+
+.panel-cuerpo {
+  padding: var(--e-4);
+}
+
+/* ---------------- Publicación ---------------- */
+
+.pub {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-md);
+  margin-bottom: var(--e-3);
+  box-shadow: var(--sombra-1);
+  overflow: hidden;
+  transition: border-color var(--transicion);
+}
+
+.pub:hover {
+  border-color: var(--borde-fuerte);
+}
+
+.pub-cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: var(--e-4) var(--e-4) 0;
+}
+
+.pub-autor {
+  min-width: 0;
+  flex: 1;
+}
+
+.pub-nombre {
+  font-weight: 650;
+  font-size: var(--t-base);
+  color: var(--texto);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pub-sub {
+  display: flex;
+  align-items: center;
+  gap: var(--e-1);
+  flex-wrap: wrap;
+  font-size: var(--t-sm);
+  color: var(--texto-tenue);
+}
+
+.pub-sub a {
+  color: var(--texto-tenue);
+}
+
+.pub-sub a:hover {
+  color: var(--marca);
+}
+
+.pub-cuerpo {
+  padding: var(--e-3) var(--e-4) var(--e-4);
+}
+
+.pub-titulo {
+  font-size: var(--t-lg);
+  font-weight: 650;
+  margin: 0 0 var(--e-2);
+}
+
+/* El texto del vecino: respeta sus saltos de línea y parte una URL pegada
+   en vez de desbordar la tarjeta. */
+.pub-texto {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--texto);
+}
+
+.pub-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  margin-bottom: var(--e-3);
+}
+
+.pub-datos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-1);
+  margin-top: var(--e-3);
+  padding-top: var(--e-3);
+  border-top: 1px dashed var(--borde);
+}
+
+.pub-dato {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  font-size: var(--t-sm);
+  color: var(--texto-suave);
+}
+
+.pub-dato svg {
+  flex-shrink: 0;
+  color: var(--texto-tenue);
+}
+
+/* Galería: una imagen ocupa todo el ancho; dos o más van en rejilla de dos
+   columnas, que es lo que hace que no se vea como una lista de adjuntos. */
+.pub-medios {
+  display: grid;
+  gap: 2px;
+  background: var(--superficie-activa);
+  border-top: 1px solid var(--borde);
+  border-bottom: 1px solid var(--borde);
+  margin-top: var(--e-3);
+}
+
+.pub-medios-2,
+.pub-medios-3,
+.pub-medios-4 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.pub-medios img {
+  width: 100%;
+  height: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  cursor: zoom-in;
+}
+
+.pub-medios-1 img {
+  max-height: 520px;
+  object-fit: contain;
+  background: var(--gris-900);
+}
+
+.pub-medios-3 img:first-child {
+  grid-column: span 2;
+  max-height: 280px;
+}
+
+/* ---------------- Insignias y chips ---------------- */
+
+.insignia {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--e-2);
+  border-radius: var(--r-full);
+  background: var(--superficie-activa);
+  color: var(--texto-suave);
+  font-size: var(--t-xs);
+  font-weight: 650;
+  line-height: 1.6;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+a.insignia:hover {
+  text-decoration: none;
+  background: var(--borde);
+  color: var(--texto);
+}
+
+.insignia-marca {
+  background: var(--marca-tenue);
+  color: var(--marca-fuerte);
+}
+
+.insignia-exito {
+  background: var(--marca-tenue);
+  color: var(--marca-fuerte);
+}
+
+.insignia-aviso {
+  background: var(--aviso-tenue);
+  color: var(--aviso);
+}
+
+.insignia-peligro {
+  background: var(--peligro-tenue);
+  color: var(--peligro);
+}
+
+.insignia-info {
+  background: var(--info-tenue);
+  color: var(--info);
+}
+
+.insignia-destacado {
+  background: linear-gradient(135deg, #f6d365, #d4a017);
+  color: #4a3505;
+}
+
+.punto-separador::before {
+  content: '·';
+  margin: 0 var(--e-1);
+  color: var(--texto-tenue);
+}
+
+/* ---------------- Avatar ---------------- */
+
+.avatar {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-full);
+  background: var(--superficie-activa);
+  color: #fff;
+  font-weight: 700;
+  font-size: var(--t-base);
+  letter-spacing: -0.02em;
+  overflow: hidden;
+  user-select: none;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-sm {
+  width: 30px;
+  height: 30px;
+  font-size: var(--t-sm);
+}
+
+.avatar-xs {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+
+.avatar-lg {
+  width: 56px;
+  height: 56px;
+  font-size: var(--t-xl);
+}
+
+/* ---------------- Barra de interacción ---------------- */
+
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--e-1);
+  padding: var(--e-2) var(--e-2);
+  border-top: 1px solid var(--borde);
+  flex-wrap: wrap;
+}
+
+.accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--e-2) var(--e-3);
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--texto-suave);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transicion), color var(--transicion);
+}
+
+.accion:hover:not(:disabled) {
+  background: var(--superficie-hover);
+  color: var(--texto);
+}
+
+.accion.activa {
+  color: var(--marca);
+  background: var(--marca-tenue);
+}
+
+.accion-emoji {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.accion-cuenta {
+  font-variant-numeric: tabular-nums;
+}
+
+.accion-fin {
+  margin-left: auto;
+}
+
+/* Selector de reacción que se despliega al pulsar "Reaccionar". */
+.reacciones-menu {
+  display: flex;
+  gap: 2px;
+  padding: var(--e-1);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-full);
+  box-shadow: var(--sombra-3);
+}
+
+.reacciones-menu button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: var(--r-full);
+  font-size: 19px;
+  cursor: pointer;
+  transition: transform var(--transicion), background var(--transicion);
+}
+
+.reacciones-menu button:hover {
+  background: var(--superficie-hover);
+  transform: scale(1.18);
+}
+
+.resumen-reacciones {
+  display: flex;
+  align-items: center;
+  gap: var(--e-1);
+  padding: var(--e-2) var(--e-4) 0;
+  font-size: var(--t-sm);
+  color: var(--texto-tenue);
+}
+
+.resumen-reacciones-emojis {
+  display: inline-flex;
+}
+
+.resumen-reacciones-emojis span {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-full);
+  background: var(--superficie);
+  border: 1.5px solid var(--superficie);
+  box-shadow: var(--sombra-1);
+  font-size: 11px;
+  margin-right: -5px;
+}
+
+/* ---------------- Comentarios ---------------- */
+
+.comentarios {
+  padding: var(--e-3) var(--e-4) var(--e-4);
+  border-top: 1px solid var(--borde);
+  background: var(--superficie-2);
+}
+
+.comentario {
+  display: flex;
+  gap: var(--e-2);
+  margin-bottom: var(--e-3);
+  font-size: var(--t-sm);
+}
+
+.comentario-burbuja {
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-md);
+  padding: var(--e-2) var(--e-3);
+}
+
+.comentario-autor {
+  font-weight: 650;
+  color: var(--texto);
+}
+
+.comentario-texto {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.comentario-pie {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin-top: 3px;
+  font-size: var(--t-xs);
+  color: var(--texto-tenue);
+}
+
+.estrellas {
+  color: #d4a017;
+  letter-spacing: 1px;
+}
+
+.selector-estrellas {
+  display: inline-flex;
+}
+
+.selector-estrellas button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 2px;
+  font-size: 18px;
+  color: #d4a017;
+  line-height: 1;
+}
+
+.formulario-comentario {
+  display: flex;
+  gap: var(--e-2);
+  align-items: center;
+  margin-top: var(--e-3);
+}
+
+.formulario-comentario input {
+  border-radius: var(--r-full);
+  background: var(--superficie);
+}
+
+/* ---------------- Esqueletos de carga ---------------- */
+
+/* Un esqueleto en vez de "Cargando...": ocupa el sitio que va a ocupar el
+   contenido, así que la página no salta cuando llega, y se percibe más
+   rápida aunque tarde lo mismo. */
+.esqueleto {
+  background: linear-gradient(
+    90deg,
+    var(--superficie-activa) 25%,
+    var(--superficie-hover) 37%,
+    var(--superficie-activa) 63%
+  );
+  background-size: 400% 100%;
+  animation: brillo 1.4s ease-in-out infinite;
+  border-radius: var(--r-sm);
+}
+
+@keyframes brillo {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+.esqueleto-linea {
+  height: 11px;
+  margin-bottom: var(--e-2);
+}
+
+.esqueleto-circulo {
+  border-radius: var(--r-full);
+}
+
+/* ---------------- Estado vacío ---------------- */
+
+.vacio {
+  text-align: center;
+  padding: var(--e-10) var(--e-5);
+  background: var(--superficie);
+  border: 1px dashed var(--borde-fuerte);
+  border-radius: var(--r-md);
+}
+
+.vacio-icono {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto var(--e-4);
+  border-radius: var(--r-full);
+  background: var(--marca-tenue);
+  color: var(--marca);
+}
+
+.vacio h3 {
+  margin-bottom: var(--e-2);
+}
+
+.vacio p {
+  color: var(--texto-suave);
+  max-width: 42ch;
+  margin: 0 auto var(--e-4);
+}
+
+/* ---------------- Avisos ---------------- */
+
+.aviso {
+  display: flex;
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  font-size: var(--t-sm);
+  margin-bottom: var(--e-4);
+}
+
+.aviso svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.aviso-error {
+  background: var(--peligro-tenue);
+  border-color: color-mix(in srgb, var(--peligro) 30%, transparent);
+  color: var(--peligro);
+}
+
+.aviso-info {
+  background: var(--info-tenue);
+  border-color: color-mix(in srgb, var(--info) 25%, transparent);
+  color: var(--info);
+}
+
+.aviso-exito {
+  background: var(--marca-tenue);
+  border-color: var(--marca-borde);
+  color: var(--marca-fuerte);
+}
+
+.mensaje-error {
+  color: var(--peligro);
+  font-size: var(--t-sm);
+  margin: var(--e-2) 0 0;
+}
+
+/* ---------------- Filtros ---------------- */
+
+.lista-filtros {
+  display: flex;
+  gap: var(--e-2);
+  margin-bottom: var(--e-4);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.lista-filtros select,
+.lista-filtros input {
+  width: auto;
+}
+
+.filtro-casilla {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin: 0;
+  font-size: var(--t-sm);
+  font-weight: 500;
+  color: var(--texto-suave);
+  cursor: pointer;
+}
+
+/* ---------------- Formularios en tarjeta ---------------- */
+
+.tarjeta-formulario {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-md);
+  padding: var(--e-5);
+  margin-bottom: var(--e-4);
+  box-shadow: var(--sombra-2);
+}
+
+.tarjeta-formulario h2 {
+  font-size: var(--t-lg);
+  margin-bottom: var(--e-4);
+}
+
+.acciones-formulario {
+  display: flex;
+  gap: var(--e-2);
+  margin-top: var(--e-5);
+}
+
+/* Autenticación: centrada y estrecha, sin la navegación lateral
+   distrayendo. */
+.formulario-auth {
+  max-width: 400px;
+  margin: var(--e-10) auto;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-lg);
+  padding: var(--e-8);
+  box-shadow: var(--sombra-3);
+}
+
+.formulario-auth h1 {
+  font-size: var(--t-xl);
+  margin-bottom: var(--e-2);
+}
+
+.formulario-auth-sub {
+  color: var(--texto-suave);
+  font-size: var(--t-sm);
+  margin-bottom: var(--e-6);
+}
+
+.formulario-auth-pie {
+  margin-top: var(--e-5);
+  padding-top: var(--e-4);
+  border-top: 1px solid var(--borde);
+  font-size: var(--t-sm);
+  color: var(--texto-suave);
+  text-align: center;
+}
+
+.fila-fechas {
+  display: flex;
+  gap: var(--e-3);
+  flex-wrap: wrap;
+}
+
+.fila-fechas > * {
+  flex: 1;
+  min-width: 180px;
+}
+
+.mapa-ubicacion {
+  height: 280px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--borde);
+  overflow: hidden;
+}
+
+/* ---------------- El Tiempo ---------------- */
+
+.tiempo-actual {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+}
+
+.tiempo-temperatura {
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.tiempo-descripcion {
+  text-transform: capitalize;
+  font-weight: 600;
+  margin: 2px 0;
+}
+
+.tiempo-dias {
+  display: flex;
+  gap: var(--e-2);
+  overflow-x: auto;
+  padding-bottom: var(--e-1);
+  scroll-snap-type: x mandatory;
+}
+
+.tiempo-dia {
+  flex: 0 0 auto;
+  width: 92px;
+  text-align: center;
+  padding: var(--e-2);
+  border-radius: var(--r-sm);
+  background: var(--superficie-2);
+  border: 1px solid var(--borde);
+  scroll-snap-align: start;
+}
+
+.tiempo-dia img {
+  margin: 0 auto;
+}
+
+.tiempo-dia .tarjeta-meta {
+  text-transform: capitalize;
+}
+
+.tiempo-maxmin {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- Contactos de interés ---------------- */
+
+.telefonos-contacto {
+  display: flex;
+  gap: var(--e-3);
+  flex-wrap: wrap;
+  align-items: center;
+  margin: var(--e-2) 0;
+}
+
+.telefonos-contacto a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  font-weight: 650;
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--r-sm);
+  background: var(--marca-tenue);
+  color: var(--marca-fuerte);
+}
+
+.telefonos-contacto a:hover {
+  text-decoration: none;
+  background: var(--marca-borde);
+}
+
+.telefonos-contacto .telefono-principal {
+  font-size: var(--t-lg);
+}
+
+/* ---------------- Mensajería ---------------- */
+
+.buscador-vecinos {
+  margin-bottom: var(--e-5);
+}
+
+.resultados-busqueda {
+  list-style: none;
+  margin: var(--e-2) 0 0;
+  padding: var(--e-1);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-md);
+  background: var(--superficie);
+  box-shadow: var(--sombra-3);
+}
+
+.resultados-busqueda button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: var(--e-2);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  color: var(--texto);
+}
+
+.resultados-busqueda button:hover {
+  background: var(--superficie-hover);
+}
+
+.hilo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+}
+
+.hilo-texto {
+  min-width: 0;
+  flex: 1;
+}
+
+.hilo-cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+}
+
+.hilo-cabecera strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hilo-cabecera time {
+  margin-left: auto;
+  font-size: var(--t-xs);
+  color: var(--texto-tenue);
+  flex-shrink: 0;
+}
+
+.hilo .tarjeta-meta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hilo-no-leidos {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-full);
+  background: var(--marca);
+  color: var(--texto-sobre-marca);
+  font-size: var(--t-xs);
+  font-weight: 700;
+}
+
+.hilo-mensajes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  max-height: 58vh;
+  overflow-y: auto;
+  padding: var(--e-2);
+  background: var(--superficie-2);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-md);
+}
+
+.mensaje {
+  align-self: flex-start;
+  max-width: 76%;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-md) var(--r-md) var(--r-md) 4px;
+  padding: var(--e-2) var(--e-3);
+  box-shadow: var(--sombra-1);
+}
+
+.mensaje-mio {
+  align-self: flex-end;
+  background: var(--marca);
+  border-color: var(--marca);
+  color: var(--texto-sobre-marca);
+  border-radius: var(--r-md) var(--r-md) 4px var(--r-md);
+}
+
+.mensaje-texto {
+  font-size: var(--t-base);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mensaje-hora {
+  font-size: 11px;
+  color: var(--texto-tenue);
+  margin-top: 3px;
+  text-align: right;
+}
+
+.mensaje-mio .mensaje-hora {
+  color: color-mix(in srgb, var(--texto-sobre-marca) 75%, transparent);
+}
+
+.formulario-mensaje {
+  display: flex;
+  gap: var(--e-2);
+  align-items: flex-end;
+  margin-top: var(--e-3);
+}
+
+.formulario-mensaje textarea {
+  min-height: 42px;
+  max-height: 140px;
+  border-radius: var(--r-md);
+}
+
+/* ---------------- Moderación ---------------- */
+
+/* El contenido reportado se enmarca para distinguirlo de un golpe de vista
+   del reporte que habla de él: en una cola de moderación lo peor que puede
+   pasar es confundir la denuncia con lo denunciado. */
+.contenido-moderado {
+  border-left: 3px solid var(--borde-fuerte);
+  background: var(--superficie-2);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  padding: var(--e-3);
+  margin: var(--e-3) 0;
+}
+
+.contenido-moderado-texto {
+  margin: var(--e-1) 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.reporte-detalle {
+  font-style: italic;
+  color: var(--texto-suave);
+  margin: var(--e-2) 0;
+  overflow-wrap: anywhere;
+  border-left: 2px solid var(--borde-fuerte);
+  padding-left: var(--e-3);
+}
+
+.formulario-reporte,
+.formulario-resolucion {
+  border: 1px solid var(--borde);
+  border-radius: var(--r-sm);
+  padding: var(--e-3);
+  margin-top: var(--e-3);
+  background: var(--superficie-2);
+}
+
+.formulario-reporte-acciones {
+  display: flex;
+  gap: var(--e-2);
+  margin-top: var(--e-3);
+  flex-wrap: wrap;
+}
+
+.entrada-registro {
+  padding: var(--e-3) var(--e-4);
+  margin-bottom: var(--e-2);
+}
+
+/* ---------------- Utilidades ---------------- */
+
+.pila {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  flex-wrap: wrap;
+}
+
+.empuja {
+  margin-left: auto;
+}
+
+.texto-suave {
+  color: var(--texto-suave);
+}
+
+.texto-tenue {
+  color: var(--texto-tenue);
+  font-size: var(--t-sm);
+}
+
+.centrado {
+  text-align: center;
+}
+
+/* ---------------- Formularios de sección y clases heredadas ----------------
+
+   Los formularios de las seis secciones (QuejaFormulario, EventoFormulario,
+   NegocioFormulario, TurismoFormulario, FotoFormulario, EmpleoFormulario) y
+   las páginas de autenticación apilan <label> + <input> sueltos dentro de un
+   <form>, sin clases. Se les da forma desde el elemento en vez de ir a
+   añadirles una clase .campo a cada uno: son seis archivos y el resultado
+   visual es idéntico.
+
+   Las clases de más abajo son las que ya usaban páginas escritas antes del
+   sistema de diseño. Se mantienen con la apariencia nueva porque están
+   repartidas por toda la aplicación y renombrarlas no daría nada a cambio. */
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+form > label {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--texto-suave);
+  margin: var(--e-3) 0 var(--e-1);
+}
+
+form > label:first-child {
+  margin-top: 0;
+}
+
+form button[type='submit'] {
+  align-self: flex-start;
+  margin-top: var(--e-5);
+  min-height: 38px;
+  padding: var(--e-2) var(--e-5);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: var(--marca);
+  color: var(--texto-sobre-marca);
+  font-size: var(--t-base);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--sombra-1);
+  transition: background var(--transicion), transform var(--transicion);
+}
+
+form button[type='submit']:hover:not(:disabled) {
+  background: var(--marca-fuerte);
+}
+
+form button[type='submit']:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+form button[type='submit']:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.formulario-auth form button[type='submit'],
+.btn-bloque {
+  align-self: stretch;
+  width: 100%;
+}
+
+/* Botones sueltos de las páginas antiguas: en lugar de ir a ponerles
+   className="btn" uno a uno, cualquier <button> que no tenga ya una clase
+   propia recibe el aspecto base. :not() enumera las clases que sí tienen
+   estilo propio para no pisárselo. */
+button:not([class]),
+button[class=''] {
+  min-height: 36px;
+  padding: var(--e-2) var(--e-4);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--r-sm);
+  background: var(--superficie);
+  color: var(--texto);
+  font-size: var(--t-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transicion), border-color var(--transicion);
+}
+
+button:not([class]):hover:not(:disabled) {
+  background: var(--superficie-hover);
+  border-color: var(--texto-tenue);
+}
+
+button:not([class]):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Fila de botones de acción usada por el panel de moderación. */
+.botones-reaccion {
+  display: flex;
+  gap: var(--e-2);
+  margin-top: var(--e-3);
+  flex-wrap: wrap;
+}
+
+.botones-reaccion button {
+  min-height: 34px;
+  padding: var(--e-1) var(--e-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-full);
+  background: var(--superficie);
+  color: var(--texto-suave);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transicion), color var(--transicion), border-color var(--transicion);
+}
+
+.botones-reaccion button:hover:not(:disabled) {
+  background: var(--superficie-hover);
+  color: var(--texto);
+  border-color: var(--borde-fuerte);
+}
+
+.botones-reaccion button.activa,
+.lista-filtros button.activa {
+  background: var(--marca);
+  border-color: var(--marca);
+  color: var(--texto-sobre-marca);
+}
+
+.lista-filtros button {
+  min-height: 34px;
+  padding: var(--e-1) var(--e-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-full);
+  background: var(--superficie);
+  color: var(--texto-suave);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lista-filtros button:hover:not(.activa) {
+  background: var(--superficie-hover);
+  color: var(--texto);
+}
+
+/* Reportar un comentario va dentro del propio párrafo, así que tiene que
+   ocupar lo mínimo y no romper la línea. */
+.boton-reportar-compacto {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  border-radius: var(--r-sm);
+  color: var(--texto-tenue);
+  opacity: 0.55;
+  cursor: pointer;
+  transition: opacity var(--transicion), background var(--transicion), color var(--transicion);
+}
+
+.boton-reportar-compacto:hover {
+  opacity: 1;
+  background: var(--superficie-hover);
+  color: var(--peligro);
+}
+
+/* ---------------- Menú de cuenta ---------------- */
+
+.menu-cuenta {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 2;
+  min-width: 232px;
+  padding: var(--e-1);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-md);
+  box-shadow: var(--sombra-4);
+  animation: menu-entra 120ms ease-out;
+}
+
+@keyframes menu-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.menu-cuenta-cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: var(--e-3);
+  margin-bottom: var(--e-1);
+  border-bottom: 1px solid var(--borde);
+}
+
+.menu-cuenta-cabecera .tarjeta-meta {
+  text-transform: capitalize;
+}
+
+.menu-cuenta-opcion {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  width: 100%;
+  padding: var(--e-2) var(--e-3);
+  border: none;
+  background: transparent;
+  border-radius: var(--r-sm);
+  color: var(--texto-suave);
+  font-size: var(--t-base);
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--transicion), color var(--transicion);
+}
+
+.menu-cuenta-opcion:hover {
+  background: var(--superficie-hover);
+  color: var(--texto);
+  text-decoration: none;
+}
+
+/* ---------------- Compositor del muro ---------------- */
+
+.compositor {
+  display: flex;
+  gap: var(--e-3);
+  padding: var(--e-4);
+  margin-bottom: var(--e-4);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-md);
+  box-shadow: var(--sombra-1);
+}
+
+.compositor-cuerpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.compositor-pregunta {
+  margin: 0 0 var(--e-3);
+  color: var(--texto-tenue);
+  font-size: var(--t-md);
+}
+
+.compositor-atajos {
+  display: flex;
+  gap: var(--e-1);
+  flex-wrap: wrap;
+  padding-top: var(--e-3);
+  border-top: 1px solid var(--borde);
+}
+
+/* Icono de la cabecera de sección: un cuadrado teñido con el color de
+   marca, para que cada sección se reconozca antes de leer su nombre. */
+.cabecera-pagina-icono {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--r-sm);
+  background: var(--marca-tenue);
+  color: var(--marca);
+}

@@ -1,17 +1,28 @@
-// Fuente unica de verdad para las secciones de MiLepe: rutas, etiquetas y
-// los tipos de post con los que se corresponden en el backend (posts.tipo).
-// Tanto el router como la navegacion y el muro (para el enlace "ir a su
-// seccion") se apoyan en esta lista. tipos es siempre un array -incluso
-// cuando una seccion solo tiene uno- porque Empleo se reparte en dos
-// (empleo_busco/empleo_ofrezco) y asi no hace falta un caso especial en
-// quien la consuma.
+// Fuente unica de verdad para las secciones de MiLepe: rutas, etiquetas,
+// icono y los tipos de post con los que se corresponden en el backend
+// (posts.tipo). El router, la navegacion (lateral, pestanas de movil y hoja
+// de "Mas") y el muro (para el enlace "ir a su seccion") se apoyan en esta
+// lista.
+//
+// - tipos es siempre un array -incluso cuando una seccion solo tiene uno-
+//   porque Empleo se reparte en dos (empleo_busco/empleo_ofrezco) y asi no
+//   hace falta un caso especial en quien la consuma.
+// - icono es el nombre de un icono de components/Icono.jsx.
+// - principal marca las que van en la barra de pestanas del movil, que solo
+//   caben cuatro; el resto viven en la hoja de "Mas".
 export const SECCIONES = [
-  { ruta: '/quejas', etiqueta: 'Quejas', tipos: ['queja'] },
-  { ruta: '/turismo', etiqueta: 'Turismo', tipos: ['turismo'] },
-  { ruta: '/fotos', etiqueta: 'Fotos', tipos: ['foto'] },
-  { ruta: '/eventos', etiqueta: 'Eventos', tipos: ['evento'] },
-  { ruta: '/tiempo', etiqueta: 'El Tiempo', tipos: [] },
-  { ruta: '/empleo', etiqueta: 'Empleo', tipos: ['empleo_busco', 'empleo_ofrezco'] },
-  { ruta: '/negocios', etiqueta: 'Negocios', tipos: ['negocio'] },
-  { ruta: '/contactos', etiqueta: 'Contactos', tipos: [] },
+  { ruta: '/quejas', etiqueta: 'Quejas', icono: 'quejas', tipos: ['queja'], principal: true },
+  { ruta: '/eventos', etiqueta: 'Eventos', icono: 'eventos', tipos: ['evento'], principal: true },
+  { ruta: '/fotos', etiqueta: 'Fotos', icono: 'fotos', tipos: ['foto'] },
+  { ruta: '/turismo', etiqueta: 'Turismo', icono: 'turismo', tipos: ['turismo'] },
+  { ruta: '/negocios', etiqueta: 'Negocios', icono: 'negocios', tipos: ['negocio'] },
+  { ruta: '/empleo', etiqueta: 'Empleo', icono: 'empleo', tipos: ['empleo_busco', 'empleo_ofrezco'] },
+  { ruta: '/tiempo', etiqueta: 'El Tiempo', icono: 'tiempo', tipos: [] },
+  { ruta: '/contactos', etiqueta: 'Contactos', icono: 'contactos', tipos: [] },
 ];
+
+// tipo de Post -> seccion a la que pertenece. 'muro' no aparece: es
+// contenido general y no tiene seccion propia.
+export const SECCION_POR_TIPO = Object.fromEntries(
+  SECCIONES.flatMap((seccion) => seccion.tipos.map((tipo) => [tipo, seccion])),
+);

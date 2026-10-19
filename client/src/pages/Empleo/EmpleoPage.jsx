@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
-import { useAuth } from '../../context/AuthContext.jsx';
+import CabeceraSeccion from '../../components/CabeceraSeccion.jsx';
+import EstadoVacio from '../../components/EstadoVacio.jsx';
+import Icono from '../../components/Icono.jsx';
+import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import EmpleoFormulario from './EmpleoFormulario.jsx';
 import EmpleoTarjeta from './EmpleoTarjeta.jsx';
 
@@ -14,7 +17,6 @@ const SECTORES = [
 ];
 
 function EmpleoPage() {
-  const { usuario } = useAuth();
   const [modalidad, setModalidad] = useState('ofrezco');
   const [sector, setSector] = useState('');
   const [incluirCaducadas, setIncluirCaducadas] = useState(false);
@@ -65,15 +67,13 @@ function EmpleoPage() {
 
   return (
     <section>
-      <h1>Empleo</h1>
-
-      {usuario ? (
-        <button type="button" onClick={() => setMostrarFormulario(!mostrarFormulario)} style={{ marginBottom: 14 }}>
-          {mostrarFormulario ? 'Cancelar' : '+ Publicar'}
-        </button>
-      ) : (
-        <p className="tarjeta-meta">Inicia sesión para poder publicar.</p>
-      )}
+      <CabeceraSeccion
+        ruta="/empleo"
+        descripcion="Quién busca trabajo y quién lo ofrece en el pueblo"
+        textoNuevo="Nueva publicación"
+        formularioAbierto={mostrarFormulario}
+        onAlternarFormulario={() => setMostrarFormulario(!mostrarFormulario)}
+      />
 
       {mostrarFormulario && <EmpleoFormulario onCreado={manejarCreado} />}
 
@@ -102,9 +102,18 @@ function EmpleoPage() {
         )}
       </div>
 
-      {cargando && <p>Cargando...</p>}
-      {error && <p className="mensaje-error">{error}</p>}
-      {!cargando && !error && empleos.length === 0 && <p>No hay publicaciones con este filtro.</p>}
+      {cargando && <EsqueletoFeed />}
+      {error && (
+        <div className="aviso aviso-error">
+          <Icono nombre="alerta" tam={18} />
+          <span>{error}</span>
+        </div>
+      )}
+      {!cargando && !error && empleos.length === 0 && (
+        <EstadoVacio icono="empleo" titulo="No hay publicaciones con este filtro">
+          Prueba a cambiar de modalidad o de sector.
+        </EstadoVacio>
+      )}
 
       {empleos.map((empleo) => (
         <EmpleoTarjeta key={empleo._id} empleo={empleo} onRepublicado={manejarRepublicado} />

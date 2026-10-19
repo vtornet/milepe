@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
-import { useAuth } from '../../context/AuthContext.jsx';
+import CabeceraSeccion from '../../components/CabeceraSeccion.jsx';
+import EstadoVacio from '../../components/EstadoVacio.jsx';
+import Icono from '../../components/Icono.jsx';
+import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import FotoFormulario from './FotoFormulario.jsx';
 import FotoTarjeta from './FotoTarjeta.jsx';
 
 function FotosPage() {
-  const { usuario } = useAuth();
   const [fotos, setFotos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -43,15 +45,13 @@ function FotosPage() {
 
   return (
     <section>
-      <h1>Fotos</h1>
-
-      {usuario ? (
-        <button type="button" onClick={() => setMostrarFormulario(!mostrarFormulario)} style={{ marginBottom: 14 }}>
-          {mostrarFormulario ? 'Cancelar' : '+ Nueva foto'}
-        </button>
-      ) : (
-        <p className="tarjeta-meta">Inicia sesión para poder publicar una foto.</p>
-      )}
+      <CabeceraSeccion
+        ruta="/fotos"
+        descripcion="Lepe de antes y de ahora, en imágenes"
+        textoNuevo="Subir foto"
+        formularioAbierto={mostrarFormulario}
+        onAlternarFormulario={() => setMostrarFormulario(!mostrarFormulario)}
+      />
 
       {mostrarFormulario && <FotoFormulario onCreada={manejarFotoCreada} />}
 
@@ -63,9 +63,18 @@ function FotosPage() {
         </select>
       </div>
 
-      {cargando && <p>Cargando...</p>}
-      {error && <p className="mensaje-error">{error}</p>}
-      {!cargando && !error && fotos.length === 0 && <p>No hay fotos con este filtro todavía.</p>}
+      {cargando && <EsqueletoFeed />}
+      {error && (
+        <div className="aviso aviso-error">
+          <Icono nombre="alerta" tam={18} />
+          <span>{error}</span>
+        </div>
+      )}
+      {!cargando && !error && fotos.length === 0 && (
+        <EstadoVacio icono="fotos" titulo="Todavía no hay fotos">
+          Sube una foto antigua del pueblo, o una de hoy mismo.
+        </EstadoVacio>
+      )}
 
       {fotos.map((foto) => (
         <FotoTarjeta key={foto._id} foto={foto} />

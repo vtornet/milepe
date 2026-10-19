@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
-import { useAuth } from '../../context/AuthContext.jsx';
+import CabeceraSeccion from '../../components/CabeceraSeccion.jsx';
+import EstadoVacio from '../../components/EstadoVacio.jsx';
+import Icono from '../../components/Icono.jsx';
+import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import EventoFormulario from './EventoFormulario.jsx';
 import EventoTarjeta from './EventoTarjeta.jsx';
 
@@ -15,7 +18,6 @@ const CATEGORIAS = [
 ];
 
 function EventosPage() {
-  const { usuario } = useAuth();
   const [eventos, setEventos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -62,15 +64,13 @@ function EventosPage() {
 
   return (
     <section>
-      <h1>Eventos</h1>
-
-      {usuario ? (
-        <button type="button" onClick={() => setMostrarFormulario(!mostrarFormulario)} style={{ marginBottom: 14 }}>
-          {mostrarFormulario ? 'Cancelar' : '+ Nuevo evento'}
-        </button>
-      ) : (
-        <p className="tarjeta-meta">Inicia sesión para poder publicar un evento.</p>
-      )}
+      <CabeceraSeccion
+        ruta="/eventos"
+        descripcion="La agenda de Lepe: ferias, conciertos, deporte y fiestas"
+        textoNuevo="Nuevo evento"
+        formularioAbierto={mostrarFormulario}
+        onAlternarFormulario={() => setMostrarFormulario(!mostrarFormulario)}
+      />
 
       {mostrarFormulario && <EventoFormulario onCreado={manejarEventoCreado} />}
 
@@ -93,9 +93,18 @@ function EventosPage() {
         </label>
       </div>
 
-      {cargando && <p>Cargando...</p>}
-      {error && <p className="mensaje-error">{error}</p>}
-      {!cargando && !error && eventos.length === 0 && <p>No hay eventos con este filtro.</p>}
+      {cargando && <EsqueletoFeed />}
+      {error && (
+        <div className="aviso aviso-error">
+          <Icono nombre="alerta" tam={18} />
+          <span>{error}</span>
+        </div>
+      )}
+      {!cargando && !error && eventos.length === 0 && (
+        <EstadoVacio icono="eventos" titulo="No hay eventos a la vista">
+          Aquí aparecen los próximos, ordenados por fecha. Marca «incluir pasados» para ver los ya celebrados.
+        </EstadoVacio>
+      )}
 
       {eventos.map((evento) => (
         <EventoTarjeta key={evento._id} evento={evento} />

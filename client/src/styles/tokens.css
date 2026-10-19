@@ -1,0 +1,205 @@
+/* Tokens de diseño: el único sitio donde se definen colores, espacios,
+   radios, sombras y tipografía. Todo lo demás los consume con var(). Si un
+   componente necesita un color nuevo, se añade aquí, no se escribe un
+   hexadecimal suelto: así el modo oscuro funciona sin tocar cada archivo.
+
+   El verde es el de siempre (era #1e6f5c), pero convertido en una escala
+   completa en vez de dos tonos: con un solo color no se puede distinguir
+   un botón normal de uno pulsado, ni un fondo tenue de un borde. */
+:root {
+  /* Marca */
+  --verde-50: #eaf4f1;
+  --verde-100: #cfe6e0;
+  --verde-200: #a3cfc4;
+  --verde-300: #6fb3a3;
+  --verde-400: #3f9280;
+  --verde-500: #1e6f5c;
+  --verde-600: #185a4b;
+  --verde-700: #13483c;
+  --verde-800: #0e352c;
+
+  /* Neutros. Cálidos a propósito (una pizca de amarillo): un gris puro
+     junto al verde se ve azulado y frío, y esto es un pueblo del sur. */
+  --gris-0: #ffffff;
+  --gris-25: #fbfbfa;
+  --gris-50: #f6f6f4;
+  --gris-100: #eeeeea;
+  --gris-200: #e0e0db;
+  --gris-300: #c8c8c1;
+  --gris-400: #a3a39b;
+  --gris-500: #7a7a72;
+  --gris-600: #5c5c55;
+  --gris-700: #42423d;
+  --gris-800: #2a2a26;
+  --gris-900: #1a1a17;
+  --gris-950: #111110;
+
+  /* Semánticos */
+  --rojo-400: #e06a62;
+  --rojo-500: #c0392b;
+  --rojo-600: #9c2d22;
+  --rojo-50: #fdeeec;
+  --ambar-500: #b8860b;
+  --ambar-50: #fdf6e3;
+  --azul-500: #2f6f9f;
+  --azul-50: #eaf2f8;
+
+  /* --- Papeles semánticos (lo que usan los componentes) --- */
+  --fondo: var(--gris-50);
+  --superficie: var(--gris-0);
+  --superficie-2: var(--gris-25);
+  --superficie-hover: var(--gris-50);
+  --superficie-activa: var(--gris-100);
+
+  --texto: var(--gris-900);
+  --texto-suave: var(--gris-600);
+  --texto-tenue: var(--gris-500);
+  --texto-sobre-marca: #ffffff;
+
+  --borde: var(--gris-200);
+  --borde-fuerte: var(--gris-300);
+
+  --marca: var(--verde-500);
+  --marca-fuerte: var(--verde-600);
+  --marca-tenue: var(--verde-50);
+  --marca-borde: var(--verde-200);
+
+  --peligro: var(--rojo-500);
+  --peligro-tenue: var(--rojo-50);
+  --aviso: var(--ambar-500);
+  --aviso-tenue: var(--ambar-50);
+  --info: var(--azul-500);
+  --info-tenue: var(--azul-50);
+
+  /* Escala de espacios de 4 px. Usar la escala y no números a ojo es lo
+     que hace que dos tarjetas distintas respiren igual. */
+  --e-1: 4px;
+  --e-2: 8px;
+  --e-3: 12px;
+  --e-4: 16px;
+  --e-5: 20px;
+  --e-6: 24px;
+  --e-8: 32px;
+  --e-10: 40px;
+  --e-12: 48px;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --r-full: 999px;
+
+  /* Sombras cortas y de poca opacidad: una sombra marcada es lo que hace
+     que una interfaz parezca de 2012. */
+  --sombra-1: 0 1px 2px rgba(17, 17, 16, 0.05);
+  --sombra-2: 0 1px 3px rgba(17, 17, 16, 0.07), 0 1px 2px rgba(17, 17, 16, 0.04);
+  --sombra-3: 0 4px 12px rgba(17, 17, 16, 0.08), 0 1px 3px rgba(17, 17, 16, 0.05);
+  --sombra-4: 0 12px 32px rgba(17, 17, 16, 0.14), 0 2px 8px rgba(17, 17, 16, 0.06);
+
+  /* Tipografía del sistema: nada de Google Fonts. Esto es una PWA que debe
+     abrir al instante y funcionar sin red, y una fuente remota es una
+     petición bloqueante más y un salto de texto al cargar. */
+  --fuente: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --fuente-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+  --t-xs: 0.75rem;
+  --t-sm: 0.8125rem;
+  --t-base: 0.9375rem;
+  --t-md: 1rem;
+  --t-lg: 1.125rem;
+  --t-xl: 1.375rem;
+  --t-2xl: 1.75rem;
+
+  --alto-linea: 1.55;
+  --alto-linea-apretado: 1.25;
+
+  /* Medidas del armazón */
+  --alto-barra: 56px;
+  --ancho-lateral: 232px;
+  --ancho-rail: 300px;
+  --ancho-columna: 640px;
+  --alto-barra-inferior: 60px;
+
+  --z-barra: 100;
+  --z-lateral: 90;
+  --z-hoja: 200;
+  --z-aviso: 300;
+
+  --transicion: 140ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  color-scheme: light;
+}
+
+/* Modo oscuro. Dos reglas y no una: la primera sigue al sistema, la
+   segunda la fuerza el usuario desde el botón de la barra. El selector
+   :root:not([data-tema='claro']) es lo que permite que quien tiene el
+   sistema en oscuro pueda elegir claro de todas formas. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema='claro']) {
+    --fondo: var(--gris-950);
+    --superficie: var(--gris-900);
+    --superficie-2: var(--gris-800);
+    --superficie-hover: var(--gris-800);
+    --superficie-activa: var(--gris-700);
+
+    --texto: var(--gris-50);
+    --texto-suave: var(--gris-300);
+    --texto-tenue: var(--gris-400);
+
+    --borde: #2e2e2a;
+    --borde-fuerte: #41413b;
+
+    /* En oscuro el verde 500 queda apagado: se sube un par de pasos para
+       que siga leyéndose como color de acción. */
+    --marca: var(--verde-300);
+    --marca-fuerte: var(--verde-200);
+    --marca-tenue: rgba(111, 179, 163, 0.12);
+    --marca-borde: rgba(111, 179, 163, 0.3);
+    --texto-sobre-marca: var(--verde-800);
+
+    --peligro: var(--rojo-400);
+    --peligro-tenue: rgba(224, 106, 98, 0.12);
+    --aviso-tenue: rgba(184, 134, 11, 0.14);
+    --info-tenue: rgba(47, 111, 159, 0.16);
+
+    --sombra-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --sombra-2: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --sombra-3: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --sombra-4: 0 12px 32px rgba(0, 0, 0, 0.6);
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-tema='oscuro'] {
+  --fondo: var(--gris-950);
+  --superficie: var(--gris-900);
+  --superficie-2: var(--gris-800);
+  --superficie-hover: var(--gris-800);
+  --superficie-activa: var(--gris-700);
+
+  --texto: var(--gris-50);
+  --texto-suave: var(--gris-300);
+  --texto-tenue: var(--gris-400);
+
+  --borde: #2e2e2a;
+  --borde-fuerte: #41413b;
+
+  --marca: var(--verde-300);
+  --marca-fuerte: var(--verde-200);
+  --marca-tenue: rgba(111, 179, 163, 0.12);
+  --marca-borde: rgba(111, 179, 163, 0.3);
+  --texto-sobre-marca: var(--verde-800);
+
+  --peligro: var(--rojo-400);
+  --peligro-tenue: rgba(224, 106, 98, 0.12);
+  --aviso-tenue: rgba(184, 134, 11, 0.14);
+  --info-tenue: rgba(47, 111, 159, 0.16);
+
+  --sombra-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sombra-2: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --sombra-3: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --sombra-4: 0 12px 32px rgba(0, 0, 0, 0.6);
+
+  color-scheme: dark;
+}

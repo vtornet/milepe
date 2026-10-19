@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
-import { useAuth } from '../../context/AuthContext.jsx';
+import CabeceraSeccion from '../../components/CabeceraSeccion.jsx';
+import EstadoVacio from '../../components/EstadoVacio.jsx';
+import Icono from '../../components/Icono.jsx';
+import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import QuejaFormulario from './QuejaFormulario.jsx';
 import QuejaTarjeta from './QuejaTarjeta.jsx';
 
@@ -21,7 +24,6 @@ const ESTADOS = [
 ];
 
 function QuejasPage() {
-  const { usuario } = useAuth();
   const [quejas, setQuejas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -61,15 +63,13 @@ function QuejasPage() {
 
   return (
     <section>
-      <h1>Quejas</h1>
-
-      {usuario ? (
-        <button type="button" onClick={() => setMostrarFormulario(!mostrarFormulario)} style={{ marginBottom: 14 }}>
-          {mostrarFormulario ? 'Cancelar' : '+ Nueva queja'}
-        </button>
-      ) : (
-        <p className="tarjeta-meta">Inicia sesión para poder publicar una queja.</p>
-      )}
+      <CabeceraSeccion
+        ruta="/quejas"
+        descripcion="Avisos al Ayuntamiento sobre lo que hay que arreglar en el pueblo"
+        textoNuevo="Nueva queja"
+        formularioAbierto={mostrarFormulario}
+        onAlternarFormulario={() => setMostrarFormulario(!mostrarFormulario)}
+      />
 
       {mostrarFormulario && <QuejaFormulario onCreada={manejarQuejaCreada} />}
 
@@ -90,9 +90,18 @@ function QuejasPage() {
         </select>
       </div>
 
-      {cargando && <p>Cargando...</p>}
-      {error && <p className="mensaje-error">{error}</p>}
-      {!cargando && !error && quejas.length === 0 && <p>No hay quejas con este filtro.</p>}
+      {cargando && <EsqueletoFeed />}
+      {error && (
+        <div className="aviso aviso-error">
+          <Icono nombre="alerta" tam={18} />
+          <span>{error}</span>
+        </div>
+      )}
+      {!cargando && !error && quejas.length === 0 && (
+        <EstadoVacio icono="quejas" titulo="No hay quejas con este filtro">
+          Prueba a quitar los filtros, o escribe la primera de esta categoría.
+        </EstadoVacio>
+      )}
 
       {quejas.map((queja) => (
         <QuejaTarjeta key={queja._id} queja={queja} />

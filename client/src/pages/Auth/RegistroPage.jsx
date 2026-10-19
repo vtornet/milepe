@@ -60,6 +60,8 @@ function RegistroPage() {
   return (
     <section className="formulario-auth">
       <h1>Crear cuenta</h1>
+      <p className="formulario-auth-sub">Para publicar, comentar y hablar con otros vecinos.</p>
+
       <form onSubmit={manejarEnvio}>
         <label htmlFor="nombre_usuario">Nombre de usuario</label>
         <input
@@ -96,8 +98,9 @@ function RegistroPage() {
           {enviando ? 'Creando cuenta...' : 'Registrarse'}
         </button>
       </form>
-      <p>
-        ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
+
+      <p className="formulario-auth-pie">
+        ¿Ya tienes cuenta? <Link to="/login">Entra</Link>
       </p>
     </section>
   );

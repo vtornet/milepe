@@ -35,7 +35,9 @@ function LoginPage() {
 
   return (
     <section className="formulario-auth">
-      <h1>Iniciar sesión</h1>
+      <h1>Entrar en MiLepe</h1>
+      <p className="formulario-auth-sub">La red de los vecinos de Lepe.</p>
+
       <form onSubmit={manejarEnvio}>
         <label htmlFor="email">Email</label>
         <input id="email" name="email" type="email" required value={datos.email} onChange={manejarCambio} />
@@ -56,8 +58,9 @@ function LoginPage() {
           {enviando ? 'Entrando...' : 'Entrar'}
         </button>
       </form>
-      <p>
-        ¿No tienes cuenta? <Link to="/registro">Regístrate</Link>
+
+      <p className="formulario-auth-pie">
+        ¿No tienes cuenta? <Link to="/registro">Créala, es gratis</Link>
       </p>
     </section>
   );

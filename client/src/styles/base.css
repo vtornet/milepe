@@ -1,0 +1,140 @@
+/* Reset mínimo y tipografía base. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  /* El salto de ancho al aparecer la barra de scroll mueve toda la
+     maquetación; esto la reserva siempre. */
+  scrollbar-gutter: stable;
+}
+
+body {
+  margin: 0;
+  font-family: var(--fuente);
+  font-size: var(--t-base);
+  line-height: var(--alto-linea);
+  color: var(--texto);
+  background: var(--fondo);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  line-height: var(--alto-linea-apretado);
+  /* El interletrado negativo en títulos es la diferencia más barata entre
+     "texto grande" y "titular compuesto". */
+  letter-spacing: -0.015em;
+  font-weight: 650;
+}
+
+h1 {
+  font-size: var(--t-2xl);
+}
+h2 {
+  font-size: var(--t-xl);
+}
+h3 {
+  font-size: var(--t-lg);
+}
+
+p {
+  margin: 0 0 var(--e-3);
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+a {
+  color: var(--marca);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--borde);
+  margin: var(--e-4) 0;
+}
+
+code {
+  font-family: var(--fuente-mono);
+  font-size: 0.9em;
+  background: var(--superficie-activa);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+
+/* Un anillo de foco visible y consistente, solo para quien navega con
+   teclado: :focus-visible evita el borde azul del navegador al hacer clic
+   con el ratón sin dejar la app inaccesible, que es lo que conseguiría un
+   outline: none a secas. */
+:focus-visible {
+  outline: 2px solid var(--marca);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+::selection {
+  background: var(--marca-tenue);
+  color: var(--texto);
+}
+
+/* Respeta a quien pide menos movimiento en el sistema. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible solo para lectores de pantalla: etiquetas de botones que en
+   pantalla se entienden por su icono. */
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

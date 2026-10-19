@@ -568,6 +568,81 @@ way, but their client forms (`TurismoFormulario`, `NegocioFormulario`,
 `EventoFormulario`) don't expose a file picker at all yet — an open gap,
 not a design decision, if asked to add photo upload to one of those.
 
+### Design system and app shell
+
+The client has a real design system, split across `client/src/styles/` and
+imported in order by `index.css` (tokens → base → layout → componentes).
+The order matters: components consume the tokens, and overriding the base.
+**Never write a raw hex colour in a component** — add a token instead, or
+dark mode silently breaks in that one place.
+
+- `tokens.css` holds every colour, space, radius, shadow and type size.
+  The brand green is the original `#1e6f5c`, but expanded into a full
+  scale: with two shades you can't tell a resting button from a pressed
+  one, or a tinted background from a border. Neutrals are deliberately
+  *warm* — a pure grey next to this green reads cold and blue.
+- Dark mode is three rules, not one: `@media (prefers-color-scheme: dark)`
+  guarded by `:root:not([data-tema='claro'])`, plus `:root[data-tema=
+  'oscuro']`. That guard is what lets someone whose phone is in dark mode
+  still choose light. `hooks/useTema.js` owns the `data-tema` attribute and
+  has three states (`sistema`/`claro`/`oscuro`) — without `sistema` there'd
+  be no way back to following the phone once you'd picked something.
+- Fonts are the system stack on purpose. No Google Fonts: this is a PWA
+  that has to open instantly and work offline, and a remote font is one
+  more blocking request plus a flash of restyled text.
+
+The shell is `App.jsx` → `BarraSuperior` + `NavegacionLateral` +
+`RailDerecho` + `BarraInferior`, laid out by `.armazon`, a three-column
+grid. It's a grid and not floats so the centre column keeps its reading
+width (`--ancho-columna`) as the side columns appear and disappear. Three
+breakpoints: phone (top bar + bottom tabs), ≥900px (side nav appears,
+tabs go), ≥1240px (right rail appears).
+
+- The **bottom tab bar** is where a phone's thumb reaches; a menu in the
+  top-left corner needs a change of grip. Only five slots fit, so
+  `secciones.js` marks two sections `principal` (Quejas, Eventos) and the
+  rest live behind "Más", which opens a bottom sheet.
+- `RailDerecho` surfaces the weather and the emergency numbers, which
+  already existed but were buried one page deep each. It hides whichever
+  panel duplicates the page you're on, and only mounts at ≥1240px, so a
+  phone never makes those two requests.
+- The three places that show counters (top bar, side nav, tabs) get them
+  from **one** fetch in `App.jsx` passed down as props — otherwise it'd be
+  the same three requests per page load.
+
+Shared components worth knowing before writing a new page:
+
+- `TarjetaPublicacion` is the post shell (avatar, author, relative time,
+  section link, chips, title, text, media grid, action bar). All six
+  section cards now pass only what's theirs: `chips` for their badges and
+  `datos` for their own fields. They used to each repeat the structure by
+  hand, which is why they had drifted apart — one showed the author, one
+  didn't; one counted comments, one didn't — and why any visual change had
+  to be made six times.
+- `Icono.jsx` is a hand-rolled SVG set, ~30 icons, stroked `currentColor`.
+  No icon library on purpose: `lucide-react` or `react-icons` ship
+  thousands of icons to use thirty, and this is a PWA people install on
+  mobile data. Add new ones to the `TRAZOS` map.
+- `Avatar.jsx` falls back to initials on a colour derived from the name,
+  so the same neighbour always gets the same colour — recognising someone
+  in a feed is partly recognising their blob of colour before reading the
+  name. Nobody has uploaded a photo yet, so this is the common case, and a
+  grid of identical grey silhouettes makes a full feed look empty.
+- `Esqueleto.jsx` and `EstadoVacio.jsx` replaced the bare `Cargando...`
+  and `No hay nada.` lines. A skeleton holds the space the content will
+  take, so the page doesn't jump; an empty state with an icon and a next
+  step doesn't get confused with a failed request, which matters a lot in
+  a social network that starts out empty everywhere.
+- `CabeceraSeccion` is the section header; it reads the icon and label
+  from `secciones.js` by route, so a new section doesn't restate them.
+- There are **no `alert()` calls left**. A browser alert blocks the page
+  and reads as a system error; "inicia sesión para reaccionar" now appears
+  inside the card.
+
+PWA icons exist now (`client/public/icons/`), including a `maskable` one —
+see that folder's README for how they were generated and why the maskable
+variant is full-bleed with the lettering inside the central 80%.
+
 ### Client structure
 
 - `client/src/context/AuthContext.jsx` (wraps the whole app in `App.jsx`)
@@ -595,8 +670,9 @@ not a design decision, if asked to add photo upload to one of those.
   (verified against the running server for all three roles).
 - `client/src/pages/Mensajes/` is the only client area deliberately *not*
   in `secciones.js`: messaging has no `Post.tipo`, never appears in the
-  Muro, and only exists with a session, so its nav link lives in `NavBar`'s
-  `navbar-sesion` block next to logout rather than among the sections.
+  Muro, and only exists with a session, so its nav link lives in the
+  session area of the shell (top bar and the "Tú" group of the side nav)
+  rather than among the sections.
   `MensajesPage` is the inbox (plus the vecino search that starts a
   thread); `ConversacionPage` is one thread. The latter re-polls every 10s
   while open — there are no websockets or push here yet — and merges the
@@ -614,7 +690,7 @@ not a design decision, if asked to add photo upload to one of those.
   be filed from. `components/BotonReportar.jsx` sits inside
   `PanelInteraccion`, which is what gets reporting into all six sections at
   once — and, in its `compacto` form, onto each individual comment.
-  `NavBar` shows "Moderación" (with the pending count) only to the team,
+  The shell shows "Moderación" (with the pending count) only to the team,
   and "Mi contenido" only when `GET /moderacion/mi-contenido-moderado`
   comes back non-empty: that's one extra request per app load for a link
   most people never see, accepted over putting a permanent, unpleasantly
@@ -630,14 +706,15 @@ not a design decision, if asked to add photo upload to one of those.
   is always an array, even for a section with just one, because Empleo
   alone maps to two (`empleo_busco`/`empleo_ofrezco`) and a shared shape
   means nothing downstream needs a special case for it. Both
-  `AppRouter.jsx` and `NavBar.jsx` read from it; `MuroPage.jsx` flattens it
-  into a `tipo -> seccion` lookup for the "which section does this Muro
-  post belong to" badge. Don't hardcode a new nav link without adding it
-  here first.
+  `AppRouter.jsx` and the three navigation components read from it, and it
+  also exports `SECCION_POR_TIPO` (the flattened `tipo -> seccion` lookup
+  the Muro uses for its "which section is this from" link). Each entry now
+  also carries `icono` (a name from `Icono.jsx`) and an optional
+  `principal` flag for the phone tab bar. Don't hardcode a new nav link
+  without adding it here first.
 - `client/src/components/PanelInteraccion.jsx` is the reactions+comments
-  block shared by every section's "tarjeta" component (`QuejaTarjeta`,
-  `FotoTarjeta`, `EventoTarjeta`, `NegocioTarjeta`, `TurismoTarjeta`,
-  `EmpleoTarjeta`) — they all talk to the same generic `/api/posts/:id/
+  block, now rendered by `TarjetaPublicacion` rather than by each section's
+  card directly — they all talk to the same generic `/api/posts/:id/
   reaccion` and `/comentarios`, so the block only needs `postId` and the
   starting `reaccionesIniciales` as props. `permitirValoracion` (only
   passed by `NegocioTarjeta`) turns on a 5-star picker when commenting and
@@ -674,9 +751,10 @@ not a design decision, if asked to add photo upload to one of those.
   predates the real client UI and was the only way to test by hand before
   it existed; still useful for a quick check without opening the full
   React app.
-- PWA manifest/icons are configured in `client/vite.config.js`, but
-  `icon-192.png`/`icon-512.png` referenced there don't exist yet (see
-  `client/public/icons/README.md`) — only a placeholder SVG favicon does.
+- PWA manifest/icons are configured in `client/vite.config.js`; the PNGs
+  now exist (see "Design system and app shell" above). `index.html` carries
+  two `theme-color` tags, one per colour scheme, or the browser chrome
+  stays light green above a dark app.
 
 ### Dependency versions
 

@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
-import { useAuth } from '../../context/AuthContext.jsx';
+import CabeceraSeccion from '../../components/CabeceraSeccion.jsx';
+import EstadoVacio from '../../components/EstadoVacio.jsx';
+import Icono from '../../components/Icono.jsx';
+import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import NegocioFormulario from './NegocioFormulario.jsx';
 import NegocioTarjeta from './NegocioTarjeta.jsx';
 
@@ -15,7 +18,6 @@ const CATEGORIAS = [
 ];
 
 function NegociosPage() {
-  const { usuario } = useAuth();
   const [negocios, setNegocios] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -70,15 +72,13 @@ function NegociosPage() {
 
   return (
     <section>
-      <h1>Negocios locales</h1>
-
-      {usuario ? (
-        <button type="button" onClick={() => setMostrarFormulario(!mostrarFormulario)} style={{ marginBottom: 14 }}>
-          {mostrarFormulario ? 'Cancelar' : '+ Nuevo negocio'}
-        </button>
-      ) : (
-        <p className="tarjeta-meta">Inicia sesión para poder publicar un negocio.</p>
-      )}
+      <CabeceraSeccion
+        ruta="/negocios"
+        descripcion="El comercio de Lepe, con teléfono, horario y reseñas"
+        textoNuevo="Nuevo negocio"
+        formularioAbierto={mostrarFormulario}
+        onAlternarFormulario={() => setMostrarFormulario(!mostrarFormulario)}
+      />
 
       {mostrarFormulario && <NegocioFormulario onCreado={manejarNegocioCreado} />}
 
@@ -100,9 +100,18 @@ function NegociosPage() {
         )}
       </div>
 
-      {cargando && <p>Cargando...</p>}
-      {error && <p className="mensaje-error">{error}</p>}
-      {!cargando && !error && negocios.length === 0 && <p>No hay negocios con este filtro.</p>}
+      {cargando && <EsqueletoFeed />}
+      {error && (
+        <div className="aviso aviso-error">
+          <Icono nombre="alerta" tam={18} />
+          <span>{error}</span>
+        </div>
+      )}
+      {!cargando && !error && negocios.length === 0 && (
+        <EstadoVacio icono="negocios" titulo="No hay negocios con este filtro">
+          Prueba a quitar los filtros, o da de alta el primero de esta categoría.
+        </EstadoVacio>
+      )}
 
       {negocios.map((negocio) => (
         <NegocioTarjeta key={negocio._id} negocio={negocio} />

@@ -1,0 +1,361 @@
+/* Armazón de la aplicación.
+
+   Tres disposiciones, de pequeña a grande:
+   - Móvil: barra superior + contenido + barra de pestañas abajo. El pulgar
+     llega a la barra inferior; un menú arriba a la izquierda, no.
+   - Tablet (>=900px): aparece la navegación lateral y desaparece la de
+     abajo.
+   - Escritorio (>=1240px): se añade la columna derecha (tiempo, teléfonos
+     útiles). Es la que convierte "una página con una lista" en algo que se
+     parece a una red social de verdad.
+
+   Es un grid de tres columnas y no flotantes ni posiciones absolutas
+   porque la columna central tiene que conservar su ancho de lectura
+   (--ancho-columna) cuando las laterales aparecen y desaparecen. */
+
+.armazon {
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: calc(var(--ancho-lateral) + var(--ancho-columna) + var(--ancho-rail) + var(--e-8) * 2);
+  margin: 0 auto;
+  gap: var(--e-6);
+  padding: 0 var(--e-4);
+}
+
+.contenido {
+  min-width: 0; /* sin esto, un hijo ancho (una imagen, un <pre>) estira la columna del grid */
+  padding: var(--e-5) 0 var(--e-10);
+}
+
+/* --- Barra superior --- */
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-barra);
+  height: var(--alto-barra);
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: 0 var(--e-4);
+  background: color-mix(in srgb, var(--superficie) 85%, transparent);
+  /* El desenfoque al desplazar es lo que hace que la barra se sienta
+     "sobre" el contenido en vez de pegada encima. */
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--borde);
+}
+
+.barra-interior {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  width: 100%;
+  max-width: calc(var(--ancho-lateral) + var(--ancho-columna) + var(--ancho-rail) + var(--e-8) * 2);
+  margin: 0 auto;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  font-size: var(--t-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--texto);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.marca:hover {
+  text-decoration: none;
+}
+
+.marca-logo {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: linear-gradient(145deg, var(--verde-400), var(--verde-600));
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.04em;
+  box-shadow: var(--sombra-2);
+}
+
+.barra-acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--e-1);
+  margin-left: auto;
+}
+
+/* --- Navegación lateral (tablet y escritorio) --- */
+.lateral {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .armazon {
+    grid-template-columns: var(--ancho-lateral) minmax(0, 1fr);
+  }
+
+  .lateral {
+    display: block;
+    position: sticky;
+    top: var(--alto-barra);
+    align-self: start;
+    max-height: calc(100vh - var(--alto-barra));
+    overflow-y: auto;
+    padding: var(--e-5) 0;
+  }
+}
+
+@media (min-width: 1240px) {
+  .armazon {
+    grid-template-columns: var(--ancho-lateral) minmax(0, var(--ancho-columna)) var(--ancho-rail);
+    justify-content: center;
+  }
+}
+
+.lateral-grupo {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lateral-titulo {
+  font-size: var(--t-xs);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--texto-tenue);
+  padding: var(--e-4) var(--e-3) var(--e-2);
+}
+
+.enlace-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--r-sm);
+  color: var(--texto-suave);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background var(--transicion), color var(--transicion);
+}
+
+.enlace-nav:hover {
+  background: var(--superficie-hover);
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.enlace-nav.activo {
+  background: var(--marca-tenue);
+  color: var(--marca-fuerte);
+  font-weight: 650;
+}
+
+.enlace-nav svg {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.enlace-nav.activo svg {
+  opacity: 1;
+}
+
+.enlace-nav-contador {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-full);
+  background: var(--peligro);
+  color: #fff;
+  font-size: var(--t-xs);
+  font-weight: 700;
+}
+
+/* --- Columna derecha --- */
+.rail {
+  display: none;
+}
+
+@media (min-width: 1240px) {
+  .rail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--e-4);
+    position: sticky;
+    top: var(--alto-barra);
+    align-self: start;
+    max-height: calc(100vh - var(--alto-barra));
+    overflow-y: auto;
+    padding: var(--e-5) 0 var(--e-10);
+  }
+}
+
+/* --- Barra de pestañas inferior (solo móvil) --- */
+.barra-inferior {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-barra);
+  display: flex;
+  /* El padding inferior extra es por la barra de gestos del iPhone: sin
+     esto, el último icono queda debajo de ella y no se puede pulsar. */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  background: color-mix(in srgb, var(--superficie) 92%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-top: 1px solid var(--borde);
+}
+
+@media (min-width: 900px) {
+  .barra-inferior {
+    display: none;
+  }
+}
+
+body:has(.barra-inferior) .contenido {
+  padding-bottom: calc(var(--alto-barra-inferior) + var(--e-10));
+}
+
+@media (min-width: 900px) {
+  body:has(.barra-inferior) .contenido {
+    padding-bottom: var(--e-10);
+  }
+}
+
+.pestana {
+  flex: 1;
+  min-width: 0;
+  height: var(--alto-barra-inferior);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--texto-tenue);
+  font-size: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  position: relative;
+}
+
+.pestana:hover {
+  text-decoration: none;
+}
+
+.pestana.activo {
+  color: var(--marca);
+}
+
+/* Barrita superior que marca la pestaña activa, como en las apps nativas. */
+.pestana.activo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: var(--marca);
+}
+
+.pestana-etiqueta {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pestana-punto {
+  position: absolute;
+  top: 8px;
+  right: 50%;
+  margin-right: -14px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-full);
+  background: var(--peligro);
+  border: 2px solid var(--superficie);
+}
+
+/* --- Hoja inferior (el "Más" de la barra de pestañas) --- */
+.velo {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-hoja);
+  background: rgba(17, 17, 16, 0.45);
+  display: flex;
+  align-items: flex-end;
+  animation: aparecer 160ms ease-out;
+}
+
+.hoja {
+  width: 100%;
+  background: var(--superficie);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: var(--e-3) var(--e-4) calc(var(--e-4) + env(safe-area-inset-bottom, 0));
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: subir 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hoja-asa {
+  width: 38px;
+  height: 4px;
+  border-radius: var(--r-full);
+  background: var(--borde-fuerte);
+  margin: 0 auto var(--e-3);
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes subir {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+/* --- Cabecera de página --- */
+.cabecera-pagina {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-3);
+  margin-bottom: var(--e-5);
+}
+
+.cabecera-pagina h1 {
+  font-size: var(--t-2xl);
+}
+
+.cabecera-pagina-texto {
+  min-width: 0;
+}
+
+.cabecera-pagina-sub {
+  color: var(--texto-suave);
+  font-size: var(--t-sm);
+  margin: var(--e-1) 0 0;
+}
+
+.cabecera-pagina-acciones {
+  margin-left: auto;
+  display: flex;
+  gap: var(--e-2);
+  flex-shrink: 0;
+}

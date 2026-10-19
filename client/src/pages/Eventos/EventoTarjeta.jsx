@@ -1,4 +1,5 @@
-import PanelInteraccion from '../../components/PanelInteraccion.jsx';
+import TarjetaPublicacion, { Dato } from '../../components/TarjetaPublicacion.jsx';
+import { fechaEvento } from '../../utils/fechas.js';
 
 const ETIQUETA_CATEGORIA = {
   feria: 'Feria',
@@ -9,26 +10,37 @@ const ETIQUETA_CATEGORIA = {
   otro: 'Otro',
 };
 
-const formatearFecha = (iso) =>
-  new Date(iso).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-
 function EventoTarjeta({ evento }) {
-  return (
-    <article className="tarjeta">
-      <span className="insignia">{ETIQUETA_CATEGORIA[evento.categoria] || evento.categoria}</span>
-      {evento.patrocinado && <span className="insignia">Patrocinado{evento.patrocinador_nombre ? ` por ${evento.patrocinador_nombre}` : ''}</span>}
-      <h2>{evento.titulo}</h2>
-      <p>{evento.contenido}</p>
-      <div className="tarjeta-meta">
-        📅 {formatearFecha(evento.fecha_inicio)}
-        {evento.fecha_fin && ` — ${formatearFecha(evento.fecha_fin)}`} · 📍 {evento.lugar}
-      </div>
-      <div className="tarjeta-meta">
-        Por {evento.autor?.nombre_usuario || 'alguien'} · {evento.num_comentarios} comentarios
-      </div>
+  const yaPaso = evento.fecha_fin
+    ? new Date(evento.fecha_fin) < new Date()
+    : new Date(evento.fecha_inicio) < new Date();
 
-      <PanelInteraccion postId={evento._id} reaccionesIniciales={evento.reacciones} />
-    </article>
+  return (
+    <TarjetaPublicacion
+      post={evento}
+      chips={
+        <>
+          <span className="insignia">{ETIQUETA_CATEGORIA[evento.categoria] || evento.categoria}</span>
+          {evento.patrocinado && (
+            <span className="insignia insignia-destacado">
+              Patrocinado{evento.patrocinador_nombre ? ` · ${evento.patrocinador_nombre}` : ''}
+            </span>
+          )}
+          {/* Marcar lo ya celebrado importa porque la agenda puede mostrar
+              el historial con ?incluirPasados=true. */}
+          {yaPaso && <span className="insignia">Ya celebrado</span>}
+        </>
+      }
+      datos={
+        <>
+          <Dato icono="eventos">
+            {fechaEvento(evento.fecha_inicio)}
+            {evento.fecha_fin && ` — ${fechaEvento(evento.fecha_fin)}`}
+          </Dato>
+          <Dato icono="ubicacion">{evento.lugar}</Dato>
+        </>
+      }
+    />
   );
 }
 

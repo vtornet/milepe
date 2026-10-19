@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
-import { useAuth } from '../../context/AuthContext.jsx';
+import CabeceraSeccion from '../../components/CabeceraSeccion.jsx';
+import EstadoVacio from '../../components/EstadoVacio.jsx';
+import Icono from '../../components/Icono.jsx';
+import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import TurismoFormulario from './TurismoFormulario.jsx';
 import TurismoTarjeta from './TurismoTarjeta.jsx';
 
@@ -13,7 +16,6 @@ const CATEGORIAS = [
 ];
 
 function TurismoPage() {
-  const { usuario } = useAuth();
   const [items, setItems] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -68,15 +70,13 @@ function TurismoPage() {
 
   return (
     <section>
-      <h1>Turismo</h1>
-
-      {usuario ? (
-        <button type="button" onClick={() => setMostrarFormulario(!mostrarFormulario)} style={{ marginBottom: 14 }}>
-          {mostrarFormulario ? 'Cancelar' : '+ Nueva recomendación'}
-        </button>
-      ) : (
-        <p className="tarjeta-meta">Inicia sesión para poder publicar una recomendación.</p>
-      )}
+      <CabeceraSeccion
+        ruta="/turismo"
+        descripcion="Playas, rutas y dónde comer bien, según los vecinos"
+        textoNuevo="Nueva recomendación"
+        formularioAbierto={mostrarFormulario}
+        onAlternarFormulario={() => setMostrarFormulario(!mostrarFormulario)}
+      />
 
       {mostrarFormulario && <TurismoFormulario onCreado={manejarCreado} />}
 
@@ -98,9 +98,18 @@ function TurismoPage() {
         )}
       </div>
 
-      {cargando && <p>Cargando...</p>}
-      {error && <p className="mensaje-error">{error}</p>}
-      {!cargando && !error && items.length === 0 && <p>No hay nada con este filtro todavía.</p>}
+      {cargando && <EsqueletoFeed />}
+      {error && (
+        <div className="aviso aviso-error">
+          <Icono nombre="alerta" tam={18} />
+          <span>{error}</span>
+        </div>
+      )}
+      {!cargando && !error && items.length === 0 && (
+        <EstadoVacio icono="turismo" titulo="Todavía no hay recomendaciones">
+          Comparte una playa, una ruta o un sitio donde se coma bien.
+        </EstadoVacio>
+      )}
 
       {items.map((item) => (
         <TurismoTarjeta key={item._id} turismo={item} />

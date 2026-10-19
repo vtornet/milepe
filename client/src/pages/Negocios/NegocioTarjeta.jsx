@@ -1,4 +1,5 @@
-import PanelInteraccion from '../../components/PanelInteraccion.jsx';
+import TarjetaPublicacion, { Dato } from '../../components/TarjetaPublicacion.jsx';
+import Icono from '../../components/Icono.jsx';
 
 const ETIQUETA_CATEGORIA = {
   restauracion: 'Restauración',
@@ -11,31 +12,43 @@ const ETIQUETA_CATEGORIA = {
 
 function NegocioTarjeta({ negocio }) {
   return (
-    <article className="tarjeta">
-      <span className="insignia">{ETIQUETA_CATEGORIA[negocio.categoria] || negocio.categoria}</span>
-      {negocio.destacado && <span className="insignia">⭐ Destacado</span>}
-      <h2>{negocio.titulo}</h2>
-      <p>{negocio.contenido}</p>
-      <div className="tarjeta-meta">📍 {negocio.direccion}</div>
-      {negocio.horario && <div className="tarjeta-meta">🕒 {negocio.horario}</div>}
-      <div className="tarjeta-meta">
-        {negocio.telefono && (
-          <>
-            📞 <a href={`tel:${negocio.telefono}`}>{negocio.telefono}</a>{' '}
-          </>
-        )}
-        {negocio.sitio_web && (
-          <a href={negocio.sitio_web} target="_blank" rel="noreferrer">
-            🌐 Sitio web
-          </a>
-        )}
-      </div>
-      {typeof negocio.distancia_metros === 'number' && (
-        <div className="tarjeta-meta">📏 A {(negocio.distancia_metros / 1000).toFixed(1)} km</div>
-      )}
-
-      <PanelInteraccion postId={negocio._id} reaccionesIniciales={negocio.reacciones} permitirValoracion />
-    </article>
+    <TarjetaPublicacion
+      post={negocio}
+      // Las reseñas de un negocio son comentarios con valoracion: es la
+      // unica seccion que enciende el selector de estrellas.
+      permitirValoracion
+      chips={
+        <>
+          <span className="insignia">{ETIQUETA_CATEGORIA[negocio.categoria] || negocio.categoria}</span>
+          {negocio.destacado && <span className="insignia insignia-destacado">★ Destacado</span>}
+        </>
+      }
+      datos={
+        <>
+          <Dato icono="ubicacion">{negocio.direccion}</Dato>
+          <Dato icono="reloj">{negocio.horario}</Dato>
+          {typeof negocio.distancia_metros === 'number' && (
+            <Dato icono="ubicacion">A {(negocio.distancia_metros / 1000).toFixed(1)} km de ti</Dato>
+          )}
+        </>
+      }
+      acciones={
+        <>
+          {negocio.telefono && (
+            <a className="accion" href={`tel:${negocio.telefono.replace(/[^\d+]/g, '')}`}>
+              <Icono nombre="telefono" tam={18} />
+              {negocio.telefono}
+            </a>
+          )}
+          {negocio.sitio_web && (
+            <a className="accion" href={negocio.sitio_web} target="_blank" rel="noreferrer">
+              <Icono nombre="enlace" tam={18} />
+              Sitio web
+            </a>
+          )}
+        </>
+      }
+    />
   );
 }
 
