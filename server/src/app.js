@@ -9,7 +9,54 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+// CLIENT_URL admite varios origenes separados por comas, porque un dominio
+// propio son al menos dos (milepe.com y www.milepe.com) y en desarrollo
+// ademas esta localhost. Con un unico valor, como estaba antes, el www
+// quedaba fuera y el navegador bloqueaba sus peticiones con un error de
+// CORS que desde el cliente se ve como "no se pudo cargar", sin pista de
+// por que.
+const origenesPermitidos = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map((origen) => origen.trim())
+  .filter(Boolean);
+
+// Una mala configuracion de CORS no se avisa peticion a peticion, se avisa
+// una vez al arrancar: en los logs de produccion es lo primero que se ve, y
+// no queda sepultada entre miles de lineas de trafico.
+if (process.env.NODE_ENV === 'production' && origenesPermitidos.length === 0) {
+  console.error(
+    '[cors] CLIENT_URL no esta configurada. Ninguna peticion de navegador sera aceptada. ' +
+      'Define CLIENT_URL con los origenes permitidos, separados por comas ' +
+      '(ej. https://milepe.com,https://www.milepe.com).',
+  );
+}
+
+app.use(
+  cors({
+    origin(origen, callback) {
+      // Sin cabecera Origin son peticiones que no vienen de un navegador
+      // (curl, el health check de Railway, una app movil): CORS no les
+      // aplica y bloquearlas solo romperia la monitorizacion.
+      if (!origen) return callback(null, true);
+
+      // En desarrollo se permite cualquiera: el puerto de Vite cambia solo
+      // si 5173 esta ocupado, y pelearse con CORS en local no aporta nada.
+      if (origenesPermitidos.length === 0 && process.env.NODE_ENV !== 'production') {
+        return callback(null, true);
+      }
+
+      // Permitido o no, pero nunca lanzando: un throw aqui acaba en el
+      // gestor de errores y responde 500, que en los logs parece un fallo
+      // del servidor cuando en realidad es una peticion rechazada a
+      // proposito. Devolviendo false la respuesta sale sin las cabeceras
+      // CORS, que es exactamente lo que el navegador necesita para
+      // bloquearla.
+      return callback(null, origenesPermitidos.includes(origen));
+    },
+    credentials: true,
+  }),
+);
+
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

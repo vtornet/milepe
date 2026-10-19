@@ -102,6 +102,36 @@ Both are ESM (`"type": "module"` in both package.json files) — use
 - Requires a `.env` (copy `.env.example`) with `VITE_API_URL` pointing at the
   server's `/api` base.
 
+## Despliegue
+
+Production lives at **milepe.com**: the React client on Netlify, the
+Express API on Railway at **api.milepe.com**, Mongo on Railway's private
+network. The domain is registered at Namecheap and its DNS stays there.
+`DESPLIEGUE.md` at the repo root has the exact records, the Netlify build
+settings and the checks — read it before touching anything DNS-related.
+
+Three things that bite:
+
+- **`VITE_API_URL` is baked into the bundle at build time**, not read at
+  runtime. Changing it in Netlify does nothing until the site is rebuilt,
+  and deploying before setting it ships a site that calls
+  `http://localhost:5000/api` for everybody.
+- **`CLIENT_URL` on the server is a comma-separated list of origins**, not
+  one value — a real domain is at least two (`milepe.com` and
+  `www.milepe.com`). `app.js` rejects anything else by returning the
+  response *without* the CORS headers rather than throwing, so a blocked
+  origin doesn't show up as a 500 that looks like a server fault. In
+  production with no `CLIENT_URL` it logs a loud error at boot and refuses
+  every browser origin; in development an empty list allows everything,
+  because Vite's port moves when 5173 is taken.
+- **`client/netlify.toml` rewrites every path to `index.html` with status
+  200.** Without it, opening `milepe.com/quejas` directly — a refresh, or a
+  link shared on WhatsApp — returns Netlify's 404, because that route only
+  exists inside React Router. It must be a rewrite (200), not a redirect,
+  or the address bar loses the path. The same file stops `sw.js` from ever
+  being cached, which is the classic way a PWA strands people on an old
+  version.
+
 ## Architecture
 
 ### Post + `*_detalle` join pattern (the core design)

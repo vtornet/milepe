@@ -1,0 +1,56 @@
+# Configuración de Netlify para el cliente. Vive en client/ porque es ahí
+# donde está el package.json: en Netlify hay que poner "client" como base
+# directory y este archivo se lee desde esa carpeta.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Esto es lo que hace que una SPA funcione de verdad al recargar. Sin esta
+# regla, abrir milepe.com/quejas directamente (o pulsar F5 estando ahí, o
+# compartir el enlace por WhatsApp) devuelve el 404 de Netlify: el servidor
+# busca un archivo /quejas que no existe, porque esa ruta solo la conoce
+# React Router dentro del navegador. Devolviendo siempre index.html, la app
+# arranca y el router resuelve la ruta.
+#
+# El 200 (y no un 301) es importante: tiene que ser una reescritura
+# interna, no una redirección, o la barra de direcciones perdería la ruta.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# El service worker de la PWA no debe cachearse nunca: es el archivo que
+# decide si hay versión nueva. Si un proxy lo guarda, el vecino se queda
+# con una versión vieja de la app hasta que le caduque la caché, que es el
+# fallo más típico y más difícil de diagnosticar de una PWA.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Los recursos con hash en el nombre (assets/index-A1b2C3.js) sí se cachean
+# para siempre: si el contenido cambia, cambia el nombre.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # El navegador no debe adivinar el tipo de un archivo por su contenido.
+    X-Content-Type-Options = "nosniff"
+    # Nadie debe poder meter MiLepe dentro de un iframe suyo y hacerla
+    # pasar por su web (ni usarla para engañar con clics superpuestos).
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # La app no usa cámara, micrófono ni pagos del navegador. La
+    # geolocalización sí: la usan los buscadores "cerca de mí" de Negocios
+    # y Turismo, así que es la única que se deja.
+    Permissions-Policy = "camera=(), microphone=(), payment=(), geolocation=(self)"
