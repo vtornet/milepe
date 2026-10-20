@@ -180,18 +180,17 @@ gestionarlo en otro sitio. Si algun dia se quiere recibir, se añade.
 - **Stripe** (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) no está puesto
   en Railway porque la integración no está construida todavía. Cuando lo
   esté, el webhook tendrá que apuntar a `https://api.milepe.com/api/pagos/webhook`.
-- **Datos del responsable en las paginas legales**: `/privacidad` y
-  `/condiciones` llevan marcadores `[PENDIENTE]` donde van el nombre o
-  razon social, el NIF y el domicilio de quien responde legalmente. El RGPD
-  y la LSSI obligan a identificarlo, asi que hay que rellenarlo **antes de
-  abrir el registro al publico**. Las dos paginas muestran un aviso visible
-  mientras falte.
-- **Correos del dominio**: la politica cita `privacidad@milepe.com` y
-  `hola@milepe.com`, que todavia no existen. Hacen falta (un reenvio basta)
-  o habra que cambiar esas direcciones por una real.
+- **Domicilio en las paginas legales**: el responsable figura con nombre y
+  NIF, y como direccion consta solo "Lepe (Huelva, España)", por decision
+  expresa del titular. El articulo 10 de la LSSI pide la direccion completa
+  de quien presta un servicio de la sociedad de la informacion, asi que es
+  una concesion consciente, no un olvido. Cuando se activen los pagos con
+  Stripe la actividad pasa a ser claramente comercial y conviene revisarlo.
 - **Verificacion de email al registrarse**: no existe. Cualquiera puede
-  registrarse con un correo que no es suyo. Quien entra con Google si viene
-  verificado por Google.
+  registrarse con un correo que no es suyo (y recibir en el los enlaces de
+  recuperacion de esa cuenta inventada). Quien entra con Google si viene
+  verificado por Google. Es lo siguiente que conviene construir del lado de
+  las cuentas.
 - `milepe-production.up.railway.app` sigue existiendo y funcionando en
   paralelo. Se puede borrar (`railway domain delete
   milepe-production.up.railway.app`) una vez `api.milepe.com` esté

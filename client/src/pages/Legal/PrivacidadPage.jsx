@@ -8,31 +8,23 @@ import PaginaLegal from './PaginaLegal.jsx';
 // función que trate datos nuevos (Stripe, por ejemplo), hay que actualizar
 // esta página en el mismo cambio.
 //
-// Los datos del responsable van marcados como PENDIENTE a propósito: son
-// el nombre o razón social, el NIF y el domicilio de quien responde
-// legalmente, y eso no se puede inventar. El RGPD exige identificar al
-// responsable, así que hay que rellenarlo antes de abrir el registro al
-// público.
+// El responsable va identificado con nombre y NIF. Como domicilio consta
+// solo el municipio, por decisión expresa del titular: la LSSI pide la
+// dirección completa de quien presta el servicio, así que esto es una
+// concesión consciente, no un descuido. Si algún día se activan los pagos
+// (Stripe), la actividad pasa a ser claramente comercial y la dirección
+// completa deja de ser opcional.
 function PrivacidadPage() {
   return (
     <PaginaLegal titulo="Política de privacidad" actualizado="20 de octubre de 2026">
-      <div className="aviso aviso-aviso">
-        <span>
-          <strong>Pendiente de completar.</strong> Faltan los datos identificativos del responsable (nombre o
-          razón social, NIF y domicilio). Son obligatorios según el RGPD y deben rellenarse antes de abrir el
-          registro al público.
-        </span>
-      </div>
-
       <h2>1. Quién trata tus datos</h2>
       <p>
         El responsable del tratamiento de los datos recogidos en MiLepe (milepe.com) es{' '}
-        <strong>[PENDIENTE: nombre o razón social]</strong>, con NIF <strong>[PENDIENTE]</strong> y domicilio en{' '}
-        <strong>[PENDIENTE]</strong>.
+        <strong>Víctor José Tornet García</strong>, con NIF <strong>77534989B</strong>, en Lepe (Huelva, España).
       </p>
       <p>
         Puedes escribirnos para cualquier cuestión sobre tus datos a{' '}
-        <a href="mailto:privacidad@milepe.com">privacidad@milepe.com</a>.
+        <a href="mailto:contact@appstracta.app">contact@appstracta.app</a>.
       </p>
 
       <h2>2. Qué datos recogemos y por qué</h2>
@@ -154,8 +146,8 @@ function PrivacidadPage() {
         Puedes pedirnos <strong>acceder</strong> a tus datos, <strong>rectificarlos</strong>,{' '}
         <strong>suprimirlos</strong>, <strong>limitar</strong> u <strong>oponerte</strong> a su tratamiento y
         solicitar su <strong>portabilidad</strong>. Escríbenos a{' '}
-        <a href="mailto:privacidad@milepe.com">privacidad@milepe.com</a> y te responderemos en el plazo máximo de
-        un mes.
+        <a href="mailto:contact@appstracta.app">contact@appstracta.app</a> y te responderemos en el plazo máximo
+        de un mes.
       </p>
       <p>
         Si crees que no hemos atendido bien tu petición, puedes reclamar ante la Agencia Española de Protección

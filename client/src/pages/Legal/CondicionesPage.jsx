@@ -10,13 +10,6 @@ import PaginaLegal from './PaginaLegal.jsx';
 function CondicionesPage() {
   return (
     <PaginaLegal titulo="Condiciones de uso" actualizado="20 de octubre de 2026">
-      <div className="aviso aviso-aviso">
-        <span>
-          <strong>Pendiente de completar.</strong> Faltan los datos identificativos del titular (nombre o razón
-          social, NIF y domicilio), obligatorios por la Ley de Servicios de la Sociedad de la Información.
-        </span>
-      </div>
-
       <h2>1. Qué es MiLepe</h2>
       <p>
         MiLepe es una red social para los vecinos de Lepe (Huelva): un sitio donde avisar al Ayuntamiento de lo
@@ -24,9 +17,9 @@ function CondicionesPage() {
         publicar ofertas y búsquedas de empleo, recomendar sitios y hablar entre vecinos.
       </p>
       <p>
-        El titular del servicio es <strong>[PENDIENTE: nombre o razón social]</strong>, NIF{' '}
-        <strong>[PENDIENTE]</strong>, con domicilio en <strong>[PENDIENTE]</strong>. Puedes contactar en{' '}
-        <a href="mailto:hola@milepe.com">hola@milepe.com</a>.
+        El titular del servicio es <strong>Víctor José Tornet García</strong>, NIF <strong>77534989B</strong>,
+        en Lepe (Huelva, España). Puedes contactar en{' '}
+        <a href="mailto:contact@appstracta.app">contact@appstracta.app</a>.
       </p>
       <p>
         MiLepe <strong>no es un servicio del Ayuntamiento de Lepe</strong> ni está vinculada a él. Publicar una
