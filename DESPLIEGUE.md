@@ -12,34 +12,36 @@ mover los nameservers a ningún sitio.
 
 ---
 
-## 1. Netlify (la web)
+## 1. Netlify (la web) — YA HECHO
 
-Crear el sitio desde el repositorio de GitHub (`vtornet/milepe`) y
-configurarlo así:
+Proyecto `milepe` (equipo Appstracta), conectado a `github.com/vtornet/milepe`,
+rama `main`. Configuración aplicada:
 
 | Campo | Valor |
 |---|---|
 | Base directory | `client` |
 | Build command | `npm run build` |
 | Publish directory | `client/dist` |
+| `VITE_API_URL` | `https://api.milepe.com/api` |
 
 El resto (la reescritura de rutas de la SPA, las cabeceras de caché y de
-seguridad) ya va en `client/netlify.toml` y Netlify lo lee solo.
+seguridad) va en `client/netlify.toml` y Netlify lo lee solo. Comprobado en
+el despliegue: "1 redirect rule processed, 4 header rules processed".
 
-**Variable de entorno**, en *Site settings → Environment variables*:
+Ojo con `VITE_API_URL`: Vite la **incrusta** dentro del JavaScript al
+compilar, no la lee al ejecutarse. Si se cambia, hay que volver a desplegar
+para que tenga efecto.
 
-```
-VITE_API_URL = https://api.milepe.com/api
-```
+Dominios añadidos: `milepe.com` (principal) y `www.milepe.com` (redirige a
+la principal). Los dos en *Pending DNS verification* hasta que se toquen
+los registros en Namecheap.
 
-Ojo con esto: Vite **incrusta** esa variable dentro del JavaScript al
-compilar, no la lee al ejecutarse. Si se cambia después, hay que volver a
-desplegar para que tenga efecto; y si se despliega antes de definirla, la
-web saldrá llamando a `http://localhost:5000/api` y no funcionará para
-nadie.
-
-Luego, en *Domain management*, añadir `milepe.com` y `www.milepe.com`,
-dejando `milepe.com` como dominio principal.
+**Pendiente de una decisión:** el proyecto está en **visibilidad privada**,
+así que `milepe.netlify.app` responde 401 y manda a iniciar sesión en
+Netlify. Mientras siga así, el dominio tampoco servirá la web a los
+vecinos. Se cambia en *Project configuration → General → Project visibility
+→ Edit visibility*, o con el botón "Make public" de la pantalla principal
+del proyecto.
 
 ## 2. Namecheap (el DNS)
 
@@ -47,20 +49,23 @@ En *Domain List → milepe.com → Advanced DNS*. Son cuatro registros:
 
 | Tipo | Host | Valor | Para qué |
 |---|---|---|---|
-| A | `@` | `75.2.60.5` | milepe.com → Netlify |
-| CNAME | `www` | *(el `xxx.netlify.app` que te dé Netlify)* | www.milepe.com → Netlify |
+| ALIAS | `@` | `apex-loadbalancer.netlify.com` | milepe.com → Netlify |
+| CNAME | `www` | `milepe.netlify.app` | www.milepe.com → Netlify |
 | CNAME | `api` | `7rg36sk5.up.railway.app` | api.milepe.com → Railway |
 | TXT | `_railway-verify.api` | `railway-verify=450560ec8ed3470a305381b57521715f02eae3bcf40ef9dd4b029a5b70f65f5e` | prueba a Railway que el dominio es tuyo |
 
 Notas:
 
+- Para el dominio raíz, **ALIAS es mejor que un registro A**. Netlify ofrece
+  las dos opciones (`ALIAS apex-loadbalancer.netlify.com` o `A 75.2.60.5`),
+  y Namecheap admite ALIAS en su DNS básico. Con ALIAS, si Netlify cambia
+  de IP no hay que tocar nada; con el registro A, el día que la cambien el
+  dominio deja de funcionar sin que nadie sepa por qué. Si por lo que sea
+  el ALIAS da problemas, el registro A es el recambio.
 - El **TXT es imprescindible**: sin él Railway no emite el certificado
   HTTPS de `api.milepe.com` y el navegador bloqueará la API por certificado
   inválido. Se puede borrar una vez el dominio aparezca como verificado,
   pero no cuesta nada dejarlo.
-- La **IP del registro A** (`75.2.60.5`) es la de Netlify para dominios
-  raíz. Conviene confirmarla en el panel de Netlify al añadir el dominio,
-  por si la cambian.
 - Namecheap trae por defecto dos registros de ejemplo (un CNAME `www` a
   `parkingpage.namecheap.com` y una redirección en `@`). **Hay que
   borrarlos**, o entrarán en conflicto con los de arriba.
