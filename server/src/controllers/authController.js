@@ -146,6 +146,19 @@ const RESPUESTA_GENERICA = {
   mensaje: 'Si ese correo tiene una cuenta en MiLepe, te hemos enviado un enlace para recuperarla.',
 };
 
+// Un fallo al enviar NO puede escaparse como error: si un correo
+// desconocido responde 200 y uno real responde 500 porque el proveedor
+// esta caido, ese 500 confirma que la cuenta existe. Justo la fuga que
+// toda la respuesta generica intenta evitar. Se registra en el log, que es
+// donde tiene que verlo quien mantiene esto.
+const enviarSinDelatar = async (datos) => {
+  try {
+    await enviarCorreo(datos);
+  } catch (error) {
+    console.error(`[correo] No se pudo enviar "${datos.asunto}":`, error.message);
+  }
+};
+
 export const solicitarRecuperacion = async (req, res, next) => {
   try {
     const email = (req.body.email || '').trim().toLowerCase();
@@ -171,7 +184,7 @@ export const solicitarRecuperacion = async (req, res, next) => {
       // No tiene contraseña que recuperar. Se le avisa por correo para que
       // no se quede esperando un mensaje que no va a llegar nunca.
       const aviso = correoSinContraseña(usuario.nombre);
-      await enviarCorreo({ para: usuario.email, ...aviso });
+      await enviarSinDelatar({ para: usuario.email, ...aviso });
       res.json(RESPUESTA_GENERICA);
       return;
     }
@@ -187,7 +200,7 @@ export const solicitarRecuperacion = async (req, res, next) => {
     const enlace = `${baseCliente}/restablecer?token=${token}`;
 
     const correo = correoRecuperacion(usuario.nombre, enlace);
-    await enviarCorreo({ para: usuario.email, ...correo });
+    await enviarSinDelatar({ para: usuario.email, ...correo });
 
     res.json(RESPUESTA_GENERICA);
   } catch (error) {
