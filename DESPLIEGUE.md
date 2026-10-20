@@ -124,14 +124,74 @@ Y en el navegador: entrar en `https://milepe.com/quejas` **directamente**
 (no navegando desde el muro). Si sale el 404 de Netlify, es que no se está
 aplicando la reescritura de `netlify.toml`.
 
+## 5. Acceso con Google
+
+Proyecto `milepe` en Google Cloud Console, cliente de OAuth "MiLepe web"
+(tipo *Aplicacion web*), con estos origenes autorizados de JavaScript:
+`https://milepe.com`, `https://www.milepe.com` y `http://localhost:5173`.
+No hay URIs de redireccionamiento porque el flujo es de **ID token**, no
+el OAuth2 clasico con vuelta.
+
+El ID de cliente va en DOS sitios y es el mismo: `GOOGLE_CLIENT_ID` en
+Railway (para verificar que el token recibido se emitio para esta app) y
+`VITE_GOOGLE_CLIENT_ID` en Netlify (para pintar el boton). No es secreto:
+viaja al navegador por definicion.
+
+Estado de publicacion: **En produccion**. Antes estaba en *Prueba*, donde
+solo entran los correos que figuren en la lista de usuarios de prueba —
+con la app recien creada eso significa que el boton de Google no le
+funciona a nadie mas. Para publicar, Google exige en la pagina de marca el
+correo de contacto del desarrollador y los enlaces a **politica de
+privacidad** y **condiciones**, que son `/privacidad` y `/condiciones`.
+
+Si alguna vez se piden permisos sensibles (leer el Gmail del vecino, su
+agenda...), Google exigiria ademas verificar la app. Con los permisos
+basicos que usa MiLepe (nombre, correo y foto) no hace falta.
+
+## 6. Correo saliente (Resend)
+
+Dominio `milepe.com` **verificado** en Resend. Clave de API con permiso de
+**solo envio**, guardada en `SMTP_PASS`.
+
+Variables en Railway: `SMTP_HOST=smtp.resend.com`, `SMTP_PORT=2465`,
+`SMTP_USER=resend`, `SMTP_PASS=<clave>`, `CORREO_REMITENTE`.
+
+El puerto es **2465 y no el 587**, y conviene saber por que: Railway
+bloquea la salida por el 587, y el sintoma es un `Connection timeout` que
+parece un fallo de Resend cuando en realidad es la red de salida. Resend
+ofrece el 2465 (TLS directo) justo para eso.
+
+Los registros DNS de Resend en Namecheap son cuatro:
+
+| Tipo | Host | Para que |
+|---|---|---|
+| TXT | `resend._domainkey` | DKIM: firma los correos |
+| CNAME | `send` | SPF del Return-Path |
+| CNAME | `rsend` | infraestructura de envio |
+| TXT | `_dmarc` | politica DMARC (`v=DMARC1; p=none;`) |
+
+**El MX de Resend se omitio a proposito.** Sirve para *recibir* correo en
+`@milepe.com`, cosa que MiLepe no necesita, y ponerlo convertiria a Resend
+en el destinatario de todo el correo del dominio, cerrando la puerta a
+gestionarlo en otro sitio. Si algun dia se quiere recibir, se añade.
+
 ## Lo que queda pendiente
 
 - **Stripe** (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) no está puesto
   en Railway porque la integración no está construida todavía. Cuando lo
   esté, el webhook tendrá que apuntar a `https://api.milepe.com/api/pagos/webhook`.
-- **Correo**: no hay verificación de email ni recuperación de contraseña,
-  así que de momento el dominio no necesita registros MX ni SPF/DKIM. Si se
-  añade, habrá que configurarlos.
+- **Datos del responsable en las paginas legales**: `/privacidad` y
+  `/condiciones` llevan marcadores `[PENDIENTE]` donde van el nombre o
+  razon social, el NIF y el domicilio de quien responde legalmente. El RGPD
+  y la LSSI obligan a identificarlo, asi que hay que rellenarlo **antes de
+  abrir el registro al publico**. Las dos paginas muestran un aviso visible
+  mientras falte.
+- **Correos del dominio**: la politica cita `privacidad@milepe.com` y
+  `hola@milepe.com`, que todavia no existen. Hacen falta (un reenvio basta)
+  o habra que cambiar esas direcciones por una real.
+- **Verificacion de email al registrarse**: no existe. Cualquiera puede
+  registrarse con un correo que no es suyo. Quien entra con Google si viene
+  verificado por Google.
 - `milepe-production.up.railway.app` sigue existiendo y funcionando en
   paralelo. Se puede borrar (`railway domain delete
   milepe-production.up.railway.app`) una vez `api.milepe.com` esté
