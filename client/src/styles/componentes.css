@@ -1579,3 +1579,82 @@ button:not([class]):disabled {
   font-size: var(--t-sm);
   text-align: right;
 }
+
+/* --- Páginas legales --- */
+
+/* Columna más estrecha que el resto de la aplicación: en un texto largo y
+   seguido, una línea de 640 px cansa, y a 65 caracteres el ojo encuentra
+   solo el principio del renglón siguiente. */
+.legal-cuerpo {
+  max-width: 62ch;
+}
+
+.legal-cuerpo h2 {
+  font-size: var(--t-lg);
+  margin: var(--e-8) 0 var(--e-3);
+  padding-top: var(--e-4);
+  border-top: 1px solid var(--borde);
+}
+
+.legal-cuerpo h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.legal-cuerpo h3 {
+  font-size: var(--t-md);
+  margin: var(--e-5) 0 var(--e-2);
+  color: var(--texto-suave);
+}
+
+.legal-cuerpo p,
+.legal-cuerpo li {
+  color: var(--texto-suave);
+  line-height: 1.7;
+}
+
+.legal-cuerpo ul {
+  padding-left: var(--e-5);
+  margin: 0 0 var(--e-3);
+  list-style: disc;
+}
+
+.legal-cuerpo li {
+  margin-bottom: var(--e-2);
+}
+
+.legal-cuerpo strong {
+  color: var(--texto);
+}
+
+.legal-pie {
+  display: flex;
+  gap: var(--e-4);
+  flex-wrap: wrap;
+  margin-top: var(--e-10);
+  padding-top: var(--e-4);
+  border-top: 1px solid var(--borde);
+  font-size: var(--t-sm);
+}
+
+.aviso-aviso {
+  background: var(--aviso-tenue);
+  border-color: color-mix(in srgb, var(--aviso) 35%, transparent);
+  color: var(--aviso);
+}
+
+.rail-pie {
+  display: flex;
+  gap: var(--e-3);
+  justify-content: center;
+  font-size: var(--t-sm);
+}
+
+.texto-legal {
+  margin-top: var(--e-4);
+  font-size: var(--t-xs);
+  color: var(--texto-tenue);
+  text-align: center;
+  line-height: 1.6;
+}

@@ -86,6 +86,22 @@ function BarraInferior({ noLeidos = 0 }) {
                 </li>
               ))}
             </ul>
+
+            <div className="lateral-titulo">MiLepe</div>
+            <ul className="lateral-grupo">
+              <li>
+                <NavLink to="/privacidad" className={claseHoja} onClick={() => setHojaAbierta(false)}>
+                  <Icono nombre="moderacion" />
+                  Privacidad
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/condiciones" className={claseHoja} onClick={() => setHojaAbierta(false)}>
+                  <Icono nombre="comprobado" />
+                  Condiciones de uso
+                </NavLink>
+              </li>
+            </ul>
           </div>
         </div>
       )}

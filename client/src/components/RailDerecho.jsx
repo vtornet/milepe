@@ -119,6 +119,10 @@ function RailDerecho() {
         </section>
       )}
 
+      <nav className="rail-pie">
+        <Link to="/privacidad">Privacidad</Link>
+        <Link to="/condiciones">Condiciones</Link>
+      </nav>
       <p className="tarjeta-meta centrado">
         MiLepe · hecho en Lepe
         <br />

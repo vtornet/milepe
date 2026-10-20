@@ -117,6 +117,14 @@ function RegistroPage() {
         <button type="submit" disabled={enviando}>
           {enviando ? 'Creando cuenta...' : 'Registrarse'}
         </button>
+
+        {/* La aceptacion va aqui, pegada al boton, y no en una casilla
+            aparte: es la practica habitual y deja constancia de que se
+            informo antes de crear la cuenta. */}
+        <p className="texto-legal">
+          Al crear la cuenta aceptas las <Link to="/condiciones">condiciones de uso</Link> y la{' '}
+          <Link to="/privacidad">política de privacidad</Link>.
+        </p>
       </form>
 
       <p className="formulario-auth-pie">

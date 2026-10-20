@@ -5,6 +5,8 @@ import LoginPage from '../pages/Auth/LoginPage.jsx';
 import RegistroPage from '../pages/Auth/RegistroPage.jsx';
 import RecuperarPage from '../pages/Auth/RecuperarPage.jsx';
 import RestablecerPage from '../pages/Auth/RestablecerPage.jsx';
+import PrivacidadPage from '../pages/Legal/PrivacidadPage.jsx';
+import CondicionesPage from '../pages/Legal/CondicionesPage.jsx';
 import TurismoPage from '../pages/Turismo/TurismoPage.jsx';
 import FotosPage from '../pages/Fotos/FotosPage.jsx';
 import EventosPage from '../pages/Eventos/EventosPage.jsx';
@@ -30,6 +32,12 @@ function AppRouter() {
           del enlace del correo. */}
       <Route path="/recuperar" element={<RecuperarPage />} />
       <Route path="/restablecer" element={<RestablecerPage />} />
+
+      {/* Publicas y sin sesion a proposito: Google exige poder abrirlas sin
+          estar registrado para publicar la app, y quien se esta planteando
+          crear la cuenta tiene que poder leerlas antes. */}
+      <Route path="/privacidad" element={<PrivacidadPage />} />
+      <Route path="/condiciones" element={<CondicionesPage />} />
       <Route path="/quejas" element={<QuejasPage />} />
       <Route path="/turismo" element={<TurismoPage />} />
       <Route path="/fotos" element={<FotosPage />} />
