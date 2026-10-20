@@ -36,16 +36,14 @@ Dominios añadidos: `milepe.com` (principal) y `www.milepe.com` (redirige a
 la principal). Los dos en *Pending DNS verification* hasta que se toquen
 los registros en Namecheap.
 
-**Pendiente de una decisión:** el proyecto está en **visibilidad privada**,
-así que `milepe.netlify.app` responde 401 y manda a iniciar sesión en
-Netlify. Mientras siga así, el dominio tampoco servirá la web a los
-vecinos. Se cambia en *Project configuration → General → Project visibility
-→ Edit visibility*, o con el botón "Make public" de la pantalla principal
-del proyecto.
+Visibilidad: **pública** (*Project visibility → Public → Production and
+previews*). Venía privada de fábrica, que es lo que hacía que
+`milepe.netlify.app` respondiera 401.
 
-## 2. Namecheap (el DNS)
+## 2. Namecheap (el DNS) — YA HECHO
 
-En *Domain List → milepe.com → Advanced DNS*. Son cuatro registros:
+En *Domain List → milepe.com → Advanced DNS*. Cuatro registros, ya
+creados (y borrados los dos de ejemplo que trae Namecheap):
 
 | Tipo | Host | Valor | Para qué |
 |---|---|---|---|
@@ -67,9 +65,13 @@ Notas:
   inválido. Se puede borrar una vez el dominio aparezca como verificado,
   pero no cuesta nada dejarlo.
 - Namecheap trae por defecto dos registros de ejemplo (un CNAME `www` a
-  `parkingpage.namecheap.com` y una redirección en `@`). **Hay que
-  borrarlos**, o entrarán en conflicto con los de arriba.
-- El DNS tarda. Suele estar en minutos, pero puede llegar a horas.
+  `parkingpage.namecheap.com` y una redirección en `@`). Había que
+  borrarlos, o entrarían en conflicto con los de arriba.
+- Propagó en menos de un minuto, y los certificados de Let's Encrypt
+  (Netlify y Railway, cada uno el suyo) se emitieron un minuto después.
+  Mientras no están, el síntoma es que `http://` funciona y `https://`
+  falla con "nombre de entidad de seguridad incorrecto": no es un error de
+  configuración, es que falta el certificado.
 
 ## 3. Railway (la API)
 
@@ -79,6 +81,24 @@ Ya está hecho:
   detecta solo, que es lo correcto porque Railway inyecta `PORT` y el
   servicio escucha en el 8080, no en el 5000).
 - Variables `CLIENT_URL`, `CLOUDINARY_*` y `OPENWEATHER_API_KEY` añadidas.
+- `MONGODB_URI` corregida: ver abajo.
+
+### El nombre de la base de datos en MONGODB_URI
+
+La URI que da Railway **no incluye nombre de base de datos**, así que
+producción se conectaba a la base por defecto (`test`) mientras que todos
+los datos -usuarios, publicaciones y los contactos de emergencia
+sembrados- están en `milepe`. No era un error visible: la API respondía
+200 a todo, solo que el muro salía vacío y, peor, la sección de Contactos
+no enseñaba ningún teléfono de urgencias.
+
+Al añadir `/milepe` hay que añadir **también `?authSource=admin`**. Sin
+eso, MongoDB intenta autenticar contra la base que se nombra en la ruta, y
+el usuario de Railway vive en `admin`: el servicio arranca pero cae con
+`AuthenticationFailed (code 18)` en cada petición y Railway devuelve 502.
+La URI correcta termina así:
+
+    .../milepe?authSource=admin
 
 `CLIENT_URL` vale `https://milepe.com,https://www.milepe.com`: es la lista
 de sitios desde los que un navegador puede llamar a la API. Si algún día se
