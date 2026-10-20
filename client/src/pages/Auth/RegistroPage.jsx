@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
+import BotonGoogle from '../../components/BotonGoogle.jsx';
 
 const DATOS_INICIALES = { nombre_usuario: '', nombre: '', email: '', contraseña: '' };
 
@@ -17,11 +18,25 @@ const normalizarNombreUsuario = (texto) =>
     .replace(/[^a-zA-Z0-9._-]/g, '');
 
 function RegistroPage() {
-  const { registro } = useAuth();
+  const { registro, entrarConGoogle } = useAuth();
   const navigate = useNavigate();
   const [datos, setDatos] = useState(DATOS_INICIALES);
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
+
+  // Entrar con Google tambien crea la cuenta si no existe, asi que el
+  // mismo boton vale para registrarse: no hace falta una pantalla aparte.
+  const conGoogle = async (credential) => {
+    setError(null);
+    setEnviando(true);
+    try {
+      await entrarConGoogle(credential);
+      navigate('/', { replace: true });
+    } catch (err) {
+      setError(err.response?.data?.mensaje || 'No se ha podido entrar con Google');
+      setEnviando(false);
+    }
+  };
 
   const manejarCambio = (evento) => {
     const { name, value } = evento.target;
@@ -64,6 +79,8 @@ function RegistroPage() {
       <img className="marca-auth" src="/icons/marca.png" alt="MiLepe" width={56} height={56} />
       <h1>Crear cuenta</h1>
       <p className="formulario-auth-sub">Para publicar, comentar y hablar con otros vecinos.</p>
+
+      <BotonGoogle onCredencial={conGoogle} />
 
       <form onSubmit={manejarEnvio}>
         <label htmlFor="nombre_usuario">Nombre de usuario</label>

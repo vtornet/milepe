@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
+import BotonGoogle from '../../components/BotonGoogle.jsx';
 
 function LoginPage() {
-  const { login } = useAuth();
+  const { login, entrarConGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [datos, setDatos] = useState({ email: '', contraseña: '' });
@@ -17,6 +18,18 @@ function LoginPage() {
 
   const manejarCambio = (evento) => {
     setDatos({ ...datos, [evento.target.name]: evento.target.value });
+  };
+
+  const conGoogle = async (credential) => {
+    setError(null);
+    setEnviando(true);
+    try {
+      await entrarConGoogle(credential);
+      navigate(destinoTrasLogin, { replace: true });
+    } catch (err) {
+      setError(err.response?.data?.mensaje || 'No se ha podido entrar con Google');
+      setEnviando(false);
+    }
   };
 
   const manejarEnvio = async (evento) => {
@@ -41,6 +54,8 @@ function LoginPage() {
       <h1>Entrar en MiLepe</h1>
       <p className="formulario-auth-sub">La red de los vecinos de Lepe.</p>
 
+      <BotonGoogle onCredencial={conGoogle} />
+
       <form onSubmit={manejarEnvio}>
         <label htmlFor="email">Email</label>
         <input id="email" name="email" type="email" required value={datos.email} onChange={manejarCambio} />
@@ -54,6 +69,10 @@ function LoginPage() {
           value={datos.contraseña}
           onChange={manejarCambio}
         />
+
+        <p className="enlace-olvido">
+          <Link to="/recuperar">¿Has olvidado la contraseña?</Link>
+        </p>
 
         {error && <p className="mensaje-error">{error}</p>}
 

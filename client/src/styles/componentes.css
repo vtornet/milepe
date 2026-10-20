@@ -1547,3 +1547,35 @@ button:not([class]):disabled {
 .formulario-auth .formulario-auth-sub {
   text-align: center;
 }
+
+/* --- Acceso con Google --- */
+
+.acceso-google {
+  margin-bottom: var(--e-5);
+}
+
+/* Separador "o" entre el acceso con Google y el formulario de siempre: una
+   línea a cada lado de la palabra. Sin él, los dos bloques se leen como un
+   solo formulario largo y no como dos caminos alternativos. */
+.separador-o {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  margin: var(--e-5) 0 0;
+  color: var(--texto-tenue);
+  font-size: var(--t-sm);
+}
+
+.separador-o::before,
+.separador-o::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--borde);
+}
+
+.enlace-olvido {
+  margin: var(--e-3) 0 0;
+  font-size: var(--t-sm);
+  text-align: right;
+}

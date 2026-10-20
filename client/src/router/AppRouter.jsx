@@ -3,6 +3,8 @@ import MuroPage from '../pages/Muro/MuroPage.jsx';
 import QuejasPage from '../pages/Quejas/QuejasPage.jsx';
 import LoginPage from '../pages/Auth/LoginPage.jsx';
 import RegistroPage from '../pages/Auth/RegistroPage.jsx';
+import RecuperarPage from '../pages/Auth/RecuperarPage.jsx';
+import RestablecerPage from '../pages/Auth/RestablecerPage.jsx';
 import TurismoPage from '../pages/Turismo/TurismoPage.jsx';
 import FotosPage from '../pages/Fotos/FotosPage.jsx';
 import EventosPage from '../pages/Eventos/EventosPage.jsx';
@@ -23,6 +25,11 @@ function AppRouter() {
       <Route path="/" element={<MuroPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registro" element={<RegistroPage />} />
+      {/* Las dos mitades de la recuperacion. Publicas: quien ha perdido la
+          contraseña no tiene sesion. /restablecer lee el token de la query
+          del enlace del correo. */}
+      <Route path="/recuperar" element={<RecuperarPage />} />
+      <Route path="/restablecer" element={<RestablecerPage />} />
       <Route path="/quejas" element={<QuejasPage />} />
       <Route path="/turismo" element={<TurismoPage />} />
       <Route path="/fotos" element={<FotosPage />} />

@@ -566,7 +566,64 @@ expected fields from `req.body` before calling `Usuario.create()` — never
 passes `req.body` through directly, specifically so nobody can smuggle in
 `rol: 'admin'`. Login returns the same generic "Credenciales invalidas" for
 a wrong password, an unknown email, and a deactivated account — deliberately
-not distinguishing which. `utils/ErrorHttp.js` is the plain `{status,
+not distinguishing which. **Entrar con Google** (`POST /api/auth/google`) uses Google Identity
+Services' ID-token flow, not the redirect-based OAuth2 dance: the client
+gets a token signed by Google and posts it here, which fits an API that
+already has no sessions and answers with its own JWT.
+`utils/googleAuth.js` verifies it against Google's public keys — never
+trust the payload unverified, or anyone could post a JSON with a
+neighbour's email — and **rejects accounts whose email Google hasn't
+verified**, because linking by email without that check would let someone
+take over another neighbour's account.
+
+Three cases, and the third is the one that matters: a known `google_id`
+signs in; an unknown one creates an account; and an existing account **with
+the same email** gets *linked*, not duplicated. Without that, a neighbour
+who registered with a password and later pressed "Continuar con Google"
+would end up with two accounts and their posts split between them.
+
+Consequences elsewhere:
+
+- `Usuario.contraseña` is **conditionally required** (a function, not
+  `required: true`): a Google account has none. `iniciarSesion` therefore
+  also checks `!usuario.contraseña`, so a Google-only account fails the
+  password login with the same generic message as everything else.
+- `google_id`'s uniqueness is a **partial index**, not `unique + sparse`.
+  Sparse skips documents where the field is *missing*, but `default: null`
+  makes it *present and null*, so every password account collided on that
+  null. The smoke test caught it on the second account created — it would
+  have broken registration immediately in production.
+- Google users get an invented `nombre_usuario`
+  (`generarNombreUsuarioLibre`), since Google supplies none and the field
+  is unique and shown on every post.
+
+**Recuperación de contraseña** (`POST /api/auth/recuperar` +
+`/restablecer`): `Usuario` stores the **SHA-256 hash** of the token, never
+the token itself — the one that travels by email is the original, so a
+database leak doesn't let anyone reset a single account. SHA-256 and not
+bcrypt on purpose: the secret is 32 random bytes, not a guessable word, so
+bcrypt's cost buys nothing. Valid one hour, single use (the token is
+cleared in the same save as the new password).
+
+Both halves answer **the same generic message whatever happens** — unknown
+email, Google-only account, or rate-limited. Vary it and the endpoint
+becomes a way to find out which neighbours have an account. The client
+mirrors this: `RecuperarPage` shows the same confirmation either way, or
+the server's care would be wasted. A per-email 60-second throttle (in
+process memory, same reasoning as El Tiempo's cache) stops the endpoint
+being a comfortable way to flood a neighbour's inbox. A Google-only
+account still gets an email, telling them to use Google — otherwise they'd
+wait for a message that is never coming.
+
+Mail goes out over **SMTP via nodemailer** (`utils/correo.js`), not a
+provider's own SDK: every provider speaks SMTP, so switching from Brevo to
+Resend to anything else is four environment variables rather than a
+rewrite. With no SMTP configured it prints the email to the console in
+development — the whole recovery flow, link included, can be exercised
+without signing up for anything — and logs an error in production, where
+missing configuration means nobody is receiving their link.
+
+`utils/ErrorHttp.js` is the plain `{status,
 message}` error class every controller throws for expected failures (404,
 403, 400 with a specific message); the central handler in `app.js` also
 separately translates raw Mongoose `ValidationError` (400), duplicate-key
