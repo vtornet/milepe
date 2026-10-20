@@ -21,11 +21,20 @@ const obtenerTransporte = () => {
   transporte = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: puerto,
-    // 465 es TLS desde el primer byte; 587 empieza en claro y sube a TLS
-    // con STARTTLS. Poner secure: true en el 587 hace que la conexion se
-    // quede colgada hasta agotar el tiempo de espera, sin un error que
-    // explique por que.
-    secure: puerto === 465,
+    // 465 y 2465 son TLS desde el primer byte; 587 y 2587 empiezan en
+    // claro y suben a TLS con STARTTLS. Poner secure: true en un puerto de
+    // STARTTLS deja la conexion colgada hasta agotar el tiempo de espera,
+    // sin un error que explique por que.
+    //
+    // Los puertos 2465/2587 existen porque muchos hospedajes (Railway
+    // entre ellos) bloquean la salida por el 587 clasico: el sintoma es un
+    // "Connection timeout" que parece un fallo del proveedor de correo
+    // cuando en realidad es la red de salida.
+    secure: puerto === 465 || puerto === 2465,
+    // Sin esto, un puerto bloqueado tarda dos minutos en rendirse y la
+    // peticion del vecino se queda colgada todo ese rato.
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
 
