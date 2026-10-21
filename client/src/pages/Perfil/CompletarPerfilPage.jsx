@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import FormularioPerfil from './FormularioPerfil.jsx';
 import AvisoVerificacion from './AvisoVerificacion.jsx';
 import { Linea } from '../../components/Esqueleto.jsx';
+import Icono from '../../components/Icono.jsx';
 
 // Pantalla de alta. Aquí llega todo el que entra con el perfil sin
 // terminar (ver GuardiaPerfil): tanto quien se acaba de registrar como
@@ -18,13 +19,23 @@ function CompletarPerfilPage() {
   const { refrescarUsuario } = useAuth();
   const navigate = useNavigate();
   const [perfil, setPerfil] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let cancelado = false;
 
-    api.get('/usuarios/perfil').then(({ data }) => {
-      if (!cancelado) setPerfil(data.usuario);
-    });
+    api
+      .get('/usuarios/perfil')
+      .then(({ data }) => {
+        if (!cancelado) setPerfil(data.usuario);
+      })
+      // Sin esto, un fallo al cargar dejaba en pantalla la barra gris del
+      // esqueleto para siempre: ni formulario, ni explicacion, ni salida.
+      // Un cargador que no termina nunca es peor que un error, porque
+      // quien lo mira no sabe si esperar o irse.
+      .catch(() => {
+        if (!cancelado) setError('No hemos podido cargar tus datos. Vuelve a intentarlo en un momento.');
+      });
 
     return () => {
       cancelado = true;
@@ -47,8 +58,28 @@ function CompletarPerfilPage() {
 
       <AvisoVerificacion />
 
-      {!perfil ? (
-        <Linea ancho="100%" alto={30} />
+      {error ? (
+        <>
+          <div className="aviso aviso-error">
+            <Icono nombre="alerta" tam={18} />
+            <span>{error}</span>
+          </div>
+          <div className="formulario-reporte-acciones">
+            <button type="button" className="btn btn-primario" onClick={() => window.location.reload()}>
+              Reintentar
+            </button>
+            <Link to="/" className="btn btn-contorno">
+              Volver al muro
+            </Link>
+          </div>
+        </>
+      ) : !perfil ? (
+        <>
+          <Linea ancho="100%" alto={30} />
+          <p className="tarjeta-meta centrado" style={{ marginTop: 'var(--e-3)' }}>
+            Cargando tus datos...
+          </p>
+        </>
       ) : (
         <FormularioPerfil perfil={perfil} onGuardado={alGuardar} textoBoton="Guardar y empezar" />
       )}

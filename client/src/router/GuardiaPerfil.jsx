@@ -29,7 +29,16 @@ function GuardiaPerfil({ children }) {
 
   const permitida = RUTAS_PERMITIDAS.some((ruta) => location.pathname.startsWith(ruta));
 
-  if (!usuario.perfil_completo && !permitida) {
+  // Se compara con false EXPLICITO, no por "es falso". La diferencia
+  // importa: si el servidor todavia no conoce este campo -porque el
+  // cliente se ha desplegado antes que la API, que es justo lo que paso-
+  // llega undefined, y tratarlo como "perfil incompleto" encierra en el
+  // formulario de alta a TODOS los vecinos con sesion, incluso para leer.
+  //
+  // Un cliente mas nuevo que su API tiene que degradar a no hacer nada,
+  // nunca a bloquear. Quien de verdad lo impide es exigePerfilCompleto en
+  // el servidor, que rechaza las peticiones que escriben.
+  if (usuario.perfil_completo === false && !permitida) {
     return <Navigate to="/completar-perfil" replace state={{ desde: location.pathname }} />;
   }
 
