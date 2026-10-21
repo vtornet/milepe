@@ -195,3 +195,43 @@ gestionarlo en otro sitio. Si algun dia se quiere recibir, se añade.
   paralelo. Se puede borrar (`railway domain delete
   milepe-production.up.railway.app`) una vez `api.milepe.com` esté
   verificado, para que la API tenga una sola dirección.
+
+## Avisos push (Web Push)
+
+Pendiente en produccion: hay que anadir en Railway las tres variables que
+ya estan documentadas en `server/.env.example`:
+
+- `VAPID_PUBLIC_KEY`
+- `VAPID_PRIVATE_KEY`
+- `VAPID_SUBJECT` (`mailto:contact@appstracta.app`)
+
+Las locales se generaron con `web-push` y estan en `server/.env`. Para
+produccion vale el mismo par o uno nuevo (`npx web-push
+generate-vapid-keys`), pero **no se pueden cambiar despues sin romper las
+suscripciones ya guardadas**: una suscripcion esta atada a la clave
+publica con la que se creo, asi que al cambiarla todos los navegadores
+suscritos dejan de recibir avisos hasta que vuelven a activarlos. Si se
+cambian, conviene vaciar la coleccion `suscripcions`.
+
+No hace falta ninguna cuenta ni ningun servicio: las claves VAPID son solo
+un par de claves. Y mientras no esten puestas, MiLepe funciona igual: no se
+envian avisos y los vecinos los ven al abrir la aplicacion.
+
+El cliente no necesita variable ninguna para esto: la clave publica la
+sirve la propia API en `GET /api/notificaciones/push/clave`.
+
+## Migracion de amistades a seguimientos
+
+`Amistad` ya no existe en el codigo. Cuando Railway vuelva, hay que
+ejecutar **una vez** contra la base de produccion:
+
+    node scripts/migrar-amistades-a-seguimientos.mjs
+
+Convierte cada amistad aceptada en dos seguimientos (uno por sentido) y
+cada solicitud pendiente en uno. Es idempotente y no borra la coleccion
+vieja; cuando se haya comprobado el resultado, se puede volver a ejecutar
+con `--borrar`.
+
+Importa porque los mensajes privados ahora exigen seguimiento mutuo: sin
+migrar, dos vecinos que eran amigos se encontrarian su conversacion en
+solo lectura.

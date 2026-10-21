@@ -28,7 +28,10 @@ export const TIPOS_REACCION = [
 // Apelacion, RegistroModeracion) necesitan el listado, y Reporte ademas
 // importa Post/Comentario para auto-ocultar, asi que meterlo en cualquiera
 // de ellos crearia un import circular.
-export const TIPOS_CONTENIDO_MODERABLE = ['post', 'comentario'];
+// Un mensaje privado tambien se reporta. No por simetria: sin esto, lo
+// unico que se podia hacer con un privado ofensivo era bloquear a quien lo
+// mando, que lo esconde pero no se lo cuenta a nadie.
+export const TIPOS_CONTENIDO_MODERABLE = ['post', 'comentario', 'mensaje'];
 
 // Un reporte se clasifica con un motivo de una lista cerrada en vez de con
 // texto libre: asi la cola de moderacion se puede agrupar y priorizar por

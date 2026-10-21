@@ -15,8 +15,10 @@ social network, modeled after a previous project (`E:/Piverse`, a Flask/
 SQLAlchemy/Jinja2 app for a different, unrelated community, not reused as
 code — see the "Reactions" section below for how that translation into
 this stack's conventions works in practice). Built so far: typed
-reactions, user blocking, friend requests (`Amistad`), notifications,
-private messaging, and the report + appeal + audit-log moderation workflow.
+reactions, user blocking, following (`Seguimiento`, which replaced an
+earlier `Amistad` friend-request model), notifications, private messaging
+gated on mutual follow, threaded comments, post editing, Web Push, and the
+report + appeal + audit-log moderation workflow.
 That completes the feature set this project set out to translate from
 Piverse; Stripe (`/api/pagos`) is the only thing left from the original
 brief. Expect the feature set to keep growing beyond it.
@@ -535,16 +537,177 @@ already-open one — because a thread can be months old and the block from
 yesterday; a one-time check at creation would leak a permanent channel.
 `usuariosController.buscarUsuarios` also filters blocked users out of its
 results, on the reasoning that surfacing someone you can't write to only
-leads to a 403. Note the naming: this is unrelated to `ContactoInteres` (the
-static Ayuntamiento/Policía/... directory) — a friend-request system already exists as
-`Amistad`/`/api/amistades`, specifically named to not collide with that.
-`Amistad.existeEntre(a, b)` is the same "check both directions of a
-directional record" pattern as `Bloqueo.existeEntre` — one document holds
-`solicitante_id`/`receptor_id`, but either side queries it the same way.
-Rejecting a pending request or unfriending an accepted one are the same
-operation (`eliminarAmistad`): the document is deleted outright, there's no
-`'rechazada'` state sitting around — a friend request can always be sent
-again after a rejection.
+leads to a 403. Blocking also **breaks the follow in both directions**
+(`Seguimiento.romperEnAmbosSentidos`), because private messages are gated
+on mutual follow: leaving the other person's follow in place would leave
+the channel open, which is not blocking anything. Note the naming: this is
+unrelated to `ContactoInteres` (the static Ayuntamiento/Policía/...
+directory).
+
+### Following (replaced `Amistad`)
+
+`Seguimiento` (`server/src/models/Seguimiento.js`, routes under
+`/api/seguimientos`) **replaced the `Amistad` friend-request model**, which
+is gone — model, controller and routes. `Amistad` had never grown any UI,
+so the swap only touched the server.
+
+The difference that matters: following is unilateral and isn't approved.
+That's what lets "you follow each other" be a *derived* state — two
+documents, one per direction — instead of a field somebody has to keep in
+sync, and it's exactly what the private-message gate reads. With `Amistad`
+you had to ask which direction the row had been created in to know whether
+two people were related; here each direction is its own row and there's
+nothing to interpret.
+
+- The only unique index is on the **ordered** pair
+  (`{seguidor_id, seguido_id}`), unlike `Amistad`, where the controller had
+  to check the reverse direction by hand so two rows couldn't describe the
+  same relationship.
+- `estadoEntre(a, b)` answers all three questions (`sigo`, `me_sigue`,
+  `mutuo`) in **one** query, because they're always asked together: the
+  follow button and the message button are drawn at the same time.
+- Following is **idempotent**: a duplicate-key error means you already
+  follow them, which is what you wanted. The notification is only created
+  when the row is actually new, or two taps send two identical ones.
+- There are **no denormalized counters** on `Usuario`: counting with these
+  indexes is cheap, and a counter only pays for itself when it's needed per
+  row of a listing. The profile counts on demand.
+- `scripts/migrar-amistades-a-seguimientos.mjs` converts the old
+  collection: an *accepted* friendship becomes two follows (otherwise two
+  neighbours who had been messaging for months would find their thread
+  read-only overnight), a *pending* request becomes one follow from the
+  sender (the faithful translation — they wanted the relationship, and that
+  is now called following; discarding them would throw away an intent
+  somebody expressed). Idempotent, and it doesn't drop the old collection
+  unless you pass `--borrar`.
+
+**Private messages are gated on mutual follow.** `canalAbierto()` /
+`exigirCanalAbierto()` in `conversacionesController` is the single gate,
+checked when opening a thread **and on every send** — a thread can be
+months old and the unfollow from yesterday, so a one-time check at creation
+would leave a permanent channel open. Mutual and not "I follow you":
+if following were enough, anyone could open a channel to write to whoever
+they liked with one tap, which is the problem direct messages have on open
+networks. The 403 carries a `razon` (`sin_seguimiento_mutuo` | `bloqueo`)
+so the client can tell the two cases apart without parsing the message.
+
+**Unfollowing makes the conversation read-only, it does not delete it.**
+Reading your own thread needs nothing; only writing is gated. The history
+stays whole — deleting it would destroy *both* people's record because one
+of them changed their mind — and `listarMensajes` and `listarConversaciones`
+both return `solo_lectura` + `razon_solo_lectura` so the inbox can mark a
+thread before you open it and type into it. The client keeps polling a
+read-only thread on purpose: the same response carries that state, so if
+the other person follows back the notice clears itself.
+
+### Reporting a private message
+
+`TIPOS_CONTENIDO_MODERABLE` is now `['post', 'comentario', 'mensaje']`, and
+`Mensaje` gained the two fields the generic moderation needs
+(`estado_moderacion`, `moderador_id`) on top of the `autor_id` it already
+had. Without this, the only thing you could do about an abusive private
+message was block its sender, which hides it but tells nobody.
+
+- **`puedeReportar()`** in `utils/contenidoModerable.js` is new and is not
+  a formality: a post or a comment is public, so anyone can report it, but a
+  private message has been seen by two people. Without the check, anyone
+  holding a message id could push it into the moderation queue and get a
+  moderator to read someone else's private conversation — and the
+  auto-hide threshold would do it with no moderator involved. It answers
+  **404, not 403**, same reasoning as `cargarConversacionPropia`.
+- A moderated message's text **stops travelling**: `mensajeParaElCliente()`
+  returns the row with `retirado: 'moderacion'` and no text. The author
+  *is* kept, unlike a deleted comment — in a thread of two, knowing who
+  wrote it reveals nothing the other person doesn't already know.
+- The moderation panel shows **only the reported message**, never the
+  thread around it.
+- `TEXTOS_ACCION` in `moderacionController` is now per content type. There
+  used to be one set of wordings, the posts' one, so somebody whose
+  *comment* was hidden got "Tu publicación ha sido ocultada" — Spanish
+  needs agreement, so a noun in a template doesn't fix it; each case needs
+  its own sentence.
+- Two traps that the smoke test caught, both in `Mensaje`'s hooks:
+  - The `post('save')` hook that maintains `Conversacion.ultimo_mensaje`
+    used to run on **every** save. That was safe only while a message was
+    written once and never touched again (`marcarLeidos` uses `updateMany`,
+    which skips hooks). Moderating a month-old message saves it, which
+    would have made that old message the thread's preview and bumped the
+    conversation to the top of the inbox as if something had just arrived.
+    It now only runs when the document is new.
+  - `refrescarVistaPrevia()` rewrites the preview after moderation (the
+    retired text is **copied** into `Conversacion`, so without this you'd
+    keep reading it in the inbox after hiding it) and must pass
+    `{ timestamps: false }`: Mongoose updates `fecha_actualizacion` on its
+    own in *any* `updateOne`, and the inbox is sorted by that field.
+
+### Real time (not yet)
+
+There is still no real time: `ConversacionPage` polls every 10s. Both
+halves of the seam exist so that enchufing socket.io later means changing
+one place on each side, and **socket.io is deliberately not installed** —
+adding it now means a server holding open websockets nobody listens to,
+and on Railway those are billed connections for nothing.
+
+- `server/src/utils/tiempoReal.js`: `emitir(usuarioId, evento, datos)` does
+  nothing until `registrarAdaptador()` is called from `server.js` (the file
+  carries the exact snippet). `enviarMensaje` already calls it. Events are
+  named after the matching notification type so client and server don't
+  keep two vocabularies.
+- `client/src/hooks/useSondeo.js`: the polling hook. It also **stops while
+  the tab is hidden** — polling a chat nobody is looking at spends a
+  neighbour's battery and mobile data — and fetches immediately on return,
+  so nothing is missed.
+
+### Web Push
+
+`web-push` (a real dependency now) + `Suscripcion` + `utils/push.js`.
+Avisos go out on a new follower and on a new private message.
+
+- A `Suscripcion` row is **a browser**, not a user: the permission is
+  granted per browser and per device, so one neighbour can have three rows
+  and all three must be notified. `POST /api/notificaciones/push` is an
+  **upsert by endpoint**, never an insert — on a shared phone a second
+  neighbour subscribing has to take the row over, not collide with it.
+- Same contract as `utils/correo.js`: **unconfigured, nothing breaks.** No
+  VAPID keys means no pushes and one logged line. And a failing push can
+  never take down the request that triggered it — not getting the
+  notification for a message is an annoyance; the message not being sent
+  because the notification failed is a bug.
+- VAPID keys are just a keypair (`npx web-push generate-vapid-keys`), no
+  account anywhere. The **public key is served by the API**
+  (`GET /api/notificaciones/push/clave`) instead of living in the client's
+  `.env`, so the two can't drift apart: a public key that isn't the pair of
+  the server's private one produces subscriptions that look fine and fail
+  only when you try to send.
+- All pushes about one conversation share a `tag`, so the twentieth message
+  replaces the first notification instead of stacking twenty.
+- The browser's service worker is generated by `vite-plugin-pwa`
+  (`generateSW`) and can't be edited, so `workbox.importScripts` pulls in
+  `client/public/push-sw.js`, which holds the `push` and
+  `notificationclick` handlers. The alternative was moving the whole PWA to
+  `injectManifest` and hand-writing the service worker, precaching
+  included.
+- The permission is **not** requested on load — a browser asking "allow
+  notifications?" in the first second is the fastest way to get a
+  permanent no, and the browser never asks again. It's a switch in the
+  profile (`components/AvisosPush.jsx`).
+
+### Public profile
+
+`GET /api/usuarios/:id` (`perfilPublico`) + `client/src/pages/Perfil/
+VecinoPage.jsx` at `/vecino/:id`. Readable without an account, like the
+rest of MiLepe; what a session adds is the follow and message buttons and
+the `relacion` block. It returns only `CAMPOS_PUBLICOS_USUARIO` plus the
+join date and role — the real name, surnames and email never leave through
+here, which is the whole reason `miPerfil()` is the only place that adds
+them back by hand.
+
+It needed a third auth middleware, `opcional` in `middlewares/auth.js`:
+like `protegido` but it lets anonymous requests through with `req.usuario`
+undefined, and **ignores a bad token** instead of answering 401 (a stale
+token must not break a public page). `listarMuro` also took a `?autor=`
+filter, served by the `{autor_id, fecha_creacion}` index that already
+existed.
 
 ### Notifications
 
@@ -552,18 +715,20 @@ again after a rejection.
 `/api/notificaciones`) stores an already-rendered `mensaje` string (not
 pieces to assemble client-side — server and client can't disagree on
 wording that way) plus a polymorphic `referencia_id`/`referencia_tipo`
-(`'post' | 'comentario' | 'amistad' | 'conversacion'`) pair for where to
-navigate on click, since there's no single `ref` a Mongoose populate could
-use across four unrelated collections. There is no model-level hook creating these (unlike
+(`'post' | 'comentario' | 'mensaje' | 'usuario' | 'conversacion'`) pair for
+where to navigate on click, since there's no single `ref` a Mongoose
+populate could use across unrelated collections. There is no model-level hook creating these (unlike
 `num_comentarios`/`reacciones_resumen`, which are hooked because they're
 data-integrity counters) — every trigger point calls `Notificacion.create()`
 explicitly from the controller, currently: new comment, new/changed
-reaction (never on removing one), a friend request sent, one accepted, a
+reaction (never on removing one), a new follower (`seguidor_nuevo`, which
+replaced the two `Amistad` types and whose wording changes when the follow
+makes it mutual, because that's the moment you can write to each other), a
 queja's `estado` changing, a private message received, and every
 moderation action on your content (hidden, removed, restored, appeal
 resolved). `postsController.notificarSiNoEsUnoMismo()` is
 the shared "skip if you're notifying yourself" helper for the three post/
-comment triggers; the friend and queja triggers inline the same one-line
+comment triggers; the follow and queja triggers inline the same one-line
 check since they only need it once each. Adding a new trigger point
 anywhere else should follow this same explicit-call pattern, not add a new
 model hook.
@@ -617,7 +782,7 @@ The non-obvious parts:
   notifications, which is what re-arms the next one.
 - **`:id` means two different things** in this router, so `POST
   /con/:id` (the other **user's** id — the client knows who it wants to
-  write to, not the thread id, same as `/api/amistades/:id`) is spelled
+  write to, not the thread id, same as `/api/seguimientos/:id`) is spelled
   with `/con/` precisely so the difference is visible in the URL instead of
   two indistinguishable kinds of id in the same position. Every other route
   takes the **conversation** id.
@@ -635,7 +800,10 @@ start a conversation and there's no profile page yet. Min 2 characters,
 max 10 results, public fields only, excludes you and anyone a block
 touches. It escapes the query before building the `RegExp` — an unbalanced
 `(` typed into a search box is not an exotic search, it's a thrown
-exception and a 500. The friends UI will want this same endpoint.
+exception and a 500. Since the mutual-follow gate exists, the inbox's
+search no longer opens a thread directly (that would almost always be a
+403): it navigates to `/vecino/:id`, where the follow and message buttons
+live with the reason written out.
 
 ### Section controllers — what's different about each one
 

@@ -8,6 +8,7 @@ import RestablecerPage from '../pages/Auth/RestablecerPage.jsx';
 import VerificarPage from '../pages/Auth/VerificarPage.jsx';
 import PerfilPage from '../pages/Perfil/PerfilPage.jsx';
 import CompletarPerfilPage from '../pages/Perfil/CompletarPerfilPage.jsx';
+import VecinoPage from '../pages/Perfil/VecinoPage.jsx';
 import PrivacidadPage from '../pages/Legal/PrivacidadPage.jsx';
 import CondicionesPage from '../pages/Legal/CondicionesPage.jsx';
 import TurismoPage from '../pages/Turismo/TurismoPage.jsx';
@@ -52,6 +53,11 @@ function AppRouter() {
       <Route path="/empleo" element={<EmpleoPage />} />
       <Route path="/negocios" element={<NegociosPage />} />
       <Route path="/contactos" element={<ContactosPage />} />
+
+      {/* La ficha de un vecino es publica, como el resto del muro: sin
+          sesion se ve quien es y lo que ha publicado, y lo que no aparece
+          son los botones de seguirle y escribirle. */}
+      <Route path="/vecino/:id" element={<VecinoPage />} />
 
       {/* La mensajeria es la unica parte que exige sesion para entrar y no
           solo para actuar: un hilo privado no se puede ni listar sin saber

@@ -354,6 +354,9 @@ input[type='radio'] {
   align-items: center;
   gap: var(--e-3);
   padding: var(--e-4) var(--e-4) 0;
+  /* Con seguir, editar y reportar a la derecha ya son hasta tres cosas:
+     sin wrap, en un movil estrecho la ultima se salia de la tarjeta. */
+  flex-wrap: wrap;
 }
 
 .pub-autor {
@@ -1310,6 +1313,29 @@ a.insignia:hover {
 .entrada-registro {
   padding: var(--e-3) var(--e-4);
   margin-bottom: var(--e-2);
+}
+
+/* ---------------- Seguir / ficha de un vecino ---------------- */
+
+.perfil-acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  flex-wrap: wrap;
+}
+
+/* El nombre del autor es ahora un enlace a su ficha, pero tiene que
+   seguir leyendose como un nombre y no como un enlace: el subrayado llega
+   solo al pasar por encima. */
+.pub-nombre a,
+.comentario-autor a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pub-nombre a:hover,
+.comentario-autor a:hover {
+  text-decoration: underline;
 }
 
 /* ---------------- Hilo de comentarios ---------------- */

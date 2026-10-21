@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api.js';
+import Icono from '../../components/Icono.jsx';
 
 const formatearFecha = (iso) => new Date(iso).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
 
-// Bandeja de entrada: los hilos abiertos y un buscador para empezar uno
-// nuevo. El buscador esta aqui porque todavia no hay pagina de perfil
-// desde la que pulsar "escribir a X": sin el, esta pantalla estaria vacia
-// y no habria manera de iniciar una conversacion.
+// Bandeja de entrada: los hilos abiertos y un buscador de vecinos.
+//
+// El buscador ya no abre la conversacion directamente, porque desde que
+// hace falta seguimiento mutuo eso acabaria casi siempre en un 403: lleva
+// a la ficha del vecino, que es donde estan el boton de seguir y el de
+// escribir, con el motivo escrito si todavia no se puede.
 function MensajesPage() {
   const navigate = useNavigate();
 
@@ -17,7 +20,6 @@ function MensajesPage() {
 
   const [busqueda, setBusqueda] = useState('');
   const [resultados, setResultados] = useState([]);
-  const [abriendo, setAbriendo] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
@@ -68,25 +70,14 @@ function MensajesPage() {
     };
   }, [busqueda]);
 
-  const abrirConversacion = async (usuario) => {
-    setAbriendo(true);
-    setError(null);
-
-    try {
-      const { data } = await api.post(`/conversaciones/con/${usuario._id}`);
-      navigate(`/mensajes/${data.conversacion._id}`);
-    } catch (err) {
-      setError(err.response?.data?.mensaje || 'No se pudo abrir la conversación.');
-      setAbriendo(false);
-    }
-  };
+  const irAFicha = (usuario) => navigate(`/vecino/${usuario._id}`);
 
   return (
     <section>
       <h1>Mensajes</h1>
 
       <div className="buscador-vecinos">
-        <label htmlFor="buscar-vecino">Escribir a un vecino</label>
+        <label htmlFor="buscar-vecino">Buscar un vecino</label>
         <input
           id="buscar-vecino"
           type="search"
@@ -99,9 +90,8 @@ function MensajesPage() {
           <ul className="resultados-busqueda">
             {resultados.map((usuario) => (
               <li key={usuario._id}>
-                <button type="button" disabled={abriendo} onClick={() => abrirConversacion(usuario)}>
+                <button type="button" onClick={() => irAFicha(usuario)}>
                   {usuario.nombre_usuario}
-                  {usuario.nombre && usuario.nombre !== usuario.nombre_usuario && ` · ${usuario.nombre}`}
                 </button>
               </li>
             ))}
@@ -126,6 +116,14 @@ function MensajesPage() {
           <div className="hilo-cabecera">
             <strong>{conversacion.con?.nombre_usuario || 'Vecino'}</strong>
             {conversacion.no_leidos > 0 && <span className="insignia">{conversacion.no_leidos}</span>}
+            {/* Se marca en la propia bandeja y no al abrir el hilo: enterarse
+                de que ya no podéis escribiros después de redactar un
+                mensaje es la peor forma de enterarse. */}
+            {conversacion.solo_lectura && (
+              <span className="insignia" title="Para escribiros tenéis que seguiros mutuamente">
+                <Icono nombre="alerta" tam={13} /> solo lectura
+              </span>
+            )}
           </div>
 
           <div className="tarjeta-meta">

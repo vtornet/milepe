@@ -7,6 +7,7 @@ import BarraInferior from './components/BarraInferior.jsx';
 import RailDerecho from './components/RailDerecho.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { ReaccionesProvider } from './context/ReaccionesContext.jsx';
+import { SeguimientosProvider } from './context/SeguimientosContext.jsx';
 import api from './services/api.js';
 
 // Los tres sitios donde se enseñan avisos (la barra superior, la lateral y
@@ -99,7 +100,9 @@ function App() {
       {/* Dentro del de sesión porque depende de quién sea: cuando no hay
           nadie no pide nada, y al salir se queda vacío. */}
       <ReaccionesProvider>
-        <Armazon />
+        <SeguimientosProvider>
+          <Armazon />
+        </SeguimientosProvider>
       </ReaccionesProvider>
     </AuthProvider>
   );

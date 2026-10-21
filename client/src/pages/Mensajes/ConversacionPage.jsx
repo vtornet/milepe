@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../../services/api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import BotonReportar from '../../components/BotonReportar.jsx';
+import Icono from '../../components/Icono.jsx';
+import useSondeo from '../../hooks/useSondeo.js';
 
 const MENSAJES_POR_PAGINA = 50; // igual que MENSAJES_POR_PAGINA en el controlador
 const MS_ENTRE_SONDEOS = 10000;
@@ -36,6 +39,13 @@ function ConversacionPage() {
   const [hayMasAntiguos, setHayMasAntiguos] = useState(false);
   const [cargandoAntiguos, setCargandoAntiguos] = useState(false);
 
+  // Un hilo pasa a solo lectura cuando se rompe el seguimiento mutuo (o
+  // cuando hay un bloqueo). Lo dice el servidor en cada carga, no se
+  // deduce aquí: así el aviso desaparece solo en el siguiente sondeo si la
+  // otra persona vuelve a seguirte.
+  const [soloLectura, setSoloLectura] = useState(false);
+  const [razonSoloLectura, setRazonSoloLectura] = useState(null);
+
   const finDelHilo = useRef(null);
 
   const cargarUltimos = useCallback(
@@ -43,6 +53,8 @@ function ConversacionPage() {
       const { data } = await api.get(`/conversaciones/${id}/mensajes`);
       setCon(data.con);
       setMensajes((previos) => combinarMensajes(previos, data.mensajes));
+      setSoloLectura(Boolean(data.solo_lectura));
+      setRazonSoloLectura(data.razon_solo_lectura || null);
 
       // Si la primera pagina viene llena, es que hay mas hacia atras. No
       // es exacto (si el hilo tiene justo 50 se ofrecera un boton que no
@@ -87,20 +99,17 @@ function ConversacionPage() {
     };
   }, [cargarUltimos]);
 
-  // Sin websockets ni notificaciones push todavia: se vuelve a preguntar
-  // cada diez segundos mientras el hilo este abierto. Es poco elegante,
-  // pero para un chat entre dos vecinos basta, y el intervalo se limpia al
-  // salir, asi que no sigue consultando en segundo plano.
-  useEffect(() => {
-    const intervalo = setInterval(() => {
-      cargarUltimos().catch(() => {
-        // Un sondeo fallido no se le enseña al usuario: lo que ya esta en
-        // pantalla sigue siendo valido y el siguiente intento lo arregla.
-      });
-    }, MS_ENTRE_SONDEOS);
-
-    return () => clearInterval(intervalo);
-  }, [cargarUltimos]);
+  // Todavía no hay tiempo real: se vuelve a preguntar cada diez segundos
+  // mientras el hilo esté abierto. Ahora con useSondeo, que además deja de
+  // preguntar cuando la pestaña no se ve -sondear un chat que nadie está
+  // mirando es gastar la batería del móvil de un vecino- y es el sitio
+  // único que habrá que cambiar cuando se enchufe socket.io; el servidor
+  // ya tiene su mitad de esa frontera en utils/tiempoReal.js.
+  //
+  // Sigue sondeando aunque el hilo esté en solo lectura, porque la
+  // respuesta trae también ese estado: así, si la otra persona vuelve a
+  // seguirte, el aviso se va solo y se puede escribir sin recargar.
+  useSondeo(cargarUltimos, MS_ENTRE_SONDEOS);
 
   // Bajar al ultimo mensaje, que es lo que se quiere ver al abrir un chat
   // y tras enviar.
@@ -151,7 +160,13 @@ function ConversacionPage() {
         <Link to="/mensajes">← Mensajes</Link>
       </p>
 
-      <h1>{con?.nombre_usuario || 'Conversación'}</h1>
+      <h1>
+        {con?._id ? (
+          <Link to={`/vecino/${con._id}`}>{con.nombre_usuario}</Link>
+        ) : (
+          con?.nombre_usuario || 'Conversación'
+        )}
+      </h1>
 
       {cargando && <p>Cargando mensajes...</p>}
 
@@ -171,10 +186,25 @@ function ConversacionPage() {
 
               return (
                 <div key={mensaje._id} className={esMio ? 'mensaje mensaje-mio' : 'mensaje'}>
-                  <div className="mensaje-texto">{mensaje.texto}</div>
+                  {/* Un mensaje retirado por moderación conserva su sitio
+                      -se ve que ahí había algo- pero su texto ya no viaja
+                      desde el servidor. */}
+                  {mensaje.retirado ? (
+                    <div className="mensaje-texto comentario-retirado">Mensaje retirado por moderación</div>
+                  ) : (
+                    <div className="mensaje-texto">{mensaje.texto}</div>
+                  )}
+
                   <div className="mensaje-hora">
                     {formatearHora(mensaje.fecha_creacion)}
                     {esMio && mensaje.leido_en && ' · leído'}
+                    {/* Reportar un privado solo tiene sentido en los que
+                        recibes: los tuyos ya los escribiste tú. Solo lo
+                        puede hacer quien está en el hilo, y eso lo
+                        comprueba el servidor. */}
+                    {!esMio && !mensaje.retirado && (
+                      <BotonReportar contenidoTipo="mensaje" contenidoId={mensaje._id} compacto />
+                    )}
                   </div>
                 </div>
               );
@@ -183,18 +213,32 @@ function ConversacionPage() {
             <div ref={finDelHilo} />
           </div>
 
-          <form onSubmit={enviar} className="formulario-mensaje">
-            <textarea
-              rows={2}
-              maxLength={2000}
-              placeholder="Escribe un mensaje..."
-              value={texto}
-              onChange={(evento) => setTexto(evento.target.value)}
-            />
-            <button type="submit" disabled={enviando || texto.trim().length === 0}>
-              {enviando ? 'Enviando...' : 'Enviar'}
-            </button>
-          </form>
+          {soloLectura ? (
+            // Se explica, no se esconde: una caja de texto que desaparece
+            // sin motivo se lee como una avería. Y la conversación se
+            // queda entera, que es justo lo que hay que dejar claro.
+            <div className="aviso aviso-info">
+              <Icono nombre="alerta" tam={18} />
+              <span>
+                {razonSoloLectura === 'bloqueo'
+                  ? 'No podéis escribiros porque hay un bloqueo entre vosotros. La conversación se queda guardada.'
+                  : 'Esta conversación está en solo lectura: para volver a escribiros tenéis que seguiros mutuamente. Lo que os dijisteis sigue aquí.'}
+              </span>
+            </div>
+          ) : (
+            <form onSubmit={enviar} className="formulario-mensaje">
+              <textarea
+                rows={2}
+                maxLength={2000}
+                placeholder="Escribe un mensaje..."
+                value={texto}
+                onChange={(evento) => setTexto(evento.target.value)}
+              />
+              <button type="submit" disabled={enviando || texto.trim().length === 0}>
+                {enviando ? 'Enviando...' : 'Enviar'}
+              </button>
+            </form>
+          )}
         </>
       )}
 

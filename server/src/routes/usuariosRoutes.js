@@ -6,8 +6,9 @@ import {
   buscarUsuarios,
   miPerfil,
   actualizarMiPerfil,
+  perfilPublico,
 } from '../controllers/usuariosController.js';
-import { protegido } from '../middlewares/auth.js';
+import { protegido, opcional } from '../middlewares/auth.js';
 
 const router = Router();
 
@@ -18,6 +19,12 @@ router.put('/perfil', protegido, actualizarMiPerfil);
 
 router.get('/buscar', protegido, buscarUsuarios);
 router.get('/bloqueados', protegido, listarBloqueados);
+// La ficha de un vecino se ve sin sesion (MiLepe se lee sin cuenta), pero
+// si hay sesion la respuesta incluye la relacion: de ahi `opcional` y no
+// `protegido`. Va despues de /perfil, /buscar y /bloqueados para que esas
+// tres no se tomen por el id de un usuario.
+router.get('/:id', opcional, perfilPublico);
+
 router.post('/:id/bloquear', protegido, bloquearUsuario);
 router.delete('/:id/bloquear', protegido, desbloquearUsuario);
 

@@ -7,8 +7,9 @@ const { Schema, model } = mongoose;
 export const TIPOS_NOTIFICACION = [
   'comentario',
   'reaccion',
-  'solicitud_amistad',
-  'amistad_aceptada',
+  // Sustituye a 'solicitud_amistad'/'amistad_aceptada': seguir no se
+  // solicita ni se acepta, asi que solo hay un evento que avisar.
+  'seguidor_nuevo',
   'cambio_estado_queja',
   'moderacion',
   'mensaje_nuevo',
@@ -19,7 +20,7 @@ const notificacionSchema = new Schema(
     // El destinatario. Nunca el que provoco el evento (eso, si hace falta
     // mostrarlo, se resuelve del lado del cliente a partir de la
     // referencia, para no duplicar aqui un actor_id que ya vive en el post/
-    // comentario/amistad referenciados).
+    // comentario/usuario referenciados).
     usuario_id: {
       type: Schema.Types.ObjectId,
       ref: 'Usuario',
@@ -41,7 +42,7 @@ const notificacionSchema = new Schema(
     },
     // A que ir cuando se pulsa la notificacion. referencia_tipo dice que
     // coleccion consultar con referencia_id (no hay un ref fijo posible:
-    // puede apuntar a Post, Comentario, Amistad o Conversacion segun el
+    // puede apuntar a Post, Comentario, Usuario o Conversacion segun el
     // tipo).
     referencia_id: {
       type: Schema.Types.ObjectId,
@@ -49,7 +50,7 @@ const notificacionSchema = new Schema(
     },
     referencia_tipo: {
       type: String,
-      enum: ['post', 'comentario', 'amistad', 'conversacion', null],
+      enum: ['post', 'comentario', 'mensaje', 'usuario', 'conversacion', null],
       default: null,
     },
     leida: {

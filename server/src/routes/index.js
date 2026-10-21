@@ -3,7 +3,7 @@ import authRoutes from './authRoutes.js';
 import postsRoutes from './postsRoutes.js';
 import quejasRoutes from './quejasRoutes.js';
 import usuariosRoutes from './usuariosRoutes.js';
-import amistadesRoutes from './amistadesRoutes.js';
+import seguimientosRoutes from './seguimientosRoutes.js';
 import notificacionesRoutes from './notificacionesRoutes.js';
 import conversacionesRoutes from './conversacionesRoutes.js';
 import moderacionRoutes from './moderacionRoutes.js';
@@ -27,7 +27,7 @@ router.use('/auth', authRoutes);
 router.use('/posts', postsRoutes); // muro (feed general) + reaccion/reportar/comentarios/moderar, comunes a toda seccion
 router.use('/quejas', quejasRoutes);
 router.use('/usuarios', usuariosRoutes); // bloqueos por ahora; perfil publico mas adelante
-router.use('/amistades', amistadesRoutes);
+router.use('/seguimientos', seguimientosRoutes); // sustituye a /amistades: seguir es unilateral y no se aprueba
 router.use('/notificaciones', notificacionesRoutes);
 router.use('/conversaciones', conversacionesRoutes); // mensajeria privada; la unica seccion sin nada publico
 router.use('/moderacion', moderacionRoutes); // reportes, acciones, apelaciones y auditoria (vale para post y comentario)

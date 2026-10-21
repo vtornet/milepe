@@ -5,12 +5,44 @@ import Apelacion from '../models/Apelacion.js';
 import RegistroModeracion from '../models/RegistroModeracion.js';
 import Notificacion from '../models/Notificacion.js';
 import { TIPOS_CONTENIDO_MODERABLE, MOTIVOS_REPORTE, CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
-import { cargarModerable } from '../utils/contenidoModerable.js';
+import Mensaje from '../models/Mensaje.js';
+import { cargarModerable, puedeReportar } from '../utils/contenidoModerable.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 
 // Que accion del registro corresponde a cada estado al que se mueve el
 // contenido. 'publicado' es "restaurar" porque a este estado solo se llega
 // deshaciendo algo.
+// Lo que se le dice al autor, por tipo de contenido. Una frase completa
+// por caso y no un sustantivo metido en una plantilla, porque en
+// castellano hay que concordar: "publicacion" es femenina y "comentario"
+// masculino, asi que "Tu <nombre> ha sido ocultad?" no se puede resolver
+// con una sola cadena.
+//
+// Antes habia un solo juego de textos, el de los posts, asi que a quien le
+// ocultaban un comentario le llegaba "Tu publicación ha sido ocultada".
+const TEXTOS_ACCION = {
+  post: {
+    oculto: 'Tu publicación ha sido ocultada por un moderador',
+    eliminado: 'Tu publicación ha sido eliminada por un moderador',
+    publicado: 'Tu publicación vuelve a estar visible',
+    auto: 'Tu publicación se ha ocultado automáticamente por acumular reportes y está pendiente de revisión',
+  },
+  comentario: {
+    oculto: 'Tu comentario ha sido ocultado por un moderador',
+    eliminado: 'Tu comentario ha sido eliminado por un moderador',
+    publicado: 'Tu comentario vuelve a estar visible',
+    auto: 'Tu comentario se ha ocultado automáticamente por acumular reportes y está pendiente de revisión',
+  },
+  mensaje: {
+    oculto: 'Un mensaje privado tuyo ha sido ocultado por un moderador',
+    eliminado: 'Un mensaje privado tuyo ha sido eliminado por un moderador',
+    publicado: 'Tu mensaje vuelve a estar visible',
+    auto: 'Un mensaje privado tuyo se ha ocultado automáticamente por acumular reportes',
+  },
+};
+
+const textoDe = (contenidoTipo, clave) => (TEXTOS_ACCION[contenidoTipo] || TEXTOS_ACCION.post)[clave];
+
 const ACCION_POR_ESTADO = {
   oculto: 'ocultar',
   eliminado: 'eliminar',
@@ -117,17 +149,13 @@ const aplicarAccion = async ({ contenido, contenidoTipo, estadoNuevo, moderador,
     apelacion_id: apelacionId || null,
   });
 
-  const textos = {
-    oculto: 'Tu publicación ha sido ocultada por un moderador',
-    eliminado: 'Tu publicación ha sido eliminada por un moderador',
-    publicado: 'Tu publicación vuelve a estar visible',
-  };
+  const texto = textoDe(contenidoTipo, estadoNuevo);
 
   if (estadoAnterior !== estadoNuevo) {
     await avisarAlAutor({
       autorId: contenido.autor_id,
       actorId: moderador._id,
-      mensaje: nota ? `${textos[estadoNuevo]}: ${nota}` : textos[estadoNuevo],
+      mensaje: nota ? `${texto}: ${nota}` : texto,
       contenidoTipo,
       contenidoId: contenido._id,
     });
@@ -233,6 +261,16 @@ export const crearReporte = async (req, res, next) => {
       throw new ErrorHttp(400, 'No puedes reportar tu propio contenido');
     }
 
+    // Un post o un comentario los ve cualquiera, asi que cualquiera puede
+    // reportarlos. Un mensaje privado solo lo han visto dos personas, y
+    // reportarlo es lo que lo pone delante de un moderador: ver
+    // puedeReportar() para por que esto no es una formalidad. 404 y no
+    // 403: a quien no es del hilo no se le confirma que ese mensaje
+    // exista, igual que en cargarConversacionPropia.
+    if (!(await puedeReportar(contenido_tipo, contenido, req.usuario._id))) {
+      throw new ErrorHttp(404, 'El contenido indicado no existe');
+    }
+
     if (contenido.estado_moderacion === 'eliminado') {
       throw new ErrorHttp(409, 'Este contenido ya ha sido eliminado');
     }
@@ -257,7 +295,7 @@ export const crearReporte = async (req, res, next) => {
       await avisarAlAutor({
         autorId: contenido.autor_id,
         actorId: null, // lo oculto el umbral, no una persona
-        mensaje: 'Tu publicación se ha ocultado automáticamente por acumular reportes y está pendiente de revisión',
+        mensaje: textoDe(contenido_tipo, 'auto'),
         contenidoTipo: contenido_tipo,
         contenidoId: contenido._id,
       });
@@ -430,7 +468,7 @@ export const listarMiContenidoModerado = async (req, res, next) => {
   try {
     const noPublicado = { $in: ['oculto', 'eliminado'] };
 
-    const [posts, comentarios] = await Promise.all([
+    const [posts, comentarios, mensajes] = await Promise.all([
       Post.find({ autor_id: req.usuario._id, estado_moderacion: noPublicado })
         .sort({ fecha_actualizacion: -1 })
         .select('tipo titulo contenido estado_moderacion fecha_creacion'),
@@ -444,11 +482,17 @@ export const listarMiContenidoModerado = async (req, res, next) => {
       })
         .sort({ fecha_actualizacion: -1 })
         .select('texto post_id estado_moderacion fecha_creacion'),
+      // Los mensajes privados moderados tambien, o moderarlos seria una
+      // sancion sin derecho a replica: sin esto su autor no se entera de
+      // por que y no tiene desde donde apelar.
+      Mensaje.find({ autor_id: req.usuario._id, estado_moderacion: noPublicado })
+        .sort({ fecha_actualizacion: -1 })
+        .select('texto conversacion_id estado_moderacion fecha_creacion'),
     ]);
 
     const apelaciones = await Apelacion.find({
       autor_id: req.usuario._id,
-      contenido_id: { $in: [...posts, ...comentarios].map((doc) => doc._id) },
+      contenido_id: { $in: [...posts, ...comentarios, ...mensajes].map((doc) => doc._id) },
     });
     const apelacionPorContenido = new Map(apelaciones.map((a) => [String(a.contenido_id), a]));
 
@@ -480,6 +524,7 @@ export const listarMiContenidoModerado = async (req, res, next) => {
       contenido: [
         ...posts.map((doc) => montar(doc, 'post')),
         ...comentarios.map((doc) => montar(doc, 'comentario')),
+        ...mensajes.map((doc) => montar(doc, 'mensaje')),
       ],
     });
   } catch (error) {

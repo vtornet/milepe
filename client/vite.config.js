@@ -9,6 +9,16 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/favicon-32.png', 'icons/apple-touch-icon.png'],
+      workbox: {
+        // El service worker lo genera el plugin y se regenera en cada
+        // build, asi que no se puede editar para anadirle los avisos push.
+        // Lo que si se puede es pedirle que importe un archivo nuestro
+        // (public/push-sw.js), que es lo que atiende 'push' y
+        // 'notificationclick'. La alternativa era pasar todo a
+        // injectManifest y escribir el service worker entero a mano,
+        // incluida la precarga que ahora funciona sola.
+        importScripts: ['push-sw.js'],
+      },
       manifest: {
         name: 'MiLepe',
         short_name: 'MiLepe',

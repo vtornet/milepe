@@ -1,5 +1,7 @@
 import Usuario from '../models/Usuario.js';
 import Bloqueo from '../models/Bloqueo.js';
+import Seguimiento from '../models/Seguimiento.js';
+import Post from '../models/Post.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 
@@ -23,6 +25,14 @@ export const bloquearUsuario = async (req, res, next) => {
       }
       throw error;
     }
+
+    // Bloquear rompe el seguimiento en los DOS sentidos. Seguir
+    // apareciendo en la lista de seguidores de alguien a quien has
+    // bloqueado le mantendria abierto el canal de mensajes privados (que
+    // se abre con el seguimiento mutuo), o sea que no habrias bloqueado
+    // nada. Y no solo el sentido propio: si solo se borrase "yo le sigo",
+    // el suyo seguiria ahi y la lista de el seguiria contandote.
+    await Seguimiento.romperEnAmbosSentidos(req.usuario._id, bloqueadoId);
 
     res.status(201).json({ ok: true });
   } catch (error) {
@@ -174,6 +184,44 @@ export const actualizarMiPerfil = async (req, res, next) => {
       ok: true,
       usuario: { ...usuario.toJSON(), nombre: usuario.nombre, apellidos: usuario.apellidos },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// La ficha publica de un vecino: lo que ve cualquiera, mas la relacion que
+// tiene con quien pregunta si hay sesion.
+//
+// Devuelve solo CAMPOS_PUBLICOS_USUARIO mas la fecha de alta y el rol. El
+// nombre real, los apellidos y el correo no salen de aqui jamas: ese es
+// justo el motivo de que miPerfil() sea el unico sitio que los re-anade a
+// mano.
+export const perfilPublico = async (req, res, next) => {
+  try {
+    const usuario = await Usuario.findOne({ _id: req.params.id, activo: true }).select(
+      `${CAMPOS_PUBLICOS_USUARIO} rol fecha_creacion`,
+    );
+
+    if (!usuario) {
+      throw new ErrorHttp(404, 'Usuario no encontrado');
+    }
+
+    const [seguidores, siguiendo, publicaciones] = await Promise.all([
+      Seguimiento.countDocuments({ seguido_id: usuario._id }),
+      Seguimiento.countDocuments({ seguidor_id: usuario._id }),
+      Post.countDocuments({ autor_id: usuario._id, estado_moderacion: 'publicado' }),
+    ]);
+
+    // Sin sesion no hay relacion que contar, y la ficha se sigue viendo:
+    // MiLepe se lee sin cuenta.
+    let relacion = null;
+    if (req.usuario) {
+      const estado = await Seguimiento.estadoEntre(req.usuario._id, usuario._id);
+      const bloqueado = Boolean(await Bloqueo.existeEntre(req.usuario._id, usuario._id));
+      relacion = { ...estado, bloqueado, puede_escribir: estado.mutuo && !bloqueado };
+    }
+
+    res.json({ ok: true, usuario, contadores: { seguidores, siguiendo, publicaciones }, relacion });
   } catch (error) {
     next(error);
   }

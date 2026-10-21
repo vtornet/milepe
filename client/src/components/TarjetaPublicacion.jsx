@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Avatar from './Avatar.jsx';
 import Icono from './Icono.jsx';
 import BotonReportar from './BotonReportar.jsx';
+import BotonSeguir from './BotonSeguir.jsx';
 import PanelInteraccion from './PanelInteraccion.jsx';
 import EditarPublicacion from './EditarPublicacion.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -61,7 +62,15 @@ function TarjetaPublicacion({
         <Avatar usuario={quien} />
 
         <div className="pub-autor">
-          <div className="pub-nombre">{quien?.nombre_usuario || 'Vecino de Lepe'}</div>
+          {/* El nombre lleva a su ficha: era el unico sitio del muro donde
+              se ve quien ha escrito algo, y no se podia pulsar. */}
+          <div className="pub-nombre">
+            {autorId ? (
+              <Link to={`/vecino/${autorId}`}>{quien?.nombre_usuario || 'Vecino de Lepe'}</Link>
+            ) : (
+              quien?.nombre_usuario || 'Vecino de Lepe'
+            )}
+          </div>
           <div className="pub-sub">
             <time dateTime={post.fecha_creacion} title={fechaCompleta(post.fecha_creacion)}>
               {haceCuanto(post.fecha_creacion)}
@@ -86,6 +95,11 @@ function TarjetaPublicacion({
             )}
           </div>
         </div>
+
+        {/* Seguir al autor desde el propio muro, que es donde se le
+            descubre. El componente se esconde solo si es tu publicacion o
+            si no hay sesion. */}
+        <BotonSeguir usuarioId={autorId} compacto />
 
         {soyElAutor && !editando && (
           <button

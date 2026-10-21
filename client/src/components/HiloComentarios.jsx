@@ -377,7 +377,13 @@ function Comentario({
       <Avatar usuario={comentario.autor_id} tamano="xs" />
 
       <div className="comentario-burbuja">
-        <span className="comentario-autor">{comentario.autor_id?.nombre_usuario || 'Vecino'}</span>
+        <span className="comentario-autor">
+          {autorId ? (
+            <Link to={`/vecino/${autorId}`}>{comentario.autor_id?.nombre_usuario || 'Vecino'}</Link>
+          ) : (
+            comentario.autor_id?.nombre_usuario || 'Vecino'
+          )}
+        </span>
         {comentario.valoracion > 0 && (
           <span className="estrellas" title={`${comentario.valoracion} de 5`}>
             {' '}

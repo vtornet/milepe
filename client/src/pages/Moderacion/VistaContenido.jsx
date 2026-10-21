@@ -21,12 +21,27 @@ function VistaContenido({ contenidoTipo, contenido }) {
   return (
     <div className="contenido-moderado">
       <div className="tarjeta-meta">
-        {contenidoTipo === 'post' ? `Publicación (${contenido.tipo})` : 'Comentario'}
+        {contenidoTipo === 'post'
+          ? `Publicación (${contenido.tipo})`
+          : contenidoTipo === 'mensaje'
+            ? 'Mensaje privado'
+            : 'Comentario'}
         {autor && ` de ${autor}`} · {new Date(contenido.fecha_creacion).toLocaleString('es-ES')} ·{' '}
         <span className="insignia">{ETIQUETA_ESTADO[contenido.estado_moderacion]}</span>
       </div>
 
-      {contenidoTipo === 'post' ? (
+      {/* De un privado se enseña SOLO el mensaje reportado, nunca el hilo
+          entero: lo que se está revisando es ese mensaje, y abrir la
+          conversación completa de dos vecinos para juzgar una frase es
+          mucho más de lo que hace falta. */}
+      {contenidoTipo === 'mensaje' ? (
+        <>
+          <p className="contenido-moderado-texto">{contenido.texto}</p>
+          <p className="tarjeta-meta">
+            De una conversación privada. Solo se muestra el mensaje reportado.
+          </p>
+        </>
+      ) : contenidoTipo === 'post' ? (
         <>
           {contenido.titulo && <strong>{contenido.titulo}</strong>}
           <p className="contenido-moderado-texto">{contenido.contenido}</p>

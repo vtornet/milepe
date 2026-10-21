@@ -30,6 +30,10 @@ export const listarMuro = async (req, res, next) => {
 
     const filtro = { estado_moderacion: 'publicado' };
     if (req.query.tipo) filtro.tipo = req.query.tipo;
+    // Lo que ha publicado un vecino, para su ficha. Se filtra aqui y no en
+    // un endpoint aparte porque es el mismo feed con un filtro mas, y ya
+    // hay un indice { autor_id, fecha_creacion } que lo sirve.
+    if (req.query.autor) filtro.autor_id = req.query.autor;
 
     const [posts, total] = await Promise.all([
       Post.find(filtro)

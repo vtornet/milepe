@@ -31,6 +31,35 @@ export const protegido = async (req, res, next) => {
   }
 };
 
+// Como protegido, pero sin exigir sesion: si viene un token valido cuelga
+// el usuario, y si no viene -o no vale- deja pasar con req.usuario sin
+// definir.
+//
+// Existe para las paginas que se ven con y sin cuenta pero cambian si hay
+// sesion: la ficha de un vecino la lee cualquiera, y solo a quien ha
+// entrado se le dice si le sigue y si puede escribirle. Con protegido
+// habria que elegir entre esconder la ficha a quien no tiene cuenta o no
+// dar nunca la relacion.
+//
+// Un token malo aqui NO es un error: se ignora y la peticion sigue como
+// anonima. Lo contrario convertiria un token caducado en un 401 en una
+// pagina publica.
+export const opcional = async (req, res, next) => {
+  const cabecera = req.headers.authorization;
+
+  if (!cabecera || !cabecera.startsWith('Bearer ')) return next();
+
+  try {
+    const payload = verificarToken(cabecera.slice('Bearer '.length));
+    const usuario = await Usuario.findById(payload.id);
+    if (usuario?.activo) req.usuario = usuario;
+  } catch {
+    // Anonimo y adelante.
+  }
+
+  next();
+};
+
 // Se usa despues de protegido: exige que req.usuario.rol este entre los
 // permitidos. autorizar('moderador', 'admin') deja pasar a cualquiera de
 // los dos, por ejemplo.
