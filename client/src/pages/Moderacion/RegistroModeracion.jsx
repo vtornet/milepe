@@ -10,6 +10,8 @@ const ETIQUETA_ACCION = {
   reporte_rechazado: 'descartó un reporte sobre',
   apelacion_aceptada: 'aceptó la apelación sobre',
   apelacion_rechazada: 'rechazó la apelación sobre',
+  revision_por_edicion: 'quedó pendiente de revisar por una edición de',
+  edicion_aprobada: 'dio el visto bueno a la edición de',
 };
 
 const ACCIONES = Object.keys(ETIQUETA_ACCION);

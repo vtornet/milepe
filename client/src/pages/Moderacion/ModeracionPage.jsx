@@ -3,11 +3,13 @@ import api from '../../services/api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import FilaReporte from './FilaReporte.jsx';
 import FilaApelacion from './FilaApelacion.jsx';
+import FilaEdicion from './FilaEdicion.jsx';
 import RegistroModeracion from './RegistroModeracion.jsx';
 
 const PESTANAS = [
   { clave: 'reportes', etiqueta: 'Reportes' },
   { clave: 'apelaciones', etiqueta: 'Apelaciones' },
+  { clave: 'ediciones', etiqueta: 'Ediciones' },
   { clave: 'registro', etiqueta: 'Registro' },
 ];
 
@@ -25,6 +27,7 @@ function ModeracionPage() {
 
   const [reportes, setReportes] = useState(null);
   const [apelaciones, setApelaciones] = useState(null);
+  const [ediciones, setEdiciones] = useState(null);
 
   const [verResueltos, setVerResueltos] = useState(false);
 
@@ -49,6 +52,13 @@ function ModeracionPage() {
     setApelaciones(data.apelaciones);
   }, [verResueltos]);
 
+  // Esta cola no tiene "ya resueltas" que mirar: una edicion aprobada
+  // desaparece de aqui y lo que queda de ella esta en el registro.
+  const cargarEdiciones = useCallback(async () => {
+    const { data } = await api.get('/moderacion/ediciones', { params: { limite: 50 } });
+    setEdiciones(data.posts);
+  }, []);
+
   useEffect(() => {
     cargarResumen();
   }, [cargarResumen]);
@@ -57,7 +67,12 @@ function ModeracionPage() {
     let cancelado = false;
     setError(null);
 
-    const cargar = pestana === 'reportes' ? cargarReportes : pestana === 'apelaciones' ? cargarApelaciones : null;
+    const porPestana = {
+      reportes: cargarReportes,
+      apelaciones: cargarApelaciones,
+      ediciones: cargarEdiciones,
+    };
+    const cargar = porPestana[pestana];
     if (!cargar) return undefined;
 
     cargar().catch(() => {
@@ -67,7 +82,7 @@ function ModeracionPage() {
     return () => {
       cancelado = true;
     };
-  }, [pestana, cargarReportes, cargarApelaciones]);
+  }, [pestana, cargarReportes, cargarApelaciones, cargarEdiciones]);
 
   // Tras resolver algo hay que refrescar la lista completa, no quitar la
   // fila sin más: resolver un reporte puede cambiar el estado del
@@ -76,6 +91,7 @@ function ModeracionPage() {
     cargarResumen();
     if (pestana === 'reportes') await cargarReportes();
     if (pestana === 'apelaciones') await cargarApelaciones();
+    if (pestana === 'ediciones') await cargarEdiciones();
   };
 
   return (
@@ -84,7 +100,8 @@ function ModeracionPage() {
 
       {resumen && (
         <p className="tarjeta-meta">
-          {resumen.reportes_pendientes} reporte(s) y {resumen.apelaciones_pendientes} apelación(es) pendientes
+          {resumen.reportes_pendientes} reporte(s), {resumen.apelaciones_pendientes} apelación(es) y{' '}
+          {resumen.ediciones_pendientes ?? 0} edición(es) pendientes
           {!esAdmin && ' · las apelaciones las resuelve un administrador'}
         </p>
       )}
@@ -101,7 +118,7 @@ function ModeracionPage() {
           </button>
         ))}
 
-        {pestana !== 'registro' && (
+        {pestana !== 'registro' && pestana !== 'ediciones' && (
           <label className="filtro-casilla">
             <input
               type="checkbox"
@@ -136,6 +153,21 @@ function ModeracionPage() {
               puedeResolver={esAdmin}
               onResuelta={trasResolver}
             />
+          ))}
+        </>
+      )}
+
+      {pestana === 'ediciones' && (
+        <>
+          {ediciones === null && <p>Cargando ediciones...</p>}
+          {ediciones?.length === 0 && (
+            <p>
+              No hay ediciones por revisar. Aquí solo entran las publicaciones a las que su autor le cambió las
+              fotos, y siguen viéndose mientras esperan.
+            </p>
+          )}
+          {ediciones?.map((post) => (
+            <FilaEdicion key={post._id} post={post} onResuelta={trasResolver} />
           ))}
         </>
       )}

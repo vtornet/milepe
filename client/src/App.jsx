@@ -6,6 +6,7 @@ import NavegacionLateral from './components/NavegacionLateral.jsx';
 import BarraInferior from './components/BarraInferior.jsx';
 import RailDerecho from './components/RailDerecho.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
+import { ReaccionesProvider } from './context/ReaccionesContext.jsx';
 import api from './services/api.js';
 
 // Los tres sitios donde se enseñan avisos (la barra superior, la lateral y
@@ -55,7 +56,9 @@ function Armazon() {
         .get('/moderacion/resumen')
         .then(({ data }) => {
           if (!cancelado) {
-            setPendientesModeracion(data.reportes_pendientes + data.apelaciones_pendientes);
+            setPendientesModeracion(
+              data.reportes_pendientes + data.apelaciones_pendientes + (data.ediciones_pendientes || 0),
+            );
           }
         })
         .catch(() => {});
@@ -93,7 +96,11 @@ function Armazon() {
 function App() {
   return (
     <AuthProvider>
-      <Armazon />
+      {/* Dentro del de sesión porque depende de quién sea: cuando no hay
+          nadie no pide nada, y al salir se queda vacío. */}
+      <ReaccionesProvider>
+        <Armazon />
+      </ReaccionesProvider>
     </AuthProvider>
   );
 }

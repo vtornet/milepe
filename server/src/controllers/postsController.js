@@ -4,7 +4,7 @@ import Reaccion, { TIPOS_REACCION } from '../models/Reaccion.js';
 import Bloqueo from '../models/Bloqueo.js';
 import Notificacion from '../models/Notificacion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
-import { crearReporte, moderarContenido } from './moderacionController.js';
+import { crearReporte, moderarContenido, anotarRevisionPorEdicion } from './moderacionController.js';
 import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 
 // Un post 'eliminado' es borrado logico: para cualquiera que no sea su
@@ -100,6 +100,147 @@ export const reaccionarPost = async (req, res, next) => {
     }
 
     res.json({ ok: true, ...resultado, reacciones: postActualizado.reacciones_resumen });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Cuantas reacciones propias se devuelven de una vez. Hay tope porque la
+// respuesta se pide entera de una sola vez, no paginada: con mil ya se
+// cubre a cualquier vecino de un pueblo, y lo que se pierde al pasarse es
+// que una reaccion de hace años no salga marcada, no que deje de funcionar.
+const TOPE_MIS_REACCIONES = 1000;
+
+// Que ha reaccionado el usuario que pregunta, todo de una vez: un mapa
+// id -> tipo para posts y otro para comentarios.
+//
+// Es una sola peticion por carga de la aplicacion, y no un campo
+// "mi_reaccion" añadido a cada listado, por dos razones: los siete
+// listados (muro y seis secciones) tendrian que calcularlo cada uno, dos
+// de ellos con agregacion; y el selector de reacciones vive dentro de una
+// tarjeta que no sabe de donde viene, asi que preguntando una vez aqui
+// funciona igual en el muro, en cada seccion y en las que vengan.
+//
+// Sin esto, al recargar la pagina tu propia reaccion no salia marcada: el
+// cliente arrancaba siempre sin saber que habias puesto.
+export const listarMisReacciones = async (req, res, next) => {
+  try {
+    const reacciones = await Reaccion.find({ autor_id: req.usuario._id })
+      .sort({ fecha_creacion: -1 })
+      .limit(TOPE_MIS_REACCIONES)
+      .select('tipo post_id comentario_id');
+
+    const posts = {};
+    const comentarios = {};
+
+    for (const reaccion of reacciones) {
+      if (reaccion.post_id) posts[reaccion.post_id] = reaccion.tipo;
+      else if (reaccion.comentario_id) comentarios[reaccion.comentario_id] = reaccion.tipo;
+    }
+
+    res.json({ ok: true, posts, comentarios });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Lo unico que se puede cambiar al editar. Lista blanca y no "todo lo que
+// venga menos esto", misma disciplina que authController.registrar: con la
+// lista negra, cualquier campo nuevo del esquema queda editable desde
+// fuera el dia que se añade, sin que nadie se de cuenta.
+const CAMPOS_EDITABLES_POST = ['titulo', 'contenido', 'imagenes'];
+
+// Edita una publicacion. Generico, como reaccionar o reportar: sirve igual
+// para una queja que para un negocio, porque solo toca los campos que
+// viven en Post. Los campos propios de cada seccion (la categoria de una
+// queja, la fecha de un evento, la direccion de un negocio) estan en su
+// *_detalle y no se editan desde aqui.
+export const editarPost = async (req, res, next) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (noEsVisible(post)) {
+      throw new ErrorHttp(404, 'Publicacion no encontrada');
+    }
+
+    // Solo el autor, y esto se comprueba aqui: un moderador puede ocultar
+    // o eliminar lo de otro, que es distinto de reescribirlo en su nombre.
+    if (!post.autor_id.equals(req.usuario._id)) {
+      throw new ErrorHttp(403, 'Solo el autor puede editar su publicacion');
+    }
+
+    // Un post oculto no se edita: dejaria al moderador resolviendo un
+    // reporte sobre un texto que ya no es el que se reporto.
+    if (post.estado_moderacion !== 'publicado') {
+      throw new ErrorHttp(400, 'No puedes editar una publicacion que esta oculta por moderacion');
+    }
+
+    const cambios = {};
+    for (const campo of CAMPOS_EDITABLES_POST) {
+      if (req.body[campo] !== undefined) cambios[campo] = req.body[campo];
+    }
+
+    if (Object.keys(cambios).length === 0) {
+      throw new ErrorHttp(400, `Indica que quieres cambiar: ${CAMPOS_EDITABLES_POST.join(', ')}`);
+    }
+
+    if (cambios.imagenes !== undefined) {
+      if (!Array.isArray(cambios.imagenes) || cambios.imagenes.some((url) => typeof url !== 'string' || !url.trim())) {
+        throw new ErrorHttp(400, 'imagenes debe ser una lista de URLs');
+      }
+      // Una foto sin foto no es nada. La seccion lo exige al crearla y
+      // tiene que seguir exigiendolo al editar, o se podria dejar vacia
+      // por la puerta de atras.
+      if (post.tipo === 'foto' && cambios.imagenes.length === 0) {
+        throw new ErrorHttp(400, 'Una publicacion de Fotos no puede quedarse sin imagenes');
+      }
+    }
+
+    const { imagenesCambiaron } = post.aplicarEdicion(cambios);
+    await post.save();
+
+    // Cambiar el texto no vuelve a revision; cambiar las imagenes si. Una
+    // imagen nueva es contenido que nadie ha visto todavia, y es la via
+    // obvia para colar algo detras de un texto ya aceptado.
+    if (imagenesCambiaron) {
+      await anotarRevisionPorEdicion(post);
+    }
+
+    await post.populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
+
+    res.json({ ok: true, post, en_revision: post.revision_pendiente });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Historial de ediciones: el autor, para ver lo que escribio, y el equipo
+// de moderacion, que es quien necesita comparar con que se publico algo y
+// en que se ha quedado cuando le llega una revision por cambio de imagen.
+// Nadie mas: el historial tiene versiones que su autor decidio retirar.
+export const listarEdiciones = async (req, res, next) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      throw new ErrorHttp(404, 'Publicacion no encontrada');
+    }
+
+    const esAutor = post.autor_id.equals(req.usuario._id);
+    const esEquipo = req.usuario.rol === 'moderador' || req.usuario.rol === 'admin';
+
+    if (!esAutor && !esEquipo) {
+      throw new ErrorHttp(403, 'No puedes ver el historial de esta publicacion');
+    }
+
+    res.json({
+      ok: true,
+      // De la mas reciente a la mas vieja, como el registro de moderacion.
+      ediciones: [...post.historial_ediciones].reverse(),
+      // La version de ahora va aparte y marcada, para que quien lo lea no
+      // tenga que adivinar cual de las filas es la que esta publicada.
+      actual: { titulo: post.titulo, texto: post.contenido, imagenes: post.imagenes },
+      editado_en: post.editado_en,
+      revision_pendiente: post.revision_pendiente,
+    });
   } catch (error) {
     next(error);
   }

@@ -1,8 +1,11 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from './Avatar.jsx';
 import Icono from './Icono.jsx';
 import BotonReportar from './BotonReportar.jsx';
 import PanelInteraccion from './PanelInteraccion.jsx';
+import EditarPublicacion from './EditarPublicacion.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import { haceCuanto, fechaCompleta } from '../utils/fechas.js';
 
 // Armazón común de una publicación: avatar, autor, cuándo, insignias,
@@ -21,7 +24,7 @@ import { haceCuanto, fechaCompleta } from '../utils/fechas.js';
 // Mismo criterio que PanelInteraccion en su día: se extrae cuando el patrón
 // ya está repetido y es idéntico, no antes.
 function TarjetaPublicacion({
-  post,
+  post: postDelPadre,
   autor,
   seccion,
   chips,
@@ -30,8 +33,27 @@ function TarjetaPublicacion({
   permitirValoracion = false,
   children,
 }) {
+  const { usuario } = useAuth();
+
+  // La tarjeta se queda con la versión que pinta, para que una edición se
+  // vea al momento sin que las seis páginas de sección tengan que pasar un
+  // onEditado y recargar su lista.
+  const [post, setPost] = useState(postDelPadre);
+  const [editando, setEditando] = useState(false);
+
+  // Y si el padre trae otra versión (recargó la lista, cambió de filtro),
+  // manda la suya: sin esto, una tarjeta que ya se ha editado una vez se
+  // quedaría enseñando su copia local para siempre.
+  useEffect(() => {
+    setPost(postDelPadre);
+  }, [postDelPadre]);
+
   const imagenes = post.imagenes || [];
   const quien = autor || post.autor || post.autor_id;
+
+  const autorId = post.autor_id?._id || post.autor_id;
+  const soyElAutor = Boolean(usuario && autorId && String(autorId) === String(usuario._id));
+  const esEquipo = usuario?.rol === 'moderador' || usuario?.rol === 'admin';
 
   return (
     <article className="pub">
@@ -44,6 +66,18 @@ function TarjetaPublicacion({
             <time dateTime={post.fecha_creacion} title={fechaCompleta(post.fecha_creacion)}>
               {haceCuanto(post.fecha_creacion)}
             </time>
+            {/* Que algo se ha editado se dice siempre, a todo el mundo: un
+                texto que cambia sin avisar debajo de los comentarios que
+                responden al anterior es la forma más fácil de que una
+                discusión acabe sin sentido. */}
+            {post.editado && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span title={post.editado_en ? `Editado el ${fechaCompleta(post.editado_en)}` : 'Editado'}>
+                  editado
+                </span>
+              </>
+            )}
             {seccion && (
               <>
                 <span aria-hidden="true">·</span>
@@ -53,35 +87,78 @@ function TarjetaPublicacion({
           </div>
         </div>
 
+        {soyElAutor && !editando && (
+          <button
+            type="button"
+            className="boton-reportar-compacto"
+            title="Editar la publicación"
+            onClick={() => setEditando(true)}
+          >
+            <Icono nombre="lapiz" tam={15} />
+          </button>
+        )}
+
         <BotonReportar contenidoTipo="post" contenidoId={post._id} compacto />
       </header>
 
-      <div className="pub-cuerpo">
-        {chips && <div className="pub-chips">{chips}</div>}
-
-        {post.titulo && <h2 className="pub-titulo">{post.titulo}</h2>}
-        {post.contenido && <p className="pub-texto">{post.contenido}</p>}
-
-        {datos && <div className="pub-datos">{datos}</div>}
-
-        {children}
-      </div>
-
-      {imagenes.length > 0 && (
-        // La clase lleva el número de imágenes para que el CSS decida la
-        // rejilla: una a todo el ancho, varias en dos columnas. Se topa en
-        // cuatro porque a partir de ahí la cuadrícula se vuelve un mosaico
-        // ilegible; las demás siguen ahí, solo que no se amontonan.
-        <div className={`pub-medios pub-medios-${Math.min(imagenes.length, 4)}`}>
-          {imagenes.slice(0, 4).map((url) => (
-            <a key={url} href={url} target="_blank" rel="noreferrer">
-              <img src={url} alt={post.titulo || 'Imagen de la publicación'} loading="lazy" />
-            </a>
-          ))}
+      {/* Que está en la cola de revisión solo lo ven su autor y el equipo.
+          Para el resto del pueblo no es información: la publicación se ve
+          igual, y un cartel de "pendiente de revisar" en algo que no tiene
+          nada de malo solo levanta una sospecha que nadie ha formulado. */}
+      {post.revision_pendiente && (soyElAutor || esEquipo) && (
+        <div className="pub-cuerpo">
+          <div className="aviso aviso-info">
+            <Icono nombre="reloj" tam={18} />
+            <span>
+              {soyElAutor
+                ? 'Un moderador revisará las fotos que has cambiado. Tu publicación sigue visible mientras tanto.'
+                : 'El autor cambió las fotos: pendiente de revisar.'}
+            </span>
+          </div>
         </div>
       )}
 
-      {acciones && <div className="acciones">{acciones}</div>}
+      {editando ? (
+        <div className="pub-cuerpo">
+          <EditarPublicacion
+            post={post}
+            onGuardado={(actualizado) => {
+              setPost({ ...post, ...actualizado });
+              setEditando(false);
+            }}
+            onCancelar={() => setEditando(false)}
+          />
+        </div>
+      ) : (
+        <>
+          <div className="pub-cuerpo">
+            {chips && <div className="pub-chips">{chips}</div>}
+
+            {post.titulo && <h2 className="pub-titulo">{post.titulo}</h2>}
+            {post.contenido && <p className="pub-texto">{post.contenido}</p>}
+
+            {datos && <div className="pub-datos">{datos}</div>}
+
+            {children}
+          </div>
+
+          {imagenes.length > 0 && (
+            // La clase lleva el número de imágenes para que el CSS decida la
+            // rejilla: una a todo el ancho, varias en dos columnas. Se topa en
+            // cuatro porque a partir de ahí la cuadrícula se vuelve un mosaico
+            // ilegible; las demás siguen ahí, solo que no se amontonan.
+            <div className={`pub-medios pub-medios-${Math.min(imagenes.length, 4)}`}>
+              {imagenes.slice(0, 4).map((url) => (
+                <a key={url} href={url} target="_blank" rel="noreferrer">
+                  <img src={url} alt={post.titulo || 'Imagen de la publicación'} loading="lazy" />
+                </a>
+              ))}
+            </div>
+          )}
+
+          {acciones && <div className="acciones">{acciones}</div>}
+        </>
+      )}
 
       <PanelInteraccion
         postId={post._id}

@@ -87,10 +87,20 @@ const moderadorQueActuo = async (contenidoTipo, contenidoId) => {
 // silencio.
 const aplicarAccion = async ({ contenido, contenidoTipo, estadoNuevo, moderador, nota, reporteId, apelacionId, accion }) => {
   const estadoAnterior = contenido.estado_moderacion;
+  const cambiaEstado = estadoAnterior !== estadoNuevo;
 
-  if (estadoAnterior !== estadoNuevo) {
+  if (cambiaEstado) {
     contenido.estado_moderacion = estadoNuevo;
     contenido.moderador_id = moderador._id;
+  }
+
+  // Ocultar, eliminar o restaurar cierra ademas la revision por edicion si
+  // habia una: el moderador acaba de mirar ese contenido, asi que seguir
+  // en la cola solo serviria para que apareciese dos veces.
+  const cierraRevision = contenido.revision_pendiente === true;
+  if (cierraRevision) contenido.revision_pendiente = false;
+
+  if (cambiaEstado || cierraRevision) {
     await contenido.save();
   }
 
@@ -124,6 +134,84 @@ const aplicarAccion = async ({ contenido, contenidoTipo, estadoNuevo, moderador,
   }
 
   return estadoAnterior;
+};
+
+// --- Ediciones (cola de revision) ---
+
+// Deja constancia de que una edicion del autor cambio las imagenes y por
+// eso entra en la cola. Lo llama postsController al editar: la escritura
+// en el registro vive aqui, con el resto de la moderacion, para que no
+// haya dos sitios distintos donde se anote lo que pasa con un contenido.
+//
+// No es un endpoint. Y no avisa al autor: desde su lado no ha pasado nada
+// -su post sigue publicado y visible-, asi que una notificacion solo
+// serviria para asustarle.
+export const anotarRevisionPorEdicion = (post) =>
+  RegistroModeracion.registrar({
+    moderador_id: null,
+    accion: 'revision_por_edicion',
+    contenido_tipo: 'post',
+    contenido_id: post._id,
+    autor_contenido_id: post.autor_id,
+    nota: 'El autor cambio las imagenes al editar',
+  });
+
+// Cola de ediciones por revisar. Es la tercera cola del panel, junto a
+// reportes y apelaciones, y la unica que no significa que algo este
+// escondido: aqui el contenido se sigue viendo mientras espera.
+export const listarEdicionesPendientes = async (req, res, next) => {
+  try {
+    const { pagina, limite } = paginacion(req);
+
+    const filtro = { revision_pendiente: true };
+
+    const [posts, total] = await Promise.all([
+      Post.find(filtro)
+        .sort({ editado_en: -1 })
+        .skip((pagina - 1) * limite)
+        .limit(limite)
+        .populate('autor_id', CAMPOS_PUBLICOS_USUARIO),
+      Post.countDocuments(filtro),
+    ]);
+
+    res.json({ ok: true, posts, total, pagina, limite });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Visto bueno a una edicion: la saca de la cola sin tocar la visibilidad,
+// que no se habia tocado. Si lo que quiere el moderador es lo contrario,
+// ocultar o eliminar, eso ya existe (PATCH /contenido) y de paso cierra
+// esta revision.
+export const aprobarEdicion = async (req, res, next) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      throw new ErrorHttp(404, 'Publicacion no encontrada');
+    }
+    if (!post.revision_pendiente) {
+      throw new ErrorHttp(400, 'Esta publicacion no esta en revision');
+    }
+
+    post.revision_pendiente = false;
+    post.moderador_id = req.usuario._id;
+    await post.save();
+
+    await RegistroModeracion.registrar({
+      moderador_id: req.usuario._id,
+      accion: 'edicion_aprobada',
+      contenido_tipo: 'post',
+      contenido_id: post._id,
+      autor_contenido_id: post.autor_id,
+      nota: req.body?.nota || null,
+    });
+
+    res.json({ ok: true, post });
+  } catch (error) {
+    next(error);
+  }
 };
 
 // --- Reportar (cualquier vecino con sesion) ---
@@ -573,12 +661,18 @@ export const listarRegistro = async (req, res, next) => {
 // moderador tenga que abrir las dos colas para ver si hay algo que hacer.
 export const resumenPendientes = async (req, res, next) => {
   try {
-    const [reportes, apelaciones] = await Promise.all([
+    const [reportes, apelaciones, ediciones] = await Promise.all([
       Reporte.countDocuments({ estado: 'pendiente' }),
       Apelacion.countDocuments({ estado: 'pendiente' }),
+      Post.countDocuments({ revision_pendiente: true }),
     ]);
 
-    res.json({ ok: true, reportes_pendientes: reportes, apelaciones_pendientes: apelaciones });
+    res.json({
+      ok: true,
+      reportes_pendientes: reportes,
+      apelaciones_pendientes: apelaciones,
+      ediciones_pendientes: ediciones,
+    });
   } catch (error) {
     next(error);
   }

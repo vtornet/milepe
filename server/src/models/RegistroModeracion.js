@@ -23,6 +23,13 @@ export const ACCIONES_MODERACION = [
   // Resolucion de una apelacion del autor del contenido.
   'apelacion_aceptada',
   'apelacion_rechazada',
+  // Edicion del autor que cambia las imagenes: el post no deja de estar
+  // visible, solo entra en la cola de revision. La marca la pone el
+  // sistema, asi que tambien va con moderador_id null; y como no toca la
+  // visibilidad, estado_anterior y estado_nuevo van nulos, igual que al
+  // rechazar un reporte.
+  'revision_por_edicion',
+  'edicion_aprobada',
 ];
 
 const registroSchema = new Schema(

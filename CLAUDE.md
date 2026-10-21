@@ -307,24 +307,136 @@ The embedded-array-to-collection switch needed no data migration: the live
 database was checked first and held 0 embedded reports (3 posts, none
 moderated), so nothing was lost by dropping the field.
 
+### Editing a post
+
+`PATCH /api/posts/:id` (`postsController.editarPost`) is generic like
+reacting and reporting: it edits only what lives on `Post` — `titulo`,
+`contenido`, `imagenes`, through a `CAMPOS_EDITABLES_POST` whitelist. The
+section-specific fields in each `*_detalle` are **not** editable from here
+(each would need its own form and its own validation).
+
+- **Only the author**, checked in the controller. A moderator can hide or
+  remove someone's post, which is a different thing from rewriting it in
+  their name. A post that isn't `publicado` can't be edited at all, or a
+  moderator would end up resolving a report against a text that no longer
+  exists.
+- **A text edit does not re-moderate; an image change does.** A new image
+  is content nobody has seen, and it's the obvious way to slip something in
+  behind an already-accepted text. `Post.aplicarEdicion()` owns that rule
+  (it's a rule about the content, not about the request) and returns
+  `imagenesCambiaron` so the controller knows whether to write the audit
+  entry. Reordering counts as a change; sending the same list in the same
+  order doesn't.
+- **Re-moderation does not hide the post.** `revision_pendiente` is a
+  separate boolean, deliberately *not* a new `estado_moderacion` value: with
+  a `'pendiente'` state, swapping one photo would make the post vanish from
+  the Muro until someone approved it, and with a single moderator that's
+  hours invisible for retouching an image. The post stays `publicado` and
+  visible, and joins a third queue in the moderation panel
+  (`GET /api/moderacion/ediciones`, `PATCH /api/moderacion/ediciones/:id`).
+  The queue has its own **partial** index on `Post` (`editado_en` filtered
+  by `revision_pendiente: true`), since posts under review are always a
+  handful.
+- The two new `ACCIONES_MODERACION` (`revision_por_edicion`,
+  `edicion_aprobada`) carry `estado_anterior`/`estado_nuevo` **null**, same
+  convention as dismissing a report: nothing about the visibility changed.
+  `revision_por_edicion` also has `moderador_id: null` — the system marked
+  it, not a person. `anotarRevisionPorEdicion()` lives in
+  `moderacionController` even though `postsController` is what calls it, so
+  there aren't two places that write to the audit log.
+- Approving **doesn't notify the author**: from their side nothing
+  happened, their post never stopped being visible, and a notification
+  would only alarm them. Hiding it goes through the existing
+  `aplicarAccion()`, which does notify — and which now also clears
+  `revision_pendiente`, or resolved content would sit in the queue forever.
+- `historial_ediciones` stores the **previous** versions (title, text and
+  images, not just the text), because what a moderator needs is to compare
+  what was published with what it became. Capped at
+  `MAX_EDICIONES_GUARDADAS` (20): the array lives inside the document, so
+  without a cap a much-retouched post would weigh more in old versions than
+  in what it currently says. `GET /api/posts/:id/ediciones` is author +
+  team only.
+- Fotos' "imágenes required" rule is re-checked on edit (emptying the array
+  would otherwise bypass it through the back door), and the client checks it
+  too so it doesn't upload files for a request that will be refused.
+- On the client, `TarjetaPublicacion` holds the version it renders in local
+  state (so an edit shows immediately without six section pages passing an
+  `onEditado` down), and re-syncs from the prop when the parent brings a
+  newer one. "editado" is shown **to everyone** — a text that changes
+  silently under the comments answering the old one is the easiest way to
+  make a discussion stop making sense — while the "pending review" notice is
+  shown only to the author and the team: for everyone else the post looks
+  the same, and a "pending review" sign on something harmless just raises a
+  suspicion nobody had.
+
 ### Reactions
 
 `Reaccion` (`server/src/models/Reaccion.js`) is one collection shared by
 posts and comments — a document has exactly `post_id` XOR `comentario_id`
 (enforced in `pre('validate')`), never both, never neither. `TIPOS_REACCION`
-(`me_gusta`, `me_encanta`, `apoyo`, `triste` — lives in `models/
-constantes.js`, not in `Reaccion.js`, specifically to avoid a circular
-import since `Post.js`/`Comentario.js` need the list too for their
-`reacciones_resumen` field) is deliberately not Facebook's full reaction
-set — `apoyo` doubles as "this happens to me too" solidarity on a Quejas
-post. `Reaccion.alternar({ autor_id, tipo, post_id | comentario_id })` is
+(`me_gusta`, `me_encanta`, `jaja`, `vaya`, `apoyo`, `triste`, `enfado` —
+lives in `models/constantes.js`, not in `Reaccion.js`, specifically to
+avoid a circular import since `Post.js`/`Comentario.js` need the list too
+for their `reacciones_resumen` field) is **seven, not Facebook's six**:
+`apoyo` ("this happens to me too") is the only one that means anything on
+a Quejas post, where a "like" on a pothole says nothing, so dropping it to
+match the usual set would have cost the flagship section its one useful
+reaction *and* required migrating existing `apoyo` rows onto a type that
+means something else. The list's order is the order the picker draws and
+the order of the `reacciones_resumen` keys.
+
+Adding the three new types needed **no migration**: documents written
+before them simply lack those keys, `$inc` creates a key that isn't there,
+and every read goes through helpers that treat missing as zero
+(`contarReacciones`/`reaccionesPresentes` on the client). Don't "fix" the
+old documents by backfilling zeros.
+
+`Reaccion.alternar({ autor_id, tipo, post_id | comentario_id })` is
 the only way to react: it upserts, and reacting again with the same `tipo`
 removes it (toggle) while a different `tipo` swaps it — one reaction per
 user per target, enforced by a partial unique index (partial because only
 one of `post_id`/`comentario_id` is set per document, so a plain compound
 unique index would collide across targets). It also keeps
 `reacciones_resumen` (a per-type counter, same denormalization pattern as
-`num_comentarios`) in sync on the right parent model. There used to be a
+`num_comentarios`) in sync on the right parent model. `GET /api/posts/mis-reacciones` answers "what has *this* user reacted
+to", as two maps (`posts` and `comentarios`) of id → type, capped at
+`TOPE_MIS_REACCIONES` (1000). It's one request per app load, held in
+`client/src/context/ReaccionesContext.jsx`, rather than a `mi_reaccion`
+field added to each listing: the seven listings (Muro plus six sections)
+would each have to compute it — two of them inside an aggregation — and the
+picker lives inside a card that doesn't know which listing it came from.
+Before this, the client started every card with no idea what you'd already
+chosen, so after a reload your own reaction wasn't highlighted.
+
+`components/SelectorReaccion.jsx` is the picker, shared by posts and
+comments (`compacto`). Three things about it are load-bearing:
+
+- **It renders the pill in a portal on `<body>`, positioned `fixed`.**
+  `.pub` has `overflow: hidden` (it needs it to clip the media grid to the
+  rounded corners) and the pill opens upward, so inside the card it got cut
+  off on short cards — which is what the "buttons sticking out of the pill"
+  symptom was. Position is computed by measuring the *rendered* pill, not by
+  estimating its width, since the buttons shrink below 420px; it flips below
+  the button when there's no room above, and clamps to the viewport. It
+  closes on scroll and resize, because a fixed element doesn't follow the
+  card.
+- **A plain tap gives or removes `me_gusta`; the row of seven opens on long
+  press** (450ms) on touch and on hover (350ms) with a real mouse
+  (`matchMedia('(hover: hover) and (pointer: fine)')`), plus ArrowUp/Down
+  for keyboard, which would otherwise have no way in. A long press also
+  fires a click, so a ref swallows that one click — without it, lifting your
+  finger opened the pill and set a reaction nobody asked for.
+- The buttons are `display: grid` + `place-items: center` with explicit
+  `padding: 0` and an emoji font stack. The browser's own button padding
+  inside a 44px box leaves the emoji no room, and emoji metrics differ per
+  platform, so centring them as text doesn't centre them.
+
+Reactions on comments existed server-side from the start
+(`POST /api/posts/:id/comentarios/reaccion`) but had no UI at all until the
+picker was shared; `PanelInteraccion` now renders it in each comment's
+footer next to the time and the report button.
+
+There used to be a
 simple `Post.likes: [ObjectId]` array with a `Post.alternarLike()` toggle —
 that's gone, replaced entirely by this.
 

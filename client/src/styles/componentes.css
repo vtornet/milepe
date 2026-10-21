@@ -623,30 +623,105 @@ a.insignia:hover {
 }
 
 /* Selector de reacción que se despliega al pulsar "Reaccionar". */
-.reacciones-menu {
-  display: flex;
-  gap: 2px;
-  padding: var(--e-1);
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--r-full);
-  box-shadow: var(--sombra-3);
+/* La píldora de reacciones se pinta en un portal sobre <body>, no dentro
+   de la tarjeta: .pub lleva overflow: hidden (lo necesita para recortar la
+   rejilla de fotos a las esquinas) y la píldora, que se abre hacia arriba,
+   quedaba cortada en las tarjetas cortas. De ahí position: fixed, y que
+   las coordenadas las ponga el componente midiendo el botón. */
+.reacciones-telon {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
 }
 
+.reacciones-menu {
+  position: fixed;
+  z-index: 61;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  box-shadow: var(--sombra-3);
+  /* Siete emojis no caben en un móvil estrecho si la píldora no sabe
+     cuánto sitio hay. */
+  max-width: calc(100vw - 16px);
+  transition: opacity 90ms ease-out;
+}
+
+/* Rejilla con place-items y no una línea de texto centrada: un emoji no
+   tiene las mismas métricas en cada sistema (Apple, Segoe, Noto) y
+   centrarlo como texto lo deja descuadrado. Y padding: 0 explícito, porque
+   el relleno que el navegador le pone a un <button> por su cuenta, dentro
+   de una caja de 44px, deja al emoji sin sitio y lo empuja fuera. */
 .reacciones-menu button {
-  width: 36px;
-  height: 36px;
-  border: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
   background: transparent;
-  border-radius: var(--r-full);
-  font-size: 19px;
+  border-radius: 999px;
+  font-size: 26px;
+  line-height: 1;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   cursor: pointer;
   transition: transform var(--transicion), background var(--transicion);
 }
 
-.reacciones-menu button:hover {
+.reacciones-menu button:hover,
+.reacciones-menu button:focus-visible {
   background: var(--superficie-hover);
   transform: scale(1.18);
+}
+
+/* La que ya tienes puesta, marcada con un aro en vez de con un color de
+   fondo propio: un tono nuevo habría que definirlo para los dos modos, y
+   el aro usa --marca, que ya existe en ambos. */
+.reacciones-menu button.elegida {
+  background: var(--superficie-hover);
+  box-shadow: inset 0 0 0 2px var(--marca);
+}
+
+/* 44px es la medida de un dedo, pero siete botones de 44 más los huecos se
+   salen de un móvil de 360. Por debajo de ahí se encogen: mejor un botón
+   algo más pequeño que una fila que no entra. */
+@media (max-width: 420px) {
+  .reacciones-menu button {
+    width: 38px;
+    height: 38px;
+    font-size: 22px;
+  }
+}
+
+/* Reaccionar a un comentario: el mismo selector en pequeño, en la línea de
+   la hora y el botón de reportar. */
+.reaccion-compacta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--texto-tenue);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reaccion-compacta:hover,
+.reaccion-compacta.activa {
+  color: var(--marca);
+}
+
+.resumen-reacciones-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--t-xs);
+  color: var(--texto-tenue);
 }
 
 .resumen-reacciones {
@@ -1230,6 +1305,82 @@ a.insignia:hover {
 .entrada-registro {
   padding: var(--e-3) var(--e-4);
   margin-bottom: var(--e-2);
+}
+
+/* ---------------- Editar una publicación ---------------- */
+
+.formulario-edicion {
+  border: 1px solid var(--borde);
+  border-radius: var(--r-sm);
+  padding: var(--e-3);
+  background: var(--superficie-2);
+}
+
+.formulario-edicion label {
+  display: block;
+  margin-bottom: var(--e-3);
+}
+
+/* Miniaturas de las imágenes que ya tiene la publicación, tanto al
+   editarla como al revisarla en el panel. Rejilla automática y no un
+   número fijo de columnas: la misma lista se pinta en el ancho de una
+   tarjeta del muro y en el del panel de moderación. */
+.edicion-imagenes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: var(--e-2);
+  margin-bottom: var(--e-3);
+}
+
+.edicion-imagen {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--superficie-2);
+}
+
+.edicion-imagen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* El aspa va sobre la foto, no debajo: con 84px de miniatura, un botón
+   aparte por imagen deja de caber en un móvil. El fondo oscuro es lo que
+   la mantiene visible sobre una foto clara. */
+.edicion-quitar {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-full);
+  background: rgb(0 0 0 / 55%);
+  color: #fff;
+  cursor: pointer;
+}
+
+.edicion-quitar:hover {
+  background: rgb(0 0 0 / 75%);
+}
+
+.historial-ediciones {
+  margin-top: var(--e-3);
+  border-left: 3px solid var(--borde);
+  padding-left: var(--e-3);
+}
+
+.historial-version + .historial-version {
+  margin-top: var(--e-3);
+  padding-top: var(--e-3);
+  border-top: 1px solid var(--borde);
 }
 
 /* ---------------- Utilidades ---------------- */
