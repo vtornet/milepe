@@ -11,6 +11,8 @@ import {
   moderarPost,
   listarComentarios,
   crearComentario,
+  editarComentario,
+  borrarComentario,
 } from '../controllers/postsController.js';
 import { protegido, autorizar } from '../middlewares/auth.js';
 import { exigePerfilCompleto } from '../middlewares/perfil.js';
@@ -34,5 +36,9 @@ router.patch('/:id/moderar', protegido, exigePerfilCompleto, autorizar('moderado
 router.get('/:id/comentarios', listarComentarios);
 router.post('/:id/comentarios', protegido, exigePerfilCompleto, crearComentario);
 router.post('/:id/comentarios/reaccion', protegido, exigePerfilCompleto, reaccionarComentario);
+// Editar y borrar un comentario. No chocan con la ruta de arriba aunque
+// comparten forma: esa es POST y estas son PATCH y DELETE.
+router.patch('/:id/comentarios/:comentarioId', protegido, exigePerfilCompleto, editarComentario);
+router.delete('/:id/comentarios/:comentarioId', protegido, exigePerfilCompleto, borrarComentario);
 
 export default router;

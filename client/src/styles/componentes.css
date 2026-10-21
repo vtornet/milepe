@@ -784,10 +784,15 @@ a.insignia:hover {
   white-space: pre-wrap;
 }
 
+/* En el pie de un comentario caben ya ocho cosas (hora, "editado",
+   reaccionar, el resumen, responder, editar, borrar y reportar), asi que
+   tiene que poder pasar a la linea siguiente: en un movil, sin wrap, las
+   ultimas se salian de la burbuja. */
 .comentario-pie {
   display: flex;
   align-items: center;
-  gap: var(--e-2);
+  flex-wrap: wrap;
+  gap: 4px var(--e-2);
   margin-top: 3px;
   font-size: var(--t-xs);
   color: var(--texto-tenue);
@@ -1305,6 +1310,84 @@ a.insignia:hover {
 .entrada-registro {
   padding: var(--e-3) var(--e-4);
   margin-bottom: var(--e-2);
+}
+
+/* ---------------- Hilo de comentarios ---------------- */
+
+/* El sangrado va por data-nivel y no por una clase por nivel: así el
+   componente solo tiene que decir en qué nivel está, y el tope de niveles
+   lo decide el servidor (niveles_sangrado), no el CSS. */
+.comentario-rama[data-nivel='1'],
+.comentario-rama[data-nivel='2'] {
+  /* La línea de la izquierda es lo que hace legible una conversación
+     anidada: sin ella, el sangrado solo se ve si hay dos ramas seguidas. */
+  border-left: 2px solid var(--borde);
+  margin-left: var(--e-3);
+  padding-left: var(--e-2);
+}
+
+/* En un móvil el sangrado se reduce a la mitad. Tres niveles a 12px se
+   comen un tercio de la pantalla, y lo que queda es una columna donde no
+   entra una frase. */
+@media (max-width: 560px) {
+  .comentario-rama[data-nivel='1'],
+  .comentario-rama[data-nivel='2'] {
+    margin-left: var(--e-2);
+    padding-left: var(--e-1);
+  }
+}
+
+/* "Ver N respuestas", "continuar hilo", "ver más": enlaces, no botones.
+   Son navegación dentro del hilo, y tres botones de verdad por comentario
+   convertirían el hilo en una pared de cajas. */
+.hilo-enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 var(--e-2) var(--e-6);
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--marca);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hilo-enlace:hover {
+  text-decoration: underline;
+}
+
+.hilo-volver {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  padding-bottom: var(--e-2);
+  margin-bottom: var(--e-2);
+  border-bottom: 1px solid var(--borde);
+  flex-wrap: wrap;
+}
+
+/* El hueco que deja un comentario retirado. En cursiva y apagado para que
+   se lea como lo que es -una ausencia- y no como algo que alguien dijo. */
+.comentario-retirado {
+  margin: 0;
+  font-style: italic;
+  font-size: var(--t-sm);
+  color: var(--texto-tenue);
+}
+
+.comentario-edicion textarea {
+  width: 100%;
+  margin-bottom: var(--e-2);
+}
+
+.comentario-confirmar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-xs);
+  color: var(--texto-tenue);
 }
 
 /* ---------------- Editar una publicación ---------------- */

@@ -440,6 +440,86 @@ There used to be a
 simple `Post.likes: [ObjectId]` array with a `Post.alternarLike()` toggle —
 that's gone, replaced entirely by this.
 
+### Comments and threads
+
+`Comentario` is threaded through `padre_id` (null = a first-level comment)
+plus a stored `profundidad`. It's a pointer to the parent, not a
+materialized path like `"1.4.2"`: moving a comment isn't an operation that
+exists here, and a path would mean rewriting every descendant's the day it
+did.
+
+- **`profundidad` is computed in the model**, in a `pre('validate')` hook
+  that runs only on creation (`colocarEnElHilo`): it loads the parent,
+  checks it belongs to the same post — otherwise a thread could be stitched
+  across two publications — and sets `profundidad = padre.profundidad + 1`.
+  It is never read from the request. The smoke test posts a reply with
+  `profundidad: 0` in the body and asserts the server ignores it.
+- **The server does not cap depth.** `NIVELES_SANGRADO` (3, exported from
+  `postsController` and sent in every listing as `niveles_sangrado`) is a
+  *rendering* limit: the client stops indenting and offers "continuar
+  hilo", which re-roots the view on that comment. Three levels at full
+  indentation already leaves a column too narrow for a sentence on a phone.
+- **`GET /api/posts/:id/comentarios` returns one level at a time**, 10 per
+  page: no `?padre` gives the roots (`padre_id: null` is just another value
+  of the same filter), `?padre=<id>` gives that comment's replies. It used
+  to return every comment of the post at once, which meant sending two
+  hundred comments to show the first five, and replies only matter to
+  whoever asks for them.
+- **A retired comment comes back as a hole**: `paraElCliente()` keeps the
+  row (`_id`, `padre_id`, `profundidad`, `num_respuestas`, date, and
+  `retirado: 'autor' | 'moderacion'`) and drops the text *and the author*.
+  That's the whole point — if they travelled and the client merely drew
+  "[deleted]" on top, the deletion would be decoration: anyone reading the
+  API response, or the browser's network tab, would still read what its
+  author withdrew. `retirado` distinguishes the two cases because "its
+  author removed this" and "a moderator removed this" aren't the same
+  sentence to whoever is reading.
+- **`num_respuestas` counts every surviving reply, including retired
+  ones** — a different rule from `Post.num_comentarios`, which counts only
+  visible ones because it's the number shown to people. The reason is
+  reachability: the listing returns retired replies as holes, so if the
+  counter skipped them, a deleted reply whose own thread is still alive
+  would leave the count at zero, the "ver N respuestas" button wouldn't be
+  drawn, and that part of the conversation would become unreachable. Soft
+  deletion therefore does *not* decrement it; only a physical `deleteOne`
+  does.
+- **Deleting takes two different paths on purpose.** The author gets a
+  plain soft delete with `borrado_por_autor: true` — not a moderation
+  action, so no audit entry and no notification to themselves. A moderator
+  deleting someone else's comment goes through `moderarContenido` (and so
+  through `aplicarAccion`), which logs it and tells the author why so they
+  can appeal. A moderator deleting *their own* comment counts as the
+  author: there's no sense in opening a file on yourself. Repeating the
+  call answers the same thing instead of 400 — with bad coverage people tap
+  twice.
+- **`borrado_por_autor` exists so the visibility axis stays single.** Both
+  kinds of deletion land in `estado_moderacion: 'eliminado'` (two fields
+  saying whether something is visible end up contradicting each other), but
+  they have to be told apart: `listarMiContenidoModerado` filters
+  `borrado_por_autor: { $ne: true }`, because a comment you deleted
+  yourself is not a sanction and would otherwise show up there as one, with
+  an appeal button against your own decision.
+- **Editing a comment keeps no version history**, unlike a post: a comment
+  is two lines, what gets fixed is almost always a typo, and keeping every
+  version of every comment of every thread costs more than it gives.
+  `editado`/`editado_en` *are* shown, because replies underneath may be
+  answering what it said before.
+- A reply re-checks `Bloqueo.existeEntre` against the **parent comment's
+  author**, not just the post's: without it, someone you blocked couldn't
+  write on your post but could hang off your comment on someone else's.
+- **A reply notifies the author of the comment, a root comment notifies the
+  author of the post** — one person, not both. Notifying the post's author
+  of every reply in every thread turns the notifications panel into a
+  counter nobody reads.
+- Client side, `components/HiloComentarios.jsx` holds the whole thread:
+  levels cached by parent id (so entering and leaving a sub-thread doesn't
+  refetch), a *stack* for "continuar hilo" so going back returns where you
+  came from rather than to the top, inline edit, and an inline "¿Seguro?"
+  instead of `confirm()` — same reasoning as everywhere else here, a
+  browser dialog blocks the page and reads as a system error. It was split
+  out of `PanelInteraccion`, which now keeps only the reaction bar and the
+  two buttons.
+
 ### Blocking
 
 `Bloqueo` (`server/src/models/Bloqueo.js`, routes under `/api/usuarios`) is

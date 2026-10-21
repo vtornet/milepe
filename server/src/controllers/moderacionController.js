@@ -434,7 +434,14 @@ export const listarMiContenidoModerado = async (req, res, next) => {
       Post.find({ autor_id: req.usuario._id, estado_moderacion: noPublicado })
         .sort({ fecha_actualizacion: -1 })
         .select('tipo titulo contenido estado_moderacion fecha_creacion'),
-      Comentario.find({ autor_id: req.usuario._id, estado_moderacion: noPublicado })
+      // borrado_por_autor fuera: un comentario que retiraste tu no es una
+      // sancion, y aqui apareceria como tal, con su boton de apelar al
+      // lado, contra una decision que tomaste tu.
+      Comentario.find({
+        autor_id: req.usuario._id,
+        estado_moderacion: noPublicado,
+        borrado_por_autor: { $ne: true },
+      })
         .sort({ fecha_actualizacion: -1 })
         .select('texto post_id estado_moderacion fecha_creacion'),
     ]);

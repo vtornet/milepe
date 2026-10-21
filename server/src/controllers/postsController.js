@@ -262,6 +262,44 @@ export const moderarPost = (req, res, next) => {
   return moderarContenido(req, res, next);
 };
 
+// Niveles del hilo que el cliente dibuja con sangrado. Vive aqui por
+// documentacion: el servidor NO limita la profundidad -se puede responder
+// a una respuesta indefinidamente, y padre_id lo soporta-; es el cliente
+// el que deja de sangrar y ofrece "continuar hilo" para no acabar con una
+// columna de texto de dos palabras de ancho en un movil.
+export const NIVELES_SANGRADO = 3;
+
+// Un comentario retirado (por su autor o por un moderador) se devuelve
+// como hueco: la fila se conserva para no romper el hilo que cuelga de
+// ella, pero el texto y el autor NO viajan.
+//
+// Que no viajen es el punto. Si fueran en la respuesta y el cliente se
+// limitase a pintar "[eliminado]" encima, el borrado seria un adorno:
+// cualquiera que mirase la respuesta de la API -o la pestana de red del
+// navegador- seguiria leyendo lo que su autor retiro.
+const paraElCliente = (comentario) => {
+  if (comentario.estado_moderacion === 'publicado') return comentario.toJSON();
+
+  return {
+    _id: comentario._id,
+    post_id: comentario.post_id,
+    padre_id: comentario.padre_id,
+    profundidad: comentario.profundidad,
+    num_respuestas: comentario.num_respuestas,
+    fecha_creacion: comentario.fecha_creacion,
+    // Quien lo retiro cambia lo que hay que poner en pantalla: "lo borro
+    // su autor" y "lo quito un moderador" no son lo mismo para quien lee.
+    retirado: comentario.borrado_por_autor ? 'autor' : 'moderacion',
+  };
+};
+
+// Un nivel del hilo: las raices del post, o las respuestas de un
+// comentario si viene ?padre=<id>.
+//
+// Paginado y por niveles en vez de todo de golpe: un post con doscientos
+// comentarios mandaba doscientos comentarios para ensenar los cinco
+// primeros. Las respuestas se piden solo cuando alguien pulsa "ver N
+// respuestas", que es lo que la mayoria no hace.
 export const listarComentarios = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -269,11 +307,29 @@ export const listarComentarios = async (req, res, next) => {
       throw new ErrorHttp(404, 'Publicacion no encontrada');
     }
 
-    const comentarios = await Comentario.find({ post_id: post._id, estado_moderacion: 'publicado' })
-      .sort({ fecha_creacion: 1 })
-      .populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
+    const pagina = Math.max(1, parseInt(req.query.pagina, 10) || 1);
+    const limite = Math.min(50, Math.max(1, parseInt(req.query.limite, 10) || 10));
 
-    res.json({ ok: true, comentarios });
+    // Sin ?padre, las raices: padre_id null no es un caso aparte, es solo
+    // otro valor del mismo filtro.
+    const filtro = { post_id: post._id, padre_id: req.query.padre || null };
+
+    const [comentarios, total] = await Promise.all([
+      Comentario.find(filtro)
+        .sort({ fecha_creacion: 1 })
+        .skip((pagina - 1) * limite)
+        .limit(limite)
+        .populate('autor_id', CAMPOS_PUBLICOS_USUARIO),
+      Comentario.countDocuments(filtro),
+    ]);
+
+    res.json({
+      ok: true,
+      comentarios: comentarios.map(paraElCliente),
+      paginacion: { pagina, limite, total, totalPaginas: Math.ceil(total / limite) },
+      // Para que el cliente no repita a mano un numero que se decide aqui.
+      niveles_sangrado: NIVELES_SANGRADO,
+    });
   } catch (error) {
     next(error);
   }
@@ -281,7 +337,7 @@ export const listarComentarios = async (req, res, next) => {
 
 export const crearComentario = async (req, res, next) => {
   try {
-    const { texto, valoracion } = req.body;
+    const { texto, valoracion, padre_id } = req.body;
 
     const post = await Post.findById(req.params.id);
     if (noEsVisible(post)) {
@@ -292,25 +348,151 @@ export const crearComentario = async (req, res, next) => {
       throw new ErrorHttp(403, 'No puedes comentar en esta publicacion');
     }
 
+    // A quien se avisa: al autor del comentario si es una respuesta, al del
+    // post si es de primer nivel. Solo a uno. Avisar tambien al autor del
+    // post de cada respuesta de cada hilo convierte el panel de avisos en
+    // un contador que nadie mira.
+    let destinatario = post.autor_id;
+    let mensaje = `${req.usuario.nombre_usuario} ha comentado en tu publicacion`;
+
+    if (padre_id) {
+      const padre = await Comentario.findOne({ _id: padre_id, post_id: post._id }).select('autor_id');
+      if (!padre) {
+        throw new ErrorHttp(404, 'El comentario al que respondes no existe');
+      }
+      // El mismo bloqueo que para comentar, ahora con la persona a la que
+      // se responde: sin esto, alguien a quien has bloqueado no puede
+      // escribirte en tu publicacion pero si colgarse de tu comentario en
+      // la de otro.
+      if (await Bloqueo.existeEntre(req.usuario._id, padre.autor_id)) {
+        throw new ErrorHttp(403, 'No puedes responder a este comentario');
+      }
+
+      destinatario = padre.autor_id;
+      mensaje = `${req.usuario.nombre_usuario} ha respondido a tu comentario`;
+    }
+
     const comentario = await Comentario.create({
       post_id: post._id,
       autor_id: req.usuario._id,
       texto,
       valoracion,
+      // La profundidad la calcula el modelo a partir del padre: aqui no se
+      // pasa, a proposito.
+      padre_id: padre_id || null,
     });
 
     await comentario.populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
 
     await notificarSiNoEsUnoMismo({
-      destinatarioId: post.autor_id,
+      destinatarioId: destinatario,
       autorAccionId: req.usuario._id,
       tipo: 'comentario',
-      mensaje: `${req.usuario.nombre_usuario} ha comentado en tu publicacion`,
+      mensaje,
       referencia_id: post._id,
       referencia_tipo: 'post',
     });
 
     res.status(201).json({ ok: true, comentario });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Carga un comentario del post de la URL. Que pertenezca a ese post se
+// comprueba en la propia consulta, no despues: asi el id de un comentario
+// de otra publicacion da 404 en vez de colarse por la puerta de al lado.
+const cargarComentario = async (req) => {
+  const comentario = await Comentario.findOne({ _id: req.params.comentarioId, post_id: req.params.id });
+  if (!comentario) {
+    throw new ErrorHttp(404, 'Comentario no encontrado');
+  }
+  return comentario;
+};
+
+// Editar el texto de un comentario propio. No guarda historial de
+// versiones, al contrario que un post: un comentario son dos lineas, lo
+// que se corrige casi siempre es una falta, y guardar cada version de cada
+// comentario de cada hilo es mucho peso para lo que da. Que esta editado
+// si se dice, porque debajo puede haber respuestas a lo que decia antes.
+export const editarComentario = async (req, res, next) => {
+  try {
+    const comentario = await cargarComentario(req);
+
+    if (!comentario.autor_id.equals(req.usuario._id)) {
+      throw new ErrorHttp(403, 'Solo el autor puede editar su comentario');
+    }
+    if (comentario.estado_moderacion !== 'publicado') {
+      throw new ErrorHttp(400, 'No puedes editar un comentario retirado');
+    }
+
+    const texto = typeof req.body.texto === 'string' ? req.body.texto.trim() : '';
+    if (!texto) {
+      throw new ErrorHttp(400, 'El texto del comentario es obligatorio');
+    }
+
+    comentario.texto = texto;
+    comentario.editado = true;
+    comentario.editado_en = new Date();
+    await comentario.save();
+
+    await comentario.populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
+
+    res.json({ ok: true, comentario });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Retirar un comentario. Dos caminos distintos segun quien pulse, a
+// proposito:
+//
+// - Su autor: borrado blando directo, con borrado_por_autor. No es una
+//   accion de moderacion, asi que no escribe en el registro de auditoria
+//   ni se manda un aviso a si mismo.
+// - Un moderador sobre lo de otro: eso si lo es, asi que pasa por
+//   moderarContenido, el camino de siempre, que deja constancia en el
+//   registro y avisa al autor con el motivo para que pueda apelar.
+//
+// En los dos casos el documento se queda: lo exige el hilo que cuelga de
+// el. Lo que desaparece es el texto, que ya no sale ni por la API.
+export const borrarComentario = async (req, res, next) => {
+  try {
+    const comentario = await cargarComentario(req);
+
+    const esAutor = comentario.autor_id.equals(req.usuario._id);
+    const esEquipo = req.usuario.rol === 'moderador' || req.usuario.rol === 'admin';
+
+    if (!esAutor && !esEquipo) {
+      throw new ErrorHttp(403, 'No puedes borrar este comentario');
+    }
+
+    // Repetir la operacion no es un error: con mala cobertura se pulsa dos
+    // veces, y un 400 ahi solo asusta. Contesta lo mismo que la primera.
+    if (comentario.estado_moderacion === 'eliminado') {
+      res.json({ ok: true, comentario: paraElCliente(comentario) });
+      return;
+    }
+
+    // Un moderador borrando SU PROPIO comentario es un autor, no un
+    // moderador: no tiene sentido abrirse un expediente a si mismo.
+    if (!esAutor) {
+      req.body = {
+        contenido_tipo: 'comentario',
+        contenido_id: String(comentario._id),
+        estado_moderacion: 'eliminado',
+        nota: req.body?.nota,
+      };
+      moderarContenido(req, res, next);
+      return;
+    }
+
+    comentario.borrado_por_autor = true;
+    comentario.estado_moderacion = 'eliminado';
+    // Los hooks del modelo descuentan Post.num_comentarios.
+    await comentario.save();
+
+    res.json({ ok: true, comentario: paraElCliente(comentario) });
   } catch (error) {
     next(error);
   }
