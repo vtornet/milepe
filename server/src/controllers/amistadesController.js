@@ -3,6 +3,7 @@ import Amistad from '../models/Amistad.js';
 import Bloqueo from '../models/Bloqueo.js';
 import Notificacion from '../models/Notificacion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
+import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 
 export const enviarSolicitud = async (req, res, next) => {
   try {
@@ -97,7 +98,7 @@ export const listarAmigos = async (req, res, next) => {
     const amistades = await Amistad.find({
       estado: 'aceptada',
       $or: [{ solicitante_id: req.usuario._id }, { receptor_id: req.usuario._id }],
-    }).populate('solicitante_id receptor_id', 'nombre_usuario nombre avatar_url');
+    }).populate('solicitante_id receptor_id', CAMPOS_PUBLICOS_USUARIO);
 
     const amigos = amistades.map((a) =>
       a.solicitante_id._id.equals(req.usuario._id) ? a.receptor_id : a.solicitante_id,
@@ -113,7 +114,7 @@ export const listarSolicitudesPendientes = async (req, res, next) => {
   try {
     const solicitudes = await Amistad.find({ receptor_id: req.usuario._id, estado: 'pendiente' }).populate(
       'solicitante_id',
-      'nombre_usuario nombre avatar_url',
+      CAMPOS_PUBLICOS_USUARIO,
     );
 
     res.json({ ok: true, solicitudes });

@@ -2,6 +2,7 @@ import Post from '../models/Post.js';
 import TurismoDetalle, { CATEGORIAS_TURISMO } from '../models/TurismoDetalle.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { aPuntoGeoJSON, deGeoJSONaLatLng } from '../utils/geo.js';
+import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 
 const formatearTurismo = (post, detalle) => ({
   _id: post._id,
@@ -39,7 +40,7 @@ export const crearTurismo = async (req, res, next) => {
       ubicacion: ubicacion ? aPuntoGeoJSON(ubicacion) : undefined,
     });
 
-    await post.populate('autor_id', 'nombre_usuario nombre avatar_url');
+    await post.populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
 
     res.status(201).json({ ok: true, turismo: formatearTurismo(post, detalle) });
   } catch (error) {
@@ -139,7 +140,7 @@ export const obtenerTurismo = async (req, res, next) => {
   try {
     const post = await Post.findOne({ _id: req.params.id, tipo: 'turismo' }).populate(
       'autor_id',
-      'nombre_usuario nombre avatar_url',
+      CAMPOS_PUBLICOS_USUARIO,
     );
 
     if (!post || post.estado_moderacion === 'eliminado') {

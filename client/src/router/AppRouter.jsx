@@ -5,6 +5,9 @@ import LoginPage from '../pages/Auth/LoginPage.jsx';
 import RegistroPage from '../pages/Auth/RegistroPage.jsx';
 import RecuperarPage from '../pages/Auth/RecuperarPage.jsx';
 import RestablecerPage from '../pages/Auth/RestablecerPage.jsx';
+import VerificarPage from '../pages/Auth/VerificarPage.jsx';
+import PerfilPage from '../pages/Perfil/PerfilPage.jsx';
+import CompletarPerfilPage from '../pages/Perfil/CompletarPerfilPage.jsx';
 import PrivacidadPage from '../pages/Legal/PrivacidadPage.jsx';
 import CondicionesPage from '../pages/Legal/CondicionesPage.jsx';
 import TurismoPage from '../pages/Turismo/TurismoPage.jsx';
@@ -32,6 +35,9 @@ function AppRouter() {
           del enlace del correo. */}
       <Route path="/recuperar" element={<RecuperarPage />} />
       <Route path="/restablecer" element={<RestablecerPage />} />
+      {/* Publica: el enlace del correo se abre a veces en otro dispositivo
+          donde no hay sesion iniciada. */}
+      <Route path="/verificar" element={<VerificarPage />} />
 
       {/* Publicas y sin sesion a proposito: Google exige poder abrirlas sin
           estar registrado para publicar la app, y quien se esta planteando
@@ -82,6 +88,22 @@ function AppRouter() {
         element={
           <RutaProtegida>
             <MiContenidoModeradoPage />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/perfil"
+        element={
+          <RutaProtegida>
+            <PerfilPage />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/completar-perfil"
+        element={
+          <RutaProtegida>
+            <CompletarPerfilPage />
           </RutaProtegida>
         }
       />

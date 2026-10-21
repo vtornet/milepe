@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import AppRouter from './router/AppRouter.jsx';
+import GuardiaPerfil from './router/GuardiaPerfil.jsx';
 import BarraSuperior from './components/BarraSuperior.jsx';
 import NavegacionLateral from './components/NavegacionLateral.jsx';
 import BarraInferior from './components/BarraInferior.jsx';
@@ -73,7 +74,12 @@ function Armazon() {
         <NavegacionLateral pendientesModeracion={pendientesModeracion} tengoSanciones={tengoSanciones} />
 
         <main className="contenido">
-          <AppRouter />
+          {/* Lleva al formulario de alta a quien tenga el perfil a medias.
+              Envuelve al router entero y no a cada ruta porque la decision
+              es la misma en todas: la lista de excepciones vive dentro. */}
+          <GuardiaPerfil>
+            <AppRouter />
+          </GuardiaPerfil>
         </main>
 
         <RailDerecho />

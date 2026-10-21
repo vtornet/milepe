@@ -1,6 +1,7 @@
 import Post from '../models/Post.js';
 import EmpleoDetalle, { MODALIDADES_EMPLEO, SECTORES_EMPLEO } from '../models/EmpleoDetalle.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
+import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 
 const formatearEmpleo = (post, detalle) => ({
   _id: post._id,
@@ -45,7 +46,7 @@ export const crearEmpleo = async (req, res, next) => {
 
     const detalle = await EmpleoDetalle.create({ post_id: post._id, modalidad, sector, zona, puesto, jornal });
 
-    await post.populate('autor_id', 'nombre_usuario nombre avatar_url');
+    await post.populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
 
     res.status(201).json({ ok: true, empleo: formatearEmpleo(post, detalle) });
   } catch (error) {
@@ -136,7 +137,7 @@ export const obtenerEmpleo = async (req, res, next) => {
     const post = await Post.findOne({
       _id: req.params.id,
       tipo: { $in: ['empleo_busco', 'empleo_ofrezco'] },
-    }).populate('autor_id', 'nombre_usuario nombre avatar_url');
+    }).populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
 
     if (!post || post.estado_moderacion === 'eliminado') {
       throw new ErrorHttp(404, 'Oferta no encontrada');

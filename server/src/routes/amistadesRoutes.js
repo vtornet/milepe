@@ -7,13 +7,14 @@ import {
   listarSolicitudesPendientes,
 } from '../controllers/amistadesController.js';
 import { protegido } from '../middlewares/auth.js';
+import { exigePerfilCompleto } from '../middlewares/perfil.js';
 
 const router = Router();
 
 router.get('/', protegido, listarAmigos);
 router.get('/solicitudes', protegido, listarSolicitudesPendientes);
-router.post('/:id', protegido, enviarSolicitud);
-router.patch('/:id/aceptar', protegido, aceptarSolicitud);
-router.delete('/:id', protegido, eliminarAmistad);
+router.post('/:id', protegido, exigePerfilCompleto, enviarSolicitud);
+router.patch('/:id/aceptar', protegido, exigePerfilCompleto, aceptarSolicitud);
+router.delete('/:id', protegido, exigePerfilCompleto, eliminarAmistad);
 
 export default router;

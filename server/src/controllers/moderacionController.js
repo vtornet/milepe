@@ -4,11 +4,9 @@ import Reporte, { ESTADOS_REPORTE } from '../models/Reporte.js';
 import Apelacion from '../models/Apelacion.js';
 import RegistroModeracion from '../models/RegistroModeracion.js';
 import Notificacion from '../models/Notificacion.js';
-import { TIPOS_CONTENIDO_MODERABLE, MOTIVOS_REPORTE } from '../models/constantes.js';
+import { TIPOS_CONTENIDO_MODERABLE, MOTIVOS_REPORTE, CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 import { cargarModerable } from '../utils/contenidoModerable.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
-
-const CAMPOS_PUBLICOS_USUARIO = 'nombre_usuario nombre avatar_url';
 
 // Que accion del registro corresponde a cada estado al que se mueve el
 // contenido. 'publicado' es "restaurar" porque a este estado solo se llega

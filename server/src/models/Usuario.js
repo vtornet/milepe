@@ -20,11 +20,27 @@ const usuarioSchema = new Schema(
       maxlength: 30,
       match: [/^[a-zA-Z0-9._-]+$/, 'El nombre de usuario solo puede contener letras, numeros, puntos, guiones y guiones bajos'],
     },
+    // Nombre y apellidos REALES. Nunca son publicos: no salen en ninguna
+    // proyeccion de las que se envian al cliente (ver CAMPOS_PUBLICOS_USUARIO
+    // en models/constantes.js), que solo llevan nombre_usuario y avatar_url.
+    // Se piden para que detras de cada cuenta haya una persona identificable
+    // ante una denuncia, no para enseñarlos en el muro.
+    //
+    // select: false para que no se escapen por descuido en un findById sin
+    // proyeccion: hay que pedirlos a proposito.
     nombre: {
       type: String,
       required: [true, 'El nombre es obligatorio'],
       trim: true,
       maxlength: 60,
+      select: false,
+    },
+    apellidos: {
+      type: String,
+      trim: true,
+      maxlength: 80,
+      default: '',
+      select: false,
     },
     email: {
       type: String,
@@ -75,6 +91,25 @@ const usuarioSchema = new Schema(
       default: 'usuario',
     },
     email_verificado: {
+      type: Boolean,
+      default: false,
+    },
+    // Token de verificacion del correo, guardado hasheado por el mismo
+    // motivo que el de recuperacion: el que viaja por correo es el original.
+    token_verificacion: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    token_verificacion_expira: {
+      type: Date,
+      default: null,
+      select: false,
+    },
+    // Hasta que no esta a true, la cuenta puede leer pero no publicar nada
+    // (ver middlewares/perfil.js). Se pone sola al guardar el perfil con
+    // todos los datos obligatorios; no es un campo que el cliente mande.
+    perfil_completo: {
       type: Boolean,
       default: false,
     },
@@ -137,7 +172,25 @@ usuarioSchema.methods.compararContraseña = function compararContraseña(candida
 // de quitarlo antes de responder. El token de recuperacion es el mas
 // peligroso de los cuatro: devolverlo en un JSON equivaldria a regalar el
 // enlace de restablecimiento de esa cuenta.
-const CAMPOS_NUNCA_SERIALIZADOS = ['contraseña', 'google_id', 'token_recuperacion', 'token_recuperacion_expira'];
+// El nombre y los apellidos reales entran en esta lista aunque ya tengan
+// select: false. No es redundante: select: false solo afecta a las
+// CONSULTAS, y un documento recien creado (registro, alta con Google) o
+// recien guardado los lleva en memoria, asi que se colarian en esa
+// respuesta. Filtrandolos aqui, la garantia de "esto no es publico" es
+// estructural y no depende de que cada controlador se acuerde.
+//
+// El perfil propio los vuelve a añadir a mano, que es el unico sitio donde
+// deben salir (ver usuariosController.miPerfil).
+const CAMPOS_NUNCA_SERIALIZADOS = [
+  'nombre',
+  'apellidos',
+  'contraseña',
+  'google_id',
+  'token_recuperacion',
+  'token_recuperacion_expira',
+  'token_verificacion',
+  'token_verificacion_expira',
+];
 
 usuarioSchema.methods.toJSON = function toJSON() {
   const objeto = this.toObject();
@@ -159,6 +212,27 @@ usuarioSchema.methods.generarTokenRecuperacion = function generarTokenRecuperaci
   this.token_recuperacion_expira = new Date(Date.now() + MINUTOS_VALIDEZ_RECUPERACION * 60 * 1000);
 
   return original;
+};
+
+// Mismo mecanismo que el de recuperacion, para el correo de verificacion.
+// Dura mas (un dia) porque no abre ninguna puerta: solo confirma que la
+// direccion existe, asi que no hay prisa en que caduque.
+usuarioSchema.methods.generarTokenVerificacion = function generarTokenVerificacion() {
+  const original = crypto.randomBytes(32).toString('hex');
+
+  this.token_verificacion = crypto.createHash('sha256').update(original).digest('hex');
+  this.token_verificacion_expira = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  return original;
+};
+
+usuarioSchema.statics.porTokenVerificacion = function porTokenVerificacion(tokenOriginal) {
+  const hash = crypto.createHash('sha256').update(tokenOriginal).digest('hex');
+
+  return this.findOne({
+    token_verificacion: hash,
+    token_verificacion_expira: { $gt: new Date() },
+  }).select('+token_verificacion +token_verificacion_expira');
 };
 
 // Busca al dueño de un token de recuperacion que siga vigente. Devuelve

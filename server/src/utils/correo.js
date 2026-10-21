@@ -139,3 +139,43 @@ export const correoSinContraseña = (nombre) => ({
     </div>
   `,
 });
+
+// Correo de verificacion al registrarse. Mientras no se pulse, la cuenta
+// puede leer pero no publicar nada: sin esto, cualquiera se registra con
+// la direccion de otro vecino y publica a su nombre.
+export const correoVerificacion = (nombre, enlace) => ({
+  asunto: 'Confirma tu correo en MiLepe',
+  texto: [
+    `Hola ${nombre}:`,
+    '',
+    'Gracias por darte de alta en MiLepe. Confirma que este correo es tuyo abriendo este enlace:',
+    '',
+    enlace,
+    '',
+    'Hasta que lo confirmes podras mirar MiLepe, pero no publicar ni comentar.',
+    '',
+    'El enlace vale 24 horas. Si no te has registrado tu, ignora este mensaje.',
+    '',
+    'MiLepe · la red de los vecinos de Lepe',
+  ].join('\n'),
+  html: `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;max-width:480px;margin:0 auto;color:#161b20">
+      <p>Hola <strong>${nombre}</strong>:</p>
+      <p>Gracias por darte de alta en MiLepe. Confirma que este correo es tuyo:</p>
+      <p style="margin:28px 0">
+        <a href="${enlace}" style="background:#0f6aa6;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">
+          Confirmar mi correo
+        </a>
+      </p>
+      <p style="color:#525a64;font-size:14px">
+        Hasta que lo confirmes podrás mirar MiLepe, pero no publicar ni comentar.<br>
+        El enlace vale 24 horas. Si no te has registrado tú, ignora este mensaje.
+      </p>
+      <p style="color:#6f7883;font-size:13px;word-break:break-all">
+        Si el botón no funciona, copia esta dirección en el navegador:<br>${enlace}
+      </p>
+      <hr style="border:none;border-top:1px solid #dbe1e7;margin:24px 0">
+      <p style="color:#6f7883;font-size:12px">MiLepe · la red de los vecinos de Lepe</p>
+    </div>
+  `,
+});

@@ -71,6 +71,32 @@ export function AuthProvider({ children }) {
     return data.usuario;
   }, []);
 
+  // Confirma el correo con el token del enlace. Publico: el enlace se abre
+  // desde el correo, quiza en otro movil sin sesion iniciada, asi que el
+  // servidor devuelve sesion y aqui se guarda.
+  const verificarCorreo = useCallback(async (token) => {
+    const { data } = await api.post('/auth/verificar', { token });
+    guardarSesion(data.token, data.usuario);
+    return data.usuario;
+  }, []);
+
+  // Actualiza el usuario de la sesion sin volver a pedir token: lo usa el
+  // perfil al guardar, para que el resto de la aplicacion (la barra, el
+  // guardia del alta) vea los cambios al instante en vez de esperar a un
+  // F5. Conserva los campos privados fuera de localStorage: ahi solo va lo
+  // que ya habia.
+  const refrescarUsuario = useCallback((actualizado) => {
+    // Se quitan el nombre y los apellidos reales antes de guardar: en
+    // localStorage solo debe quedar lo que ya iba antes. El perfil los
+    // tiene en su propio estado, pedidos a /usuarios/perfil.
+    const publico = { ...actualizado };
+    delete publico.nombre;
+    delete publico.apellidos;
+
+    localStorage.setItem(CLAVE_USUARIO, JSON.stringify(publico));
+    setUsuario(publico);
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem(CLAVE_TOKEN);
     localStorage.removeItem(CLAVE_USUARIO);
@@ -79,7 +105,17 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ usuario, cargando, login, registro, entrarConGoogle, restablecer, logout }}
+      value={{
+        usuario,
+        cargando,
+        login,
+        registro,
+        entrarConGoogle,
+        restablecer,
+        verificarCorreo,
+        refrescarUsuario,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

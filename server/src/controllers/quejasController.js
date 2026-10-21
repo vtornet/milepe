@@ -4,6 +4,7 @@ import QuejaDetalle, { CATEGORIAS_QUEJA, ESTADOS_QUEJA } from '../models/QuejaDe
 import Notificacion from '../models/Notificacion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { aPuntoGeoJSON, deGeoJSONaLatLng } from '../utils/geo.js';
+import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 
 // Post y QuejaDetalle se muestran siempre juntos de cara al cliente: esta
 // funcion los combina en una sola forma consistente, la use el create, el
@@ -50,7 +51,7 @@ export const crearQueja = async (req, res, next) => {
       direccion_aproximada,
     });
 
-    await post.populate('autor_id', 'nombre_usuario nombre avatar_url');
+    await post.populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
 
     res.status(201).json({ ok: true, queja: formatearQueja(post, detalle) });
   } catch (error) {
@@ -134,7 +135,7 @@ export const obtenerQueja = async (req, res, next) => {
   try {
     const post = await Post.findOne({ _id: req.params.id, tipo: 'queja' }).populate(
       'autor_id',
-      'nombre_usuario nombre avatar_url',
+      CAMPOS_PUBLICOS_USUARIO,
     );
 
     if (!post || post.estado_moderacion === 'eliminado') {

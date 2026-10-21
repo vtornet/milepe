@@ -5,6 +5,8 @@ import {
   entrarConGoogle,
   solicitarRecuperacion,
   restablecerContraseña,
+  verificarCorreo,
+  reenviarVerificacion,
   perfil,
 } from '../controllers/authController.js';
 import { protegido } from '../middlewares/auth.js';
@@ -20,6 +22,11 @@ router.post('/google', entrarConGoogle);
 // que autenticarse.
 router.post('/recuperar', solicitarRecuperacion);
 router.post('/restablecer', restablecerContraseña);
+
+// Verificacion del correo. /verificar es publica: el enlace se abre desde
+// el correo, quiza en otro dispositivo sin sesion iniciada.
+router.post('/verificar', verificarCorreo);
+router.post('/reenviar-verificacion', protegido, reenviarVerificacion);
 
 router.get('/perfil', protegido, perfil);
 

@@ -119,6 +119,11 @@ function BarraSuperior({ pendientesModeracion = 0 }) {
                         </div>
                       </div>
 
+                      <Link to="/perfil" className="menu-cuenta-opcion" onClick={() => setMenuAbierto(false)}>
+                        <Icono nombre="perfil" tam={17} />
+                        Mi perfil
+                      </Link>
+
                       <Link to="/mi-contenido" className="menu-cuenta-opcion" onClick={() => setMenuAbierto(false)}>
                         <Icono nombre="bandera" tam={17} />
                         Mi contenido moderado

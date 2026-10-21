@@ -31,7 +31,10 @@ const CLASE_TAMANO = { xs: 'avatar-xs', sm: 'avatar-sm', md: '', lg: 'avatar-lg'
 // lo que sale por defecto cuando nadie ha subido foto, o sea casi siempre
 // al principio- hace que un feed parezca vacío aunque esté lleno.
 function Avatar({ usuario, tamano = 'md', className = '' }) {
-  const nombre = usuario?.nombre || usuario?.nombre_usuario || '';
+  // nombre_usuario PRIMERO y no el nombre real: las iniciales se pintan en
+  // publicaciones y comentarios, asi que sacarlas del nombre real seria
+  // filtrar por la puerta de atras lo que la API se cuida de no enviar.
+  const nombre = usuario?.nombre_usuario || usuario?.nombre || '';
   const clases = ['avatar', CLASE_TAMANO[tamano], className].filter(Boolean).join(' ');
 
   if (usuario?.avatar_url) {

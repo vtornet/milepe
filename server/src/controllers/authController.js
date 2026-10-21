@@ -1,7 +1,7 @@
 import Usuario, { MINUTOS_VALIDEZ_RECUPERACION } from '../models/Usuario.js';
 import { firmarToken } from '../utils/jwt.js';
 import { verificarTokenGoogle, generarNombreUsuarioLibre } from '../utils/googleAuth.js';
-import { enviarCorreo, correoRecuperacion, correoSinContraseña } from '../utils/correo.js';
+import { enviarCorreo, correoRecuperacion, correoSinContraseña, correoVerificacion } from '../utils/correo.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 
 // Solo estos cuatro campos pueden llegar a Usuario.create: nunca
@@ -9,12 +9,17 @@ import ErrorHttp from '../utils/ErrorHttp.js';
 // registrarse mandando { rol: 'admin' } en el cuerpo de la peticion.
 export const registrar = async (req, res, next) => {
   try {
-    const { nombre_usuario, nombre, email, contraseña } = req.body;
+    const { nombre_usuario, nombre, apellidos, email, contraseña } = req.body;
 
-    const usuario = await Usuario.create({ nombre_usuario, nombre, email, contraseña });
-    const token = firmarToken(usuario._id);
+    const usuario = await Usuario.create({ nombre_usuario, nombre, apellidos, email, contraseña });
 
-    res.status(201).json({ ok: true, token, usuario });
+    // Se envia el correo de verificacion en el mismo paso. Si falla, la
+    // cuenta queda creada igual y el vecino puede pedir otro desde la
+    // aplicacion: perder el registro entero porque el proveedor de correo
+    // tuvo un mal minuto seria mucho peor.
+    await enviarVerificacion(usuario);
+
+    res.status(201).json({ ok: true, token: firmarToken(usuario._id), usuario });
   } catch (error) {
     next(error);
   }
@@ -43,6 +48,72 @@ export const iniciarSesion = async (req, res, next) => {
 
     const token = firmarToken(usuario._id);
     res.json({ ok: true, token, usuario });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// --- Verificacion del correo ---
+
+// Genera el token, lo guarda hasheado y manda el enlace. Se usa al
+// registrarse y cuando el vecino pide que se le reenvie.
+const enviarVerificacion = async (usuario) => {
+  const token = usuario.generarTokenVerificacion();
+  await usuario.save({ validateBeforeSave: false });
+
+  const baseCliente = (process.env.CLIENT_URL || 'http://localhost:5173').split(',')[0].trim();
+  const enlace = `${baseCliente}/verificar?token=${token}`;
+
+  try {
+    await enviarCorreo({ para: usuario.email, ...correoVerificacion(usuario.nombre || usuario.nombre_usuario, enlace) });
+  } catch (error) {
+    console.error('[correo] No se pudo enviar la verificacion:', error.message);
+  }
+};
+
+export const verificarCorreo = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      throw new ErrorHttp(400, 'Falta el token de verificacion');
+    }
+
+    const usuario = await Usuario.porTokenVerificacion(token);
+
+    if (!usuario) {
+      throw new ErrorHttp(400, 'El enlace no es valido o ha caducado. Pide uno nuevo desde tu perfil.');
+    }
+
+    usuario.email_verificado = true;
+    // De un solo uso, igual que el de recuperacion.
+    usuario.token_verificacion = null;
+    usuario.token_verificacion_expira = null;
+    await usuario.save({ validateBeforeSave: false });
+
+    // Se devuelve sesion: lo normal es que el enlace se abra en el movil,
+    // donde quiza no haya sesion iniciada, y mandarle a escribir la
+    // contraseña justo despues de confirmar el correo sobra.
+    res.json({ ok: true, token: firmarToken(usuario._id), usuario });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Reenviar. Exige sesion: solo puede pedirlo el dueño de la cuenta, asi
+// que no hace falta el limite por correo que si lleva la recuperacion
+// (alli el endpoint es publico y cualquiera puede escribir un correo ajeno).
+export const reenviarVerificacion = async (req, res, next) => {
+  try {
+    if (req.usuario.email_verificado) {
+      throw new ErrorHttp(400, 'Tu correo ya esta verificado');
+    }
+
+    const usuario = await Usuario.findById(req.usuario._id).select('+nombre');
+    await enviarVerificacion(usuario);
+
+    res.json({ ok: true, mensaje: 'Te hemos enviado un enlace nuevo. Revisa tu correo.' });
   } catch (error) {
     next(error);
   }

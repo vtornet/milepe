@@ -623,6 +623,39 @@ development — the whole recovery flow, link included, can be exercised
 without signing up for anything — and logs an error in production, where
 missing configuration means nobody is receiving their link.
 
+**El nombre real nunca es publico.** `Usuario.nombre` and `apellidos` hold
+the neighbour's real identity, asked for so there's a locatable person
+behind every account — not to display. Three layers keep them in:
+`select: false` on the schema, membership in `CAMPOS_NUNCA_SERIALIZADOS`
+(so a freshly created or saved document doesn't leak them in *its own*
+response — `select: false` only affects queries, which is exactly how the
+registration response was leaking them until the smoke test caught it),
+and `CAMPOS_PUBLICOS_USUARIO` in `models/constantes.js`, which is just
+`'nombre_usuario avatar_url'`. That constant exists because the projection
+used to be typed by hand in about twenty controllers: with one copy per
+controller, forgetting a single one leaks every neighbour's real name.
+`usuariosController.miPerfil` re-adds them by hand, and is the only place
+that should.
+
+**Email verification + profile gate.** `middlewares/perfil.js`
+(`exigePerfilCompleto`) guards every *writing* route — publish, comment,
+react, report, message, upload. Reading needs nothing: MiLepe is readable
+without an account at all, and demanding verification to look at the Muro
+would just scare neighbours off. Two conditions, same purpose:
+`email_verificado` (or anyone registers with someone else's address and
+posts in their name) and `perfil_completo`. The 403 carries a `razon`
+(`email_sin_verificar` / `perfil_incompleto`) through the central error
+handler, because the two cases lead to two different screens and inferring
+that from the message text would be fragile.
+
+**`nombre_usuario` is chosen once and never again.** It appears on every
+post and comment its owner ever wrote, so changing it would rewrite the
+authorship of their whole history in everyone else's eyes. Enforced in
+`actualizarMiPerfil`: editable only while `perfil_completo` is false, which
+is also what gives a Google signup the chance to replace the username that
+was invented from their email. `perfil_completo` is computed server-side
+from the required fields — it is never accepted from the client.
+
 `utils/ErrorHttp.js` is the plain `{status,
 message}` error class every controller throws for expected failures (404,
 403, 400 with a specific message); the central handler in `app.js` also

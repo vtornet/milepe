@@ -5,6 +5,7 @@ import Bloqueo from '../models/Bloqueo.js';
 import Notificacion from '../models/Notificacion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { crearReporte, moderarContenido } from './moderacionController.js';
+import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 
 // Un post 'eliminado' es borrado logico: para cualquiera que no sea su
 // autor o un moderador, se comporta como si no existiera.
@@ -35,7 +36,7 @@ export const listarMuro = async (req, res, next) => {
         .sort({ fecha_creacion: -1 })
         .skip((pagina - 1) * limite)
         .limit(limite)
-        .populate('autor_id', 'nombre_usuario nombre avatar_url'),
+        .populate('autor_id', CAMPOS_PUBLICOS_USUARIO),
       Post.countDocuments(filtro),
     ]);
 
@@ -51,7 +52,7 @@ export const listarMuro = async (req, res, next) => {
 
 export const obtenerPost = async (req, res, next) => {
   try {
-    const post = await Post.findById(req.params.id).populate('autor_id', 'nombre_usuario nombre avatar_url');
+    const post = await Post.findById(req.params.id).populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
 
     if (noEsVisible(post)) {
       throw new ErrorHttp(404, 'Publicacion no encontrada');
@@ -129,7 +130,7 @@ export const listarComentarios = async (req, res, next) => {
 
     const comentarios = await Comentario.find({ post_id: post._id, estado_moderacion: 'publicado' })
       .sort({ fecha_creacion: 1 })
-      .populate('autor_id', 'nombre_usuario nombre avatar_url');
+      .populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
 
     res.json({ ok: true, comentarios });
   } catch (error) {
@@ -157,7 +158,7 @@ export const crearComentario = async (req, res, next) => {
       valoracion,
     });
 
-    await comentario.populate('autor_id', 'nombre_usuario nombre avatar_url');
+    await comentario.populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
 
     await notificarSiNoEsUnoMismo({
       destinatarioId: post.autor_id,

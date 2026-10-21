@@ -7,6 +7,7 @@ import {
   marcarLeida,
 } from '../controllers/conversacionesController.js';
 import { protegido } from '../middlewares/auth.js';
+import { exigePerfilCompleto } from '../middlewares/perfil.js';
 
 const router = Router();
 
@@ -20,9 +21,9 @@ const router = Router();
 // que esta precisamente para que la diferencia se vea en la URL en vez de
 // tener dos clases de id indistinguibles en la misma posicion.
 router.get('/', protegido, listarConversaciones);
-router.post('/con/:id', protegido, abrirConversacion);
+router.post('/con/:id', protegido, exigePerfilCompleto, abrirConversacion);
 router.get('/:id/mensajes', protegido, listarMensajes);
-router.post('/:id/mensajes', protegido, enviarMensaje);
+router.post('/:id/mensajes', protegido, exigePerfilCompleto, enviarMensaje);
 router.patch('/:id/leida', protegido, marcarLeida);
 
 export default router;

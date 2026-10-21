@@ -26,3 +26,15 @@ export const MOTIVOS_REPORTE = [
   'discurso_odio',
   'otro',
 ];
+
+// Lo UNICO que se envia al cliente de un usuario ajeno. El nombre y los
+// apellidos reales NO estan aqui a proposito: se piden al registrarse para
+// que detras de cada cuenta haya una persona identificable, pero son
+// privados y no deben salir en una publicacion, un comentario, un mensaje
+// ni la cola de moderacion.
+//
+// Vive aqui, en una constante compartida, precisamente porque antes esta
+// lista estaba escrita a mano en una veintena de sitios: con una copia por
+// controlador, basta olvidarse de una para filtrar el nombre real de todos
+// los vecinos.
+export const CAMPOS_PUBLICOS_USUARIO = 'nombre_usuario avatar_url';

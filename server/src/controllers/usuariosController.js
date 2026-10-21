@@ -1,6 +1,7 @@
 import Usuario from '../models/Usuario.js';
 import Bloqueo from '../models/Bloqueo.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
+import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 
 export const bloquearUsuario = async (req, res, next) => {
   try {
@@ -47,7 +48,7 @@ export const listarBloqueados = async (req, res, next) => {
   try {
     const bloqueos = await Bloqueo.find({ bloqueador_id: req.usuario._id }).populate(
       'bloqueado_id',
-      'nombre_usuario nombre avatar_url',
+      CAMPOS_PUBLICOS_USUARIO,
     );
 
     res.json({ ok: true, bloqueados: bloqueos.map((b) => b.bloqueado_id) });
@@ -94,10 +95,85 @@ export const buscarUsuarios = async (req, res, next) => {
       activo: true,
       $or: [{ nombre_usuario: patron }, { nombre: patron }],
     })
-      .select('nombre_usuario nombre avatar_url')
+      .select(CAMPOS_PUBLICOS_USUARIO)
       .limit(10);
 
     res.json({ ok: true, usuarios });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- Perfil propio ---
+
+// Los campos privados (nombre y apellidos reales) tienen select: false en
+// el modelo, asi que hay que pedirlos explicitamente. Solo se devuelven
+// aqui, en el perfil de uno mismo: en cualquier otra respuesta el usuario
+// viaja con CAMPOS_PUBLICOS_USUARIO, que no los incluye.
+export const miPerfil = async (req, res, next) => {
+  try {
+    const usuario = await Usuario.findById(req.usuario._id).select('+nombre +apellidos');
+    res.json({ ok: true, usuario: { ...usuario.toJSON(), nombre: usuario.nombre, apellidos: usuario.apellidos } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Actualiza el perfil propio.
+//
+// nombre_usuario se puede elegir UNA vez y nunca mas. Dos motivos: sale en
+// cada publicacion y cada comentario que uno escribe, asi que cambiarlo
+// reescribiria la autoria de todo su historial a ojos de los demas; y es
+// como el resto de vecinos te reconocen. Quien se registro con Google
+// nunca lo eligio (se le invento uno a partir del correo), asi que este es
+// su momento de ponerle el que quiera.
+//
+// Al guardar con todos los datos obligatorios, perfil_completo pasa a true
+// y se abre la puerta a publicar. Es el servidor quien lo decide: no se
+// acepta ese campo del cliente.
+export const actualizarMiPerfil = async (req, res, next) => {
+  try {
+    const { nombre_usuario, nombre, apellidos, avatar_url } = req.body;
+
+    const usuario = await Usuario.findById(req.usuario._id).select('+nombre +apellidos');
+
+    if (nombre_usuario !== undefined && nombre_usuario !== usuario.nombre_usuario) {
+      if (usuario.perfil_completo) {
+        throw new ErrorHttp(400, 'El nombre de usuario no se puede cambiar una vez elegido');
+      }
+      usuario.nombre_usuario = nombre_usuario;
+    }
+
+    if (nombre !== undefined) usuario.nombre = nombre;
+    if (apellidos !== undefined) usuario.apellidos = apellidos;
+    if (avatar_url !== undefined) usuario.avatar_url = avatar_url;
+
+    // Lo que hace falta para poder publicar. La foto entra en la lista
+    // porque una cara (o algo) junto a un nombre hace la conversacion mas
+    // civilizada que una fila de iniciales anonimas.
+    const completo = Boolean(
+      usuario.nombre_usuario &&
+        usuario.nombre &&
+        usuario.nombre.trim() &&
+        usuario.apellidos &&
+        usuario.apellidos.trim() &&
+        usuario.avatar_url,
+    );
+    usuario.perfil_completo = completo;
+
+    try {
+      await usuario.save();
+    } catch (error) {
+      if (error.code === 11000) {
+        throw new ErrorHttp(409, 'Ese nombre de usuario ya esta cogido');
+      }
+      throw error;
+    }
+
+    res.json({
+      ok: true,
+      usuario: { ...usuario.toJSON(), nombre: usuario.nombre, apellidos: usuario.apellidos },
+    });
   } catch (error) {
     next(error);
   }

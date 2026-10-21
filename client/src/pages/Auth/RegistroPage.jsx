@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import BotonGoogle from '../../components/BotonGoogle.jsx';
 
-const DATOS_INICIALES = { nombre_usuario: '', nombre: '', email: '', contraseña: '' };
+const DATOS_INICIALES = { nombre_usuario: '', nombre: '', apellidos: '', email: '', contraseña: '' };
 
 // El servidor solo acepta letras, numeros, puntos, guiones y guiones bajos
 // en nombre_usuario (sin espacios). En vez de dejar que la gente escriba
@@ -93,10 +93,26 @@ function RegistroPage() {
           value={datos.nombre_usuario}
           onChange={manejarCambio}
         />
-        <small>Sin espacios ni acentos: se convierten solos mientras escribes.</small>
+        <small>
+          Sin espacios ni acentos: se convierten solos mientras escribes. <strong>No podrás cambiarlo después</strong>.
+        </small>
 
-        <label htmlFor="nombre">Nombre</label>
-        <input id="nombre" name="nombre" required value={datos.nombre} onChange={manejarCambio} />
+        <label htmlFor="nombre">Nombre real</label>
+        <input id="nombre" name="nombre" required value={datos.nombre} onChange={manejarCambio} autoComplete="given-name" />
+
+        <label htmlFor="apellidos">Apellidos reales</label>
+        <input
+          id="apellidos"
+          name="apellidos"
+          required
+          value={datos.apellidos}
+          onChange={manejarCambio}
+          autoComplete="family-name"
+        />
+        <small>
+          Tu nombre y tus apellidos <strong>no son públicos</strong>: los demás vecinos solo ven tu nombre de
+          usuario y tu foto.
+        </small>
 
         <label htmlFor="email">Email</label>
         <input id="email" name="email" type="email" required value={datos.email} onChange={manejarCambio} />

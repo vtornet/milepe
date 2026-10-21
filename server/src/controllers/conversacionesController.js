@@ -4,8 +4,7 @@ import Mensaje from '../models/Mensaje.js';
 import Bloqueo from '../models/Bloqueo.js';
 import Notificacion from '../models/Notificacion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
-
-const CAMPOS_PUBLICOS_USUARIO = 'nombre_usuario nombre avatar_url';
+import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 
 const MENSAJES_POR_PAGINA = 50;
 

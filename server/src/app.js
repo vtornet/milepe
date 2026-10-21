@@ -85,11 +85,16 @@ if (process.env.NODE_ENV !== 'production') {
 app.use((error, req, res, next) => {
   console.error(error);
 
+  // Algunos errores traen un motivo legible por el cliente ademas del
+  // mensaje (ver middlewares/perfil.js): dos 403 distintos llevan a dos
+  // pantallas distintas, y adivinarlo del texto del mensaje seria fragil.
+  const extra = error.razon ? { razon: error.razon } : {};
+
   if (error.name === 'ValidationError') {
     const mensaje = Object.values(error.errors)
       .map((e) => e.message)
       .join(', ');
-    return res.status(400).json({ ok: false, mensaje });
+    return res.status(400).json({ ok: false, mensaje, ...extra });
   }
 
   if (error.code === 11000) {
@@ -116,6 +121,7 @@ app.use((error, req, res, next) => {
   res.status(status).json({
     ok: false,
     mensaje: error.message || 'Error interno del servidor',
+    ...extra,
   });
 });
 

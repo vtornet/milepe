@@ -1,6 +1,7 @@
 import Post from '../models/Post.js';
 import FotoDetalle, { EPOCAS_FOTO } from '../models/FotoDetalle.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
+import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 
 // Post y FotoDetalle combinados en una sola forma, igual que
 // quejasController.formatearQueja.
@@ -41,7 +42,7 @@ export const crearFoto = async (req, res, next) => {
 
     const detalle = await FotoDetalle.create({ post_id: post._id, epoca, decada });
 
-    await post.populate('autor_id', 'nombre_usuario nombre avatar_url');
+    await post.populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
 
     res.status(201).json({ ok: true, foto: formatearFoto(post, detalle) });
   } catch (error) {
@@ -117,7 +118,7 @@ export const obtenerFoto = async (req, res, next) => {
   try {
     const post = await Post.findOne({ _id: req.params.id, tipo: 'foto' }).populate(
       'autor_id',
-      'nombre_usuario nombre avatar_url',
+      CAMPOS_PUBLICOS_USUARIO,
     );
 
     if (!post || post.estado_moderacion === 'eliminado') {

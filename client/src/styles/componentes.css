@@ -1658,3 +1658,39 @@ button:not([class]):disabled {
   text-align: center;
   line-height: 1.6;
 }
+
+/* --- Perfil --- */
+
+.perfil-publico {
+  display: flex;
+  align-items: center;
+  gap: var(--e-4);
+  flex-wrap: wrap;
+}
+
+.selector-avatar {
+  display: flex;
+  align-items: center;
+  gap: var(--e-4);
+  margin-bottom: var(--e-2);
+  flex-wrap: wrap;
+}
+
+.selector-avatar-foto {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--r-full);
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--borde);
+}
+
+/* Un campo bloqueado tiene que parecerlo: si se ve igual que el de al lado,
+   la gente escribe en él y no entiende por qué no pasa nada. */
+input:disabled,
+textarea:disabled,
+select:disabled {
+  background: var(--superficie-activa);
+  color: var(--texto-tenue);
+  cursor: not-allowed;
+}
