@@ -2091,3 +2091,115 @@ select:disabled {
   padding-top: var(--e-3);
   border-top: 1px solid var(--borde);
 }
+
+/* ---------------- Estadisticas (panel de admin) ---------------- */
+
+.estad-bloque h2 {
+  font-size: var(--t-lg);
+  margin-bottom: var(--e-3);
+}
+
+.estad-bloque h3 {
+  font-size: var(--t-sm);
+  color: var(--texto-suave);
+  margin: var(--e-4) 0 var(--e-2);
+}
+
+.estad-cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--e-3);
+  margin-bottom: var(--e-3);
+}
+
+.estad-cifra {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--e-3);
+  background: var(--superficie-2);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-sm);
+}
+
+.estad-cifra strong {
+  font-size: var(--t-xl, 1.5rem);
+  line-height: 1.1;
+  color: var(--texto);
+}
+
+.estad-cifra span {
+  font-size: var(--t-sm);
+  color: var(--texto-suave);
+}
+
+.estad-cifra small {
+  font-size: var(--t-xs, 0.75rem);
+  color: var(--texto-tenue);
+}
+
+.estad-barras {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--e-2);
+}
+
+.estad-barras li {
+  display: grid;
+  grid-template-columns: minmax(90px, 160px) 1fr auto;
+  align-items: center;
+  gap: var(--e-3);
+  font-size: var(--t-sm);
+}
+
+.estad-barra-pista {
+  height: 10px;
+  background: var(--superficie-activa);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.estad-barra-pista span {
+  display: block;
+  height: 100%;
+  background: var(--marca);
+  border-radius: 999px;
+}
+
+.estad-barra-valor {
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-suave);
+}
+
+.estad-serie {
+  margin: var(--e-3) 0 0;
+}
+
+.estad-serie figcaption {
+  font-size: var(--t-sm);
+  color: var(--texto-suave);
+  margin-bottom: var(--e-1);
+}
+
+.estad-serie svg {
+  width: 100%;
+  height: 70px;
+  display: block;
+}
+
+.estad-serie rect {
+  fill: var(--marca);
+}
+
+.estad-lista {
+  margin: 0;
+  padding-left: var(--e-5);
+  display: grid;
+  gap: var(--e-1);
+}
+
+.estad-lista small {
+  color: var(--texto-tenue);
+}

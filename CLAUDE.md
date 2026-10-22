@@ -908,6 +908,20 @@ has comments).
   re-checks it. `TurismoFormulario` uploads images through
   `/subidas/imagenes` before saving.
 
+### Admin statistics
+
+`GET /api/estadisticas` (`estadisticasController.js`, **admin only**, not
+moderators: it is network-wide data, not the moderation queue) returns
+counts and aggregates for users, content, comments/reactions, follows and
+messages, moderation, quejas and the other sections, plus 30-day daily
+series (days with no activity are filled with 0, or a chart would lie).
+"Participantes" are users who posted, commented or reacted in the window.
+Private messages contribute **volumes only** — never content. The client
+side is the "Estadísticas" tab of `ModeracionPage` (`EstadisticasPanel.jsx`,
+admin only, charts are hand-drawn SVG/CSS, no chart library: same reasoning
+as `Icono.jsx`). Everything is computed live on each request (fine at this
+scale; add a short cache if the collections ever get big).
+
 ### El Tiempo
 
 `GET /api/tiempo` (`tiempoController.js`) is the only endpoint in the app

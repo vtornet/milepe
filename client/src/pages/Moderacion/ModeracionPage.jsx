@@ -5,12 +5,15 @@ import FilaReporte from './FilaReporte.jsx';
 import FilaApelacion from './FilaApelacion.jsx';
 import FilaEdicion from './FilaEdicion.jsx';
 import RegistroModeracion from './RegistroModeracion.jsx';
+import EstadisticasPanel from './EstadisticasPanel.jsx';
 
 const PESTANAS = [
   { clave: 'reportes', etiqueta: 'Reportes' },
   { clave: 'apelaciones', etiqueta: 'Apelaciones' },
   { clave: 'ediciones', etiqueta: 'Ediciones' },
   { clave: 'registro', etiqueta: 'Registro' },
+  // Solo admin: son datos de toda la red, no de la cola de moderación.
+  { clave: 'estadisticas', etiqueta: 'Estadísticas', soloAdmin: true },
 ];
 
 // Panel del equipo de moderación: la cola de reportes, la de apelaciones y
@@ -107,7 +110,7 @@ function ModeracionPage() {
       )}
 
       <div className="lista-filtros">
-        {PESTANAS.map((p) => (
+        {PESTANAS.filter((p) => esAdmin || !p.soloAdmin).map((p) => (
           <button
             key={p.clave}
             type="button"
@@ -118,7 +121,7 @@ function ModeracionPage() {
           </button>
         ))}
 
-        {pestana !== 'registro' && pestana !== 'ediciones' && (
+        {pestana !== 'registro' && pestana !== 'ediciones' && pestana !== 'estadisticas' && (
           <label className="filtro-casilla">
             <input
               type="checkbox"
@@ -173,6 +176,8 @@ function ModeracionPage() {
       )}
 
       {pestana === 'registro' && <RegistroModeracion />}
+
+      {pestana === 'estadisticas' && esAdmin && <EstadisticasPanel />}
     </section>
   );
 }
