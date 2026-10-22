@@ -901,6 +901,19 @@ has comments).
   mí" any more: it belonged to the feed version.
 - `fuente` is the turismo.lepe.es page a record was written from; `web`
   is the resource's own site. The texts are summaries, not copies.
+- **Photos come from Wikimedia Commons** (CC BY / CC BY-SA / public domain),
+  picked by hand in `scripts/datos/fotos-turismo.json` and loaded by
+  `scripts/importar-fotos-turismo.mjs` (downloaded at ≤2000 px and uploaded
+  to our Cloudinary, `milepe/turismo`; never hot-linked). Those licences
+  **require crediting the author**, so each image has an entry in
+  `creditos` (`imagen`, `autor`, `licencia`, `url` of the Commons page) and
+  `RecursoTarjeta` prints it under the photo — don't drop it, and when a
+  record's image is removed in the form its credit goes with it. Images an
+  admin uploads need no credit. The municipal site's photos are *not* used:
+  they aren't ours. `/secciones` also returns each section's `portada`
+  (first image of its first record with one) for the cards.
+  `utils/imagenes.js` (`redimensionada`) asks Cloudinary for the width
+  actually painted instead of the 2000 px original.
 - Client: `TurismoPage` is a grid of seven cards linking to
   `/turismo/:seccion` (`TurismoSeccionPage`), which lists
   `RecursoTarjeta`s. Only `usuario.rol === 'admin'` sees create / edit /

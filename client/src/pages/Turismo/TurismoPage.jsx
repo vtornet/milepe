@@ -4,11 +4,12 @@ import api from '../../services/api.js';
 import CabeceraSeccion from '../../components/CabeceraSeccion.jsx';
 import Icono from '../../components/Icono.jsx';
 import { SECCIONES_TURISMO } from './seccionesTurismo.js';
+import { redimensionada } from '../../utils/imagenes.js';
 
 // Turismo es informacion, no un feed: una tarjeta por seccion y cada una
 // lleva a su pagina. El contenido lo mantienen los administradores.
 function TurismoPage() {
-  const [totales, setTotales] = useState({});
+  const [datos, setDatos] = useState({});
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -17,7 +18,7 @@ function TurismoPage() {
     api
       .get('/turismo/secciones')
       .then(({ data }) => {
-        if (!cancelado) setTotales(Object.fromEntries(data.secciones.map((s) => [s.seccion, s.total])));
+        if (!cancelado) setDatos(Object.fromEntries(data.secciones.map((s) => [s.seccion, s])));
       })
       .catch(() => {
         // Sin los totales las tarjetas siguen sirviendo: solo falta el numero.
@@ -42,10 +43,20 @@ function TurismoPage() {
 
       <div className="tarjetas-turismo">
         {SECCIONES_TURISMO.map((seccion) => {
-          const total = totales[seccion.valor];
+          const total = datos[seccion.valor]?.total;
+          const portada = datos[seccion.valor]?.portada;
 
           return (
-            <Link key={seccion.valor} to={`/turismo/${seccion.valor}`} className="tarjeta tarjeta-pulsable tarjeta-seccion-turismo">
+            <Link
+              key={seccion.valor}
+              to={`/turismo/${seccion.valor}`}
+              className="tarjeta tarjeta-pulsable tarjeta-seccion-turismo con-portada"
+            >
+              {/* Sin foto, la franja queda en el color de la marca: asi las siete
+                  tarjetas tienen la misma estructura y no desentonan las vacias. */}
+              <span className={`tarjeta-seccion-turismo-foto${portada ? '' : ' sin-foto'}`}>
+                {portada && <img src={redimensionada(portada, 600)} alt="" loading="lazy" />}
+              </span>
               <span className="tarjeta-seccion-turismo-icono" aria-hidden="true">
                 <Icono nombre={seccion.icono} tam={26} />
               </span>

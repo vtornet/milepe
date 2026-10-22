@@ -19,6 +19,9 @@ function TurismoFormulario({ seccion, recurso, onGuardado, onCancelar }) {
   const editando = Boolean(recurso);
   const [datos, setDatos] = useState(datosDe(recurso, seccion));
   const [imagenes, setImagenes] = useState(recurso?.imagenes || []);
+  // Creditos de las imagenes que ya tenia (Wikimedia): se conservan mientras
+  // la imagen siga, y se descartan con ella.
+  const [creditos] = useState(recurso?.creditos || []);
   const [archivos, setArchivos] = useState([]);
   const [ubicacion, setUbicacion] = useState(recurso?.ubicacion || null);
   const [marcarUbicacion, setMarcarUbicacion] = useState(Boolean(recurso?.ubicacion));
@@ -54,6 +57,7 @@ function TurismoFormulario({ seccion, recurso, onGuardado, onCancelar }) {
         telefono: datos.telefono.trim() || null,
         web: datos.web.trim() || null,
         imagenes: todasLasImagenes,
+        creditos: creditos.filter((c) => todasLasImagenes.includes(c.imagen)),
         ubicacion: marcarUbicacion && ubicacion ? ubicacion : null,
       };
 

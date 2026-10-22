@@ -48,6 +48,23 @@ const recursoTuristicoSchema = new Schema(
         message: 'Un recurso admite como maximo 10 imagenes',
       },
     },
+    // Credito de cada imagen cuya licencia exige citar al autor (las de
+    // Wikimedia Commons). `imagen` es la URL a la que se refiere; las que
+    // sube un admin por su cuenta no necesitan credito.
+    creditos: {
+      type: [
+        new Schema(
+          {
+            imagen: { type: String, required: true, trim: true },
+            autor: { type: String, trim: true, maxlength: 200, default: null },
+            licencia: { type: String, trim: true, maxlength: 60, default: null },
+            url: { type: String, trim: true, maxlength: 500, default: null },
+          },
+          { _id: false },
+        ),
+      ],
+      default: [],
+    },
     // Opcional: no todo recurso tiene un punto (una ruta sin trazado
     // fijado, un servicio sin sede). Los que no lo tienen no entran en las
     // consultas geoespaciales.

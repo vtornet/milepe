@@ -10,6 +10,7 @@ const CAMPOS_EDITABLES = [
   'titulo',
   'descripcion',
   'imagenes',
+  'creditos',
   'direccion',
   'telefono',
   'web',
@@ -43,15 +44,29 @@ const validarSeccion = (seccion) => {
 // vez de faltar, para que el cliente no tenga que rellenar huecos.
 export const resumenSecciones = async (req, res, next) => {
   try {
-    const cuentas = await RecursoTuristico.aggregate([
-      { $match: { activo: true } },
-      { $group: { _id: '$seccion', total: { $sum: 1 } } },
+    const [cuentas, portadas] = await Promise.all([
+      RecursoTuristico.aggregate([
+        { $match: { activo: true } },
+        { $group: { _id: '$seccion', total: { $sum: 1 } } },
+      ]),
+      // Portada de cada seccion: la primera imagen del primer recurso (en el
+      // orden del admin) que tenga alguna.
+      RecursoTuristico.aggregate([
+        { $match: { activo: true, 'imagenes.0': { $exists: true } } },
+        { $sort: { orden: 1 } },
+        { $group: { _id: '$seccion', portada: { $first: { $arrayElemAt: ['$imagenes', 0] } } } },
+      ]),
     ]);
     const porSeccion = Object.fromEntries(cuentas.map((c) => [c._id, c.total]));
+    const portadaDe = Object.fromEntries(portadas.map((p) => [p._id, p.portada]));
 
     res.json({
       ok: true,
-      secciones: SECCIONES_TURISMO.map((seccion) => ({ seccion, total: porSeccion[seccion] || 0 })),
+      secciones: SECCIONES_TURISMO.map((seccion) => ({
+        seccion,
+        total: porSeccion[seccion] || 0,
+        portada: portadaDe[seccion] || null,
+      })),
     });
   } catch (error) {
     next(error);

@@ -1,6 +1,18 @@
 import { useState } from 'react';
 import api from '../../services/api.js';
 import Icono from '../../components/Icono.jsx';
+import { redimensionada } from '../../utils/imagenes.js';
+
+// Dos fotos del mismo autor y licencia se citan una sola vez.
+const creditosUnicos = (creditos = []) => {
+  const vistos = new Set();
+  return creditos.filter((c) => {
+    const clave = `${c.autor}|${c.licencia}`;
+    if (vistos.has(clave)) return false;
+    vistos.add(clave);
+    return true;
+  });
+};
 
 const enlaceTelefono = (telefono) => `tel:${telefono.replace(/[^\d+]/g, '')}`;
 
@@ -43,10 +55,32 @@ function RecursoTarjeta({ recurso, onEditar, onCambiado, onEliminado }) {
   return (
     <article className={`tarjeta recurso-turismo${recurso.activo ? '' : ' recurso-oculto'}`}>
       {recurso.imagenes?.length > 0 && (
-        <div className="recurso-imagenes">
-          {recurso.imagenes.map((url) => (
-            <img key={url} src={url} alt="" loading="lazy" />
-          ))}
+        <div className="recurso-galeria">
+          <img className="recurso-portada" src={redimensionada(recurso.imagenes[0], 900)} alt={recurso.titulo} loading="lazy" />
+          {recurso.imagenes.length > 1 && (
+            <div className="recurso-miniaturas">
+              {recurso.imagenes.slice(1).map((url) => (
+                <img key={url} src={redimensionada(url, 400)} alt="" loading="lazy" />
+              ))}
+            </div>
+          )}
+          {recurso.creditos?.length > 0 && (
+            <p className="recurso-creditos">
+              {creditosUnicos(recurso.creditos).map((c, i) => (
+                <span key={c.imagen}>
+                  {i > 0 && ' · '}
+                  {c.url ? (
+                    <a href={c.url} target="_blank" rel="noreferrer">
+                      Foto: {c.autor || 'autor desconocido'}
+                    </a>
+                  ) : (
+                    <>Foto: {c.autor || 'autor desconocido'}</>
+                  )}
+                  {c.licencia && ` (${c.licencia})`}
+                </span>
+              ))}
+            </p>
+          )}
         </div>
       )}
 

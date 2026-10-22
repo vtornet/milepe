@@ -2276,3 +2276,75 @@ select:disabled {
 .estad-lista small {
   color: var(--texto-tenue);
 }
+
+/* ---------------- Turismo: fotos ---------------- */
+
+.recurso-galeria {
+  margin: calc(var(--e-4) * -1) calc(var(--e-4) * -1) var(--e-4);
+}
+
+.recurso-portada {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 340px;
+  object-fit: cover;
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  background: var(--superficie-activa);
+}
+
+.recurso-miniaturas {
+  display: flex;
+  gap: var(--e-1);
+  padding: var(--e-1) var(--e-1) 0;
+  overflow-x: auto;
+}
+
+.recurso-miniaturas img {
+  height: 76px;
+  width: auto;
+  border-radius: var(--r-sm);
+  object-fit: cover;
+  flex: none;
+}
+
+.recurso-creditos {
+  margin: var(--e-2) var(--e-4) 0;
+  font-size: var(--t-xs);
+  color: var(--texto-tenue);
+}
+
+.recurso-creditos a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* Tarjeta de seccion con foto de portada: la foto ocupa la parte de
+   arriba y la pastilla del icono se monta sobre su borde inferior. */
+.tarjeta-seccion-turismo.con-portada {
+  padding-top: 0;
+  overflow: hidden;
+}
+
+.tarjeta-seccion-turismo-foto {
+  display: block;
+  width: calc(100% + var(--e-5) * 2);
+  margin: 0 calc(var(--e-5) * -1);
+  height: 120px;
+  background: var(--superficie-activa);
+}
+
+.tarjeta-seccion-turismo-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tarjeta-seccion-turismo-foto.sin-foto {
+  background: linear-gradient(135deg, var(--marca-tenue), var(--superficie-activa));
+}
+
+.tarjeta-seccion-turismo.con-portada .tarjeta-seccion-turismo-icono {
+  margin-top: -34px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-2);
+}
