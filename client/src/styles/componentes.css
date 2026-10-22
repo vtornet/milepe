@@ -966,6 +966,41 @@ a.insignia:hover {
   cursor: pointer;
 }
 
+/* ---------------- Accesos rápidos (Contactos) ---------------- */
+
+.accesos-rapidos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  margin-bottom: var(--e-6);
+}
+
+.acceso-rapido {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  padding: var(--e-2) var(--e-3);
+  min-height: 36px;
+  background: var(--superficie);
+  color: var(--texto);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: 999px;
+  font-size: var(--t-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.acceso-rapido:hover {
+  background: var(--marca-tenue);
+  border-color: var(--marca-borde);
+  color: var(--marca-fuerte);
+}
+
+/* Que el título del grupo no quede tapado por la barra superior fija. */
+.grupo-contactos {
+  scroll-margin-top: calc(var(--alto-barra) + var(--e-4));
+}
+
 /* ---------------- Formularios en tarjeta ---------------- */
 
 .tarjeta-formulario {

@@ -92,7 +92,7 @@ export const listarFotos = async (req, res, next) => {
                 reacciones: '$reacciones_resumen',
                 epoca: '$detalle.epoca',
                 decada: '$detalle.decada',
-                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', nombre: '$autor.nombre', avatar_url: '$autor.avatar_url' },
+                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', avatar_url: '$autor.avatar_url' },
               },
             },
           ],

@@ -13,6 +13,14 @@ export const CATEGORIAS_CONTACTO = [
   'guardia_civil',
   'bomberos',
   'centro_salud',
+  'emergencias',
+  'administracion',
+  'educacion',
+  'cultura_deporte',
+  'transporte',
+  'religioso',
+  'asociaciones',
+  'alojamiento',
   'otro',
 ];
 
@@ -50,6 +58,14 @@ const contactoInteresSchema = new Schema(
       maxlength: 20,
       default: null,
     },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      maxlength: 100,
+      match: [/^\S+@\S+\.\S+$/, 'El correo no tiene un formato valido'],
+      default: null,
+    },
     // Opcional: algunos servicios de interes no publican una direccion
     // concreta (p. ej. una linea de emergencias).
     direccion: {
@@ -61,6 +77,14 @@ const contactoInteresSchema = new Schema(
     // Texto libre, igual que NegocioDetalle.horario ("Atencion 24 horas",
     // "L-V 9:00-14:00"...).
     horario: {
+      type: String,
+      trim: true,
+      maxlength: 300,
+      default: null,
+    },
+    // Aclaracion corta de para que sirve ("cita previa para ..."), cuando el
+    // nombre solo no lo dice.
+    notas: {
       type: String,
       trim: true,
       maxlength: 300,

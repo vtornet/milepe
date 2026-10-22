@@ -9,6 +9,8 @@ const CAMPOS_EDITABLES = [
   'telefono',
   'telefono_alternativo',
   'whatsapp',
+  'email',
+  'notas',
   'direccion',
   'horario',
   'orden',

@@ -108,7 +108,7 @@ export const listarQuejas = async (req, res, next) => {
                 direccion_aproximada: '$detalle.direccion_aproximada',
                 estado: '$detalle.estado',
                 fecha_resolucion: '$detalle.fecha_resolucion',
-                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', nombre: '$autor.nombre', avatar_url: '$autor.avatar_url' },
+                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', avatar_url: '$autor.avatar_url' },
               },
             },
           ],

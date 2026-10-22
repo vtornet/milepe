@@ -21,7 +21,7 @@ const PLACEHOLDER = '000000000';
 const CONTACTOS = [
   {
     nombre: 'Emergencias',
-    categoria: 'otro',
+    categoria: 'emergencias',
     telefono: '112',
     horario: 'Atención 24 horas',
     orden: 0,

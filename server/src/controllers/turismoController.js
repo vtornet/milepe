@@ -113,7 +113,7 @@ export const listarTurismo = async (req, res, next) => {
                 categoria: 1,
                 ubicacion: 1,
                 distancia_metros: 1,
-                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', nombre: '$autor.nombre', avatar_url: '$autor.avatar_url' },
+                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', avatar_url: '$autor.avatar_url' },
               },
             },
           ],
