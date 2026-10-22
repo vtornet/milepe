@@ -67,7 +67,7 @@ function TurismoSeccionPage() {
 
       <div className="cabecera-pagina">
         <span className="cabecera-pagina-icono" aria-hidden="true">
-          {seccion.icono}
+          <Icono nombre={seccion.icono} tam={22} />
         </span>
         <div className="cabecera-pagina-texto">
           <h1>{seccion.etiqueta}</h1>

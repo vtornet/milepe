@@ -1,25 +1,26 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
+import Icono from '../../components/Icono.jsx';
 
 // Mismo enum que server/src/models/ContactoInteres.js
 // (CATEGORIAS_CONTACTO). El orden de esta lista es el orden en que se
 // pintan los grupos en la ficha.
 const CATEGORIAS = [
-  { valor: 'emergencias', etiqueta: 'Emergencias', icono: '🚨' },
-  { valor: 'policia_local', etiqueta: 'Policía Local', icono: '👮' },
-  { valor: 'guardia_civil', etiqueta: 'Guardia Civil', icono: '🪖' },
-  { valor: 'proteccion_civil', etiqueta: 'Protección Civil', icono: '🦺' },
-  { valor: 'bomberos', etiqueta: 'Bomberos', icono: '🚒' },
-  { valor: 'centro_salud', etiqueta: 'Salud y farmacias', icono: '🏥' },
-  { valor: 'ayuntamiento', etiqueta: 'Ayuntamiento', icono: '🏛️' },
-  { valor: 'administracion', etiqueta: 'Otras administraciones', icono: '📋' },
-  { valor: 'educacion', etiqueta: 'Educación', icono: '🎓' },
-  { valor: 'cultura_deporte', etiqueta: 'Cultura y deporte', icono: '🎭' },
-  { valor: 'transporte', etiqueta: 'Transporte y aparcamiento', icono: '🚌' },
-  { valor: 'asociaciones', etiqueta: 'Asociaciones y consumo', icono: '🤝' },
-  { valor: 'religioso', etiqueta: 'Centros religiosos', icono: '⛪' },
-  { valor: 'alojamiento', etiqueta: 'Alojamientos', icono: '🛏️' },
-  { valor: 'otro', etiqueta: 'Otros', icono: '📞' },
+  { valor: 'emergencias', etiqueta: 'Emergencias', icono: 'sirena' },
+  { valor: 'policia_local', etiqueta: 'Policía Local', icono: 'escudo' },
+  { valor: 'guardia_civil', etiqueta: 'Guardia Civil', icono: 'escudo_estrella' },
+  { valor: 'proteccion_civil', etiqueta: 'Protección Civil', icono: 'salvavidas' },
+  { valor: 'bomberos', etiqueta: 'Bomberos', icono: 'llama' },
+  { valor: 'centro_salud', etiqueta: 'Salud y farmacias', icono: 'salud' },
+  { valor: 'ayuntamiento', etiqueta: 'Ayuntamiento', icono: 'edificio' },
+  { valor: 'administracion', etiqueta: 'Otras administraciones', icono: 'documento' },
+  { valor: 'educacion', etiqueta: 'Educación', icono: 'birrete' },
+  { valor: 'cultura_deporte', etiqueta: 'Cultura y deporte', icono: 'trofeo' },
+  { valor: 'transporte', etiqueta: 'Transporte y aparcamiento', icono: 'autobus' },
+  { valor: 'asociaciones', etiqueta: 'Asociaciones y consumo', icono: 'grupo' },
+  { valor: 'religioso', etiqueta: 'Centros religiosos', icono: 'capilla' },
+  { valor: 'alojamiento', etiqueta: 'Alojamientos', icono: 'cama' },
+  { valor: 'otro', etiqueta: 'Otros', icono: 'telefono' },
 ];
 
 // Para marcar desde el movil hay que quitarle al numero todo lo que no sea
@@ -89,7 +90,7 @@ function ContactosPage() {
               className="acceso-rapido"
               onClick={() => irACategoria(categoria.valor)}
             >
-              {categoria.icono} {categoria.etiqueta}
+              <Icono nombre={categoria.icono} tam={16} /> {categoria.etiqueta}
             </button>
           ))}
         </nav>
@@ -101,8 +102,11 @@ function ContactosPage() {
 
         return (
           <div key={categoria.valor} id={idCategoria(categoria.valor)} className="grupo-contactos">
-            <h2>
-              {categoria.icono} {categoria.etiqueta}
+            <h2 className="contactos-titulo">
+              <span className="contactos-titulo-icono" aria-hidden="true">
+                <Icono nombre={categoria.icono} tam={18} />
+              </span>
+              {categoria.etiqueta}
             </h2>
 
             {deEstaCategoria.map((contacto) => (
@@ -111,26 +115,32 @@ function ContactosPage() {
 
                 <div className="telefonos-contacto">
                   <a className="telefono-principal" href={enlaceTelefono(contacto.telefono)}>
-                    📞 {contacto.telefono}
+                    <Icono nombre="telefono" tam={16} /> {contacto.telefono}
                   </a>
                   {contacto.telefono_alternativo && (
-                    <a href={enlaceTelefono(contacto.telefono_alternativo)}>📞 {contacto.telefono_alternativo}</a>
+                    <a href={enlaceTelefono(contacto.telefono_alternativo)}>
+                      <Icono nombre="telefono" tam={16} /> {contacto.telefono_alternativo}
+                    </a>
                   )}
                   {contacto.whatsapp_url && (
                     <a href={contacto.whatsapp_url} target="_blank" rel="noreferrer">
-                      💬 WhatsApp
+                      <Icono nombre="comentario" tam={16} /> WhatsApp
                     </a>
                   )}
                 </div>
 
                 {contacto.email && (
                   <div className="tarjeta-meta">
-                    ✉️ <a href={`mailto:${contacto.email}`}>{contacto.email}</a>
+                    <Icono nombre="correo" tam={14} /> <a href={`mailto:${contacto.email}`}>{contacto.email}</a>
                   </div>
                 )}
-                {contacto.direccion && <div className="tarjeta-meta">📍 {contacto.direccion}</div>}
+                {contacto.direccion && <div className="tarjeta-meta">
+                    <Icono nombre="ubicacion" tam={14} /> {contacto.direccion}
+                  </div>}
                 {contacto.notas && <div className="tarjeta-meta">{contacto.notas}</div>}
-                {contacto.horario && <div className="tarjeta-meta">🕒 {contacto.horario}</div>}
+                {contacto.horario && <div className="tarjeta-meta">
+                    <Icono nombre="reloj" tam={14} /> {contacto.horario}
+                  </div>}
               </article>
             ))}
           </div>

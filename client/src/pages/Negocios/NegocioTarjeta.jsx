@@ -20,7 +20,7 @@ function NegocioTarjeta({ negocio }) {
       chips={
         <>
           <span className="insignia">{ETIQUETA_CATEGORIA[negocio.categoria] || negocio.categoria}</span>
-          {negocio.destacado && <span className="insignia insignia-destacado">★ Destacado</span>}
+          {negocio.destacado && <span className="insignia insignia-destacado"><Icono nombre="estrella" tam={12} /> Destacado</span>}
         </>
       }
       datos={

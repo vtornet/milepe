@@ -91,7 +91,7 @@ function NegociosPage() {
           ))}
         </select>
         <button type="button" onClick={buscarCercaDeMi}>
-          📍 {cercaDeMi ? 'Cerca de mí (activo)' : 'Cerca de mí'}
+          <Icono nombre="ubicacion" tam={16} /> {cercaDeMi ? 'Cerca de mí (activo)' : 'Cerca de mí'}
         </button>
         {cercaDeMi && (
           <button type="button" onClick={() => setCercaDeMi(null)}>

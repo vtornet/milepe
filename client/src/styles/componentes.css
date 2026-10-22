@@ -2004,15 +2004,88 @@ select:disabled {
   align-items: flex-start;
   gap: var(--e-2);
   margin-bottom: 0;
+  padding: var(--e-5);
 }
 
+.tarjeta-seccion-turismo strong {
+  font-size: var(--t-lg);
+  line-height: 1.2;
+}
+
+.tarjeta-seccion-turismo:hover {
+  border-color: var(--marca-borde);
+}
+
+/* El icono va en una pastilla del color de la marca, no suelto: da el
+   mismo peso visual a las siete tarjetas aunque unos iconos sean mas
+   densos que otros. */
 .tarjeta-seccion-turismo-icono {
-  font-size: 2rem;
-  line-height: 1;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: var(--e-1);
+  border-radius: var(--r-md);
+  background: var(--marca-tenue);
+  color: var(--marca-fuerte);
+  border: 1px solid var(--marca-borde);
+  transition: background var(--transicion), color var(--transicion);
 }
 
-.tarjeta-seccion-turismo .insignia {
+.tarjeta-seccion-turismo:hover .tarjeta-seccion-turismo-icono {
+  background: var(--marca);
+  color: var(--texto-sobre-marca);
+}
+
+.tarjeta-seccion-turismo-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
   margin-top: auto;
+  padding-top: var(--e-3);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--marca-fuerte);
+}
+
+.tarjeta-seccion-turismo-flecha {
+  margin-left: auto;
+  transition: transform var(--transicion);
+}
+
+.tarjeta-seccion-turismo:hover .tarjeta-seccion-turismo-flecha {
+  transform: translateX(3px);
+}
+
+/* ---------------- Contactos: titulos con icono ---------------- */
+
+.contactos-titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  font-size: var(--t-lg);
+  margin: var(--e-6) 0 var(--e-3);
+}
+
+.contactos-titulo-icono {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-sm);
+  background: var(--marca-tenue);
+  color: var(--marca-fuerte);
+  border: 1px solid var(--marca-borde);
+}
+
+/* Iconos de linea dentro de textos y botones: alineados con la x-height. */
+.tarjeta-meta svg,
+.acceso-rapido svg,
+.telefonos-contacto svg {
+  display: inline-block; /* base.css pone todo svg en block: el icono quedaria solo en su linea */
+  vertical-align: -3px;
+  flex: none;
 }
 
 .enlace-volver {

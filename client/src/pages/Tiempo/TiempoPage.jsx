@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
+import Icono from '../../components/Icono.jsx';
 
 // Los iconos de OpenWeather son publicos (no llevan clave), asi que se
 // pueden pedir directamente desde el navegador.
@@ -54,7 +55,7 @@ function TiempoPage() {
 
       {obsoleto && (
         <p className="tarjeta-meta">
-          ⚠️ No se ha podido contactar con el servicio meteorológico ahora mismo; estos son los últimos datos
+          <Icono nombre="alerta" tam={14} /> No se ha podido contactar con el servicio meteorológico ahora mismo; estos son los últimos datos
           disponibles.
         </p>
       )}
@@ -65,7 +66,8 @@ function TiempoPage() {
           <div className="tiempo-temperatura">{tiempo.actual.temperatura}°</div>
           <div className="tiempo-descripcion">{tiempo.actual.descripcion}</div>
           <div className="tarjeta-meta">
-            Sensación {tiempo.actual.sensacion}° · 💧 {tiempo.actual.humedad}% · 💨 {tiempo.actual.viento_kmh} km/h
+            Sensación {tiempo.actual.sensacion}° · <Icono nombre="gota" tam={14} /> {tiempo.actual.humedad}% ·{' '}
+            <Icono nombre="viento" tam={14} /> {tiempo.actual.viento_kmh} km/h
           </div>
         </div>
       </article>

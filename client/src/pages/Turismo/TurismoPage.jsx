@@ -47,15 +47,18 @@ function TurismoPage() {
           return (
             <Link key={seccion.valor} to={`/turismo/${seccion.valor}`} className="tarjeta tarjeta-pulsable tarjeta-seccion-turismo">
               <span className="tarjeta-seccion-turismo-icono" aria-hidden="true">
-                {seccion.icono}
+                <Icono nombre={seccion.icono} tam={26} />
               </span>
               <strong>{seccion.etiqueta}</strong>
               <span className="tarjeta-meta">{seccion.descripcion}</span>
-              {typeof total === 'number' && (
-                <span className="insignia insignia-marca">
-                  {total} {total === 1 ? 'recurso' : 'recursos'}
-                </span>
-              )}
+              <span className="tarjeta-seccion-turismo-pie">
+                {typeof total === 'number' && (
+                  <span>
+                    {total} {total === 1 ? 'recurso' : 'recursos'}
+                  </span>
+                )}
+                <Icono nombre="siguiente" tam={18} className="tarjeta-seccion-turismo-flecha" />
+              </span>
             </Link>
           );
         })}
