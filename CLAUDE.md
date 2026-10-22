@@ -21,7 +21,11 @@ gated on mutual follow, threaded comments, post editing, Web Push, and the
 report + appeal + audit-log moderation workflow.
 That completes the feature set this project set out to translate from
 Piverse; Stripe (`/api/pagos`) is the only thing left from the original
-brief. Expect the feature set to keep growing beyond it.
+brief. Since then: Turismo became admin-maintained information (not
+posts), Contactos de interés grew into a ~110-entry directory, an admin
+statistics tab exists, the UI uses line icons instead of emoji, and the
+app is live at milepe.com. **See "Roadmap" near the end of this file for
+what is pending and the ideas queued up.**
 
 Two independent apps, each with its own `package.json`/`node_modules` — there
 is no root package.json or workspace tooling:
@@ -82,6 +86,16 @@ Both are ESM (`"type": "module"` in both package.json files) — use
   -ano | grep :5000` to find the real listening PID, kill that exact PID,
   and start `npm run dev` fresh — don't assume nodemon's last restart
   actually took.
+- **Dev-environment hazards seen in practice.** Old Vite/nodemon processes
+  keep ports 5173–5175 and 5000 after the terminal that started them is
+  gone (the API then answers with *old* routes and a new nodemon dies with
+  `EADDRINUSE`); find the PID with `netstat -ano | grep :PORT` and kill
+  that exact one. `server/.env` `CLIENT_URL` lists `localhost:5173,5174,5175`
+  for that reason. Claude Code's background reaper stops the tunnel, API
+  and Vite when the machine is low on memory — don't restart them unprompted
+  and say so. Creating a file under `server/` (even a throwaway script)
+  restarts nodemon: run scratch scripts with `node --input-type=module -e`
+  or keep them in the scratchpad.
 - No test runner and no linter are configured yet. New Mongoose models have
   been verified during development with a throwaway script plus
   `npm install --no-save mongodb-memory-server` (spin up a real in-memory
@@ -111,6 +125,34 @@ Express API on Railway at **api.milepe.com**, Mongo on Railway's private
 network. The domain is registered at Namecheap and its DNS stays there.
 `DESPLIEGUE.md` at the repo root has the exact records, the Netlify build
 settings and the checks — read it before touching anything DNS-related.
+
+**How it ships.** Both halves deploy automatically from a push to `main` of
+`github.com/vtornet/milepe`: Netlify builds `client/`; Railway builds the
+API with *root directory `/server`*. Consequences worth knowing:
+
+- **Never `railway up` from `server/`** — it would upload the folder as
+  the root and fight that setting. To force a deploy (Railway had a
+  platform incident and silently dropped the webhook) push an empty
+  commit: `git commit --allow-empty -m "Relanzar despliegue" && git push`.
+  Watch it with `railway deployment list` (run from `server/`, which is the
+  linked directory; the repo root is not linked).
+- **The local `MONGODB_URI` through the tunnel IS the production database**
+  (`milepe`, see `DESPLIEGUE.md`). Every seed/import script run locally
+  changes production immediately, *before* any code is deployed — so a
+  data change that the old code can't read (new categories, a
+  collection that replaced a model) means a window where the live site is
+  inconsistent. Deploy first when the old code would break, or accept
+  the window knowingly. The tunnel (`scripts/vigilar-tunel.mjs`) needs
+  `railway login` (the CLI session expires; the login is interactive:
+  the user runs `! railway login`).
+- Check order after a deploy: `/api/health`, a new route, the site's main
+  bundle name changed (`curl -s https://milepe.com | grep -o 'index-[^"]*js'`),
+  CORS from `https://milepe.com`. Netlify can lag or miss a build
+  independently of Railway.
+- The production `CLOUDINARY_CLOUD_NAME` variable was saved with a leading
+  space (`= rwp2qlep`), which made every upload answer 500
+  (`Invalid cloud_name`). `config/cloudinary.js` now trims all three
+  credentials, but the variable itself is still untidy.
 
 Three things that bite:
 
@@ -862,6 +904,23 @@ ones so you can reactivate them) is `autorizar('admin')`. `activo: false`
 and `DELETE` mean different things on purpose: hide temporarily vs. it was
 a mistake / no longer exists. Create and update run `req.body` through a
 `CAMPOS_EDITABLES` whitelist, same discipline as `authController.registrar`.
+`CATEGORIAS_CONTACTO` has 15 values (the original 7 plus `emergencias`,
+`administracion`, `educacion`, `cultura_deporte`, `transporte`, `religioso`,
+`asociaciones`, `alojamiento`); the client's `ContactosPage` lists them in
+its own order with an icon each, and builds a row of quick-jump buttons at
+the top from the categories that actually have active contacts. **`otro`
+used to be rendered as "Emergencias" by the client** — it is now "Otros";
+112 lives in `emergencias`. Contacts also carry `email` and `notas`.
+`scripts/sembrar-directorio-lepe.mjs` imported the town's directory (the
+Ayuntamiento's *centros municipales* list, the ORA, a local blog's
+"teléfonos de interés", the Agencia Tributaria and the town hall's
+WhatsApp appointment line). Order of priority = official first; a blog
+entry whose phone number is already taken is dropped and printed; entries
+with no number are skipped. Anything that comes **only from the blog and
+is emergency/health/civil protection (or looks wrong)** is seeded with
+`activo: false` and a "PENDIENTE" note — see Roadmap. An official entry
+that still holds the placeholder phone (`000000000`) is filled in on the
+next run.
 `scripts/sembrar-contactos.mjs` seeds the starting directory and is
 idempotent (`$setOnInsert` upsert keyed on `nombre`, so re-running never
 duplicates *and* never clobbers an admin's later edits). It seeds the
@@ -1097,7 +1156,7 @@ imagenes` (generic, not tied to any one section) wraps both and returns
 `secure_url`s. `MulterError` (oversized file, too many files, wrong field
 name) is mapped to 400 in the central handler like every other error
 class. Needs real `CLOUDINARY_CLOUD_NAME`/`_API_KEY`/`_API_SECRET` in
-`.env` — nothing here works against `mongodb-memory-server`-style fakes,
+`.env` (trimmed on load, see Despliegue) — nothing here works against `mongodb-memory-server`-style fakes,
 there's no local Cloudinary stand-in.
 
 Every section's `Post` accepts `imagenes` (an array of already-uploaded
@@ -1166,10 +1225,18 @@ Shared components worth knowing before writing a new page:
   hand, which is why they had drifted apart — one showed the author, one
   didn't; one counted comments, one didn't — and why any visual change had
   to be made six times.
-- `Icono.jsx` is a hand-rolled SVG set, ~30 icons, stroked `currentColor`.
+- `Icono.jsx` is a hand-rolled SVG set, ~60 icons, stroked `currentColor`.
   No icon library on purpose: `lucide-react` or `react-icons` ship
-  thousands of icons to use thirty, and this is a PWA people install on
-  mobile data. Add new ones to the `TRAZOS` map.
+  thousands of icons to use sixty, and this is a PWA people install on
+  mobile data. Add new ones to the `TRAZOS` map, and **draw them on a
+  contact sheet and look at them** before using them (hand-written paths
+  come out crooked). **No decorative emoji in the UI** — the sections,
+  Contactos headings/quick links/phone-address lines, weather and
+  Negocios use `Icono`; the only emoji left are the reactions (on purpose)
+  and the ★ glyphs of ratings. `base.css` sets every `svg` to
+  `display: block`, so an icon inside text needs `display: inline-block`
+  (done for `.tarjeta-meta`, `.acceso-rapido`, `.telefonos-contacto`) or it
+  sits alone on its own line.
 - `Avatar.jsx` falls back to initials on a colour derived from the name,
   so the same neighbour always gets the same colour — recognising someone
   in a feed is partly recognising their blob of colour before reading the
@@ -1338,3 +1405,105 @@ npm offers is `nodemon@1.14.10`, a 2018 major downgrade. `nodemon` is in
 patterns, which here only come from our own watch config. Re-check whether
 upstream has shipped a fix before touching it; don't run `npm audit fix
 --force`.
+
+## Roadmap — pending work and queued ideas
+
+State at the time of writing (2026-10-22): production has 2 accounts, 3
+posts, 43 turismo records (24 photos), 113 contacts (9 inactive). Order
+below is the order I'd work in.
+
+### 1. Housekeeping before anything else
+
+- **Verify the 9 inactive contacts** (blog-only numbers, shown nowhere
+  until activated): Bomberos (080), Centro de Salud de La Antilla,
+  Hospital Virgen de la Bella, Cruz Roja Lepe, "Emergencias sanitarias
+  (línea local)" 959 527 174, "Teléfono único de emergencias de
+  Andalucía" 902 505 061, Salud Responde, the child-abuse line 900 851 818,
+  and "Capilla de San Cristóbal" (915… is a Madrid prefix; it is the
+  *official* town-hall number, so confirm with them). Activate with
+  `PATCH /api/contactos-interes/:id {"activo": true}` as admin or, better,
+  from the UI once item 2 exists. Ayuntamiento / Policía Local /
+  Protección Civil are already filled from the official list.
+- **Confirm the live site visually** (`/turismo`, `/turismo/:seccion` as
+  admin, `/contactos`, Moderación → Estadísticas): the last releases were
+  checked against the API and in a local build, not on milepe.com.
+- Tidy the Railway variable `CLOUDINARY_CLOUD_NAME` (leading space).
+- Make the Turismo grid cope with an odd 7th card (Rutas sits alone).
+
+### 2. Admin screens that only exist as API
+
+- **Contactos de interés editor.** Today it is only `POST/PATCH/DELETE
+  /api/contactos-interes` + `GET /todos`. Build it the way
+  `TurismoSeccionPage` + `RecursoTarjeta` + `TurismoFormulario` work (admin
+  check in the page, `/todos` to see inactive, inline "¿Seguro?", hide vs
+  delete). `ContactosPage` already knows the categories.
+- Turismo: no way to **reorder** records (`orden` exists, no UI).
+
+### 3. Finish the content
+
+- **Turismo coverage.** Only the first listing page of each turismo.lepe.es
+  section was read; pages 2+ (Sol y playa, Alojamientos, Servicios
+  turísticos; Turismo cultural has 5 pages) and most "Más información"
+  detail pages were not. Sections without any photo: Gastronomía,
+  Alojamientos, Servicios turísticos; records without one: Santa Pura,
+  pinares costeros, monumento al marinero, Capilla de las Monjas… (no free
+  Commons photo was good enough). Photos are Commons only — the town's
+  site photos are not reusable (see "Turismo"). Ask the Ayuntamiento for
+  permission if they want theirs used.
+- Fotos in the Negocios and Eventos forms (backend accepts `imagenes`; the
+  forms have no file picker). Avatar upload for profiles (nobody has one;
+  Google users get theirs from Google).
+- Seed content before promoting the app — an empty network doesn't attract
+  anyone: events, businesses, old photos.
+
+### 4. Stripe (`/api/pagos`) — the only item left from the original brief
+
+`NegocioDetalle.destacado_hasta` and `EventoDetalle.patrocinado_hasta` plus
+`extenderDestacado()`-style renewal already exist ("valid while a date is
+in the future" pattern); nothing charges for them. Needs Checkout + a
+webhook (raw body!), and `STRIPE_*` variables on Railway.
+
+### 5. Ideas that would make it *the* social network of Lepe
+
+Rough priority; none started.
+
+1. **Official Ayuntamiento account** with a verified badge/role, so notices
+   (water/traffic cuts, bandos, works) stand apart from neighbours' posts.
+2. **Quejas with a response**: responsible, visible status history, the
+   town hall's answer, and a public resolved-rate / mean-time summary
+   (the admin stats already compute mean resolution time).
+3. **Daily utilities** in the Muro/rail: pharmacy on duty, bus times,
+   beach status (flag, jellyfish, crowding), tides. El Tiempo (cached
+   proxy) is the model for an external-data widget.
+4. **Tablón de anuncios** (second hand, free stuff, lost objects/animals,
+   neighbours helping neighbours) — new `tipo` + `*_detalle`.
+5. **Businesses manage themselves**: claim a listing, hours, offers,
+   replies to reviews; then paid highlighting through Stripe.
+6. **Groups** (barrios, AA.VV., hermandades, peñas, clubes), **polls /
+   consultas ciudadanas**, events with "voy a ir" + ICS export, hashtags and
+   global search, verification that someone is a vecino.
+7. **Share well on WhatsApp** (Open Graph previews) and **SEO**: the app is
+   a SPA, so crawlers and link previews see an empty shell. Needs
+   prerendering/SSR for public pages (Turismo, Eventos, Negocios).
+8. **Languages** (turismo.lepe.es offers EN/DE/PT; Portugal is next door).
+9. **RGPD**: export and delete my account (privacy policy and conditions
+   pages already exist).
+10. A moderation **protocol with more than one person**: today one
+    moderator; appeals are admin-only and nobody may resolve their own.
+
+### 6. Technical base
+
+- **No server tests, no server linter, no CI.** New models were verified
+  with a throwaway script + `mongodb-memory-server` (see Commands); a real
+  runner is overdue — the stats and turismo controllers have only been
+  checked by hand.
+- **MongoDB backups** — none configured that I know of.
+- **Rate limiting and security headers** (`helmet`) beyond the password
+  recovery throttle; **error monitoring** (Sentry or similar) — a Railway
+  500 is only visible in the logs.
+- **Real time**: socket.io is deliberately not installed; the seam exists
+  (`utils/tiempoReal.js`, `hooks/useSondeo.js`) — see "Real time".
+- Admin stats are computed live per request; add a short cache if the
+  collections grow.
+- **Visual polish**: a typography/spacing pass, and the older sections'
+  loading and empty states.
