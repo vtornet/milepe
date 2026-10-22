@@ -1989,3 +1989,105 @@ select:disabled {
   color: var(--texto-tenue);
   cursor: not-allowed;
 }
+
+/* ---------------- Turismo (informacion, no posts) ---------------- */
+
+.tarjetas-turismo {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--e-3);
+}
+
+.tarjeta-seccion-turismo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e-2);
+  margin-bottom: 0;
+}
+
+.tarjeta-seccion-turismo-icono {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.tarjeta-seccion-turismo .insignia {
+  margin-top: auto;
+}
+
+.enlace-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  margin-bottom: var(--e-3);
+  font-size: var(--t-sm);
+  color: var(--texto-suave);
+}
+
+.recurso-turismo h2 {
+  font-size: var(--t-lg);
+  margin: 0;
+}
+
+.recurso-cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  flex-wrap: wrap;
+}
+
+.recurso-descripcion {
+  margin: var(--e-2) 0 var(--e-3);
+  white-space: pre-line;
+}
+
+.recurso-datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2) var(--e-4);
+}
+
+.recurso-datos a.tarjeta-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+}
+
+.recurso-oculto {
+  opacity: 0.6;
+  border-style: dashed;
+}
+
+.recurso-imagenes {
+  display: flex;
+  gap: var(--e-2);
+  overflow-x: auto;
+  margin-bottom: var(--e-3);
+}
+
+.recurso-imagenes img {
+  height: 160px;
+  width: auto;
+  max-width: 100%;
+  border-radius: var(--r-sm);
+  object-fit: cover;
+  flex: none;
+}
+
+.recurso-imagen-editable {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e-1);
+}
+
+.recurso-admin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2);
+  margin-top: var(--e-4);
+  padding-top: var(--e-3);
+  border-top: 1px solid var(--borde);
+}

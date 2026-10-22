@@ -10,7 +10,6 @@ const { Schema, model } = mongoose;
 export const TIPOS_POST = [
   'muro',
   'queja',
-  'turismo',
   'foto',
   'evento',
   'empleo_busco',

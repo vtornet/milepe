@@ -14,7 +14,7 @@ export const SECCIONES = [
   { ruta: '/quejas', etiqueta: 'Quejas', icono: 'quejas', tipos: ['queja'], principal: true },
   { ruta: '/eventos', etiqueta: 'Eventos', icono: 'eventos', tipos: ['evento'], principal: true },
   { ruta: '/fotos', etiqueta: 'Fotos', icono: 'fotos', tipos: ['foto'] },
-  { ruta: '/turismo', etiqueta: 'Turismo', icono: 'turismo', tipos: ['turismo'] },
+  { ruta: '/turismo', etiqueta: 'Turismo', icono: 'turismo', tipos: [] },
   { ruta: '/negocios', etiqueta: 'Negocios', icono: 'negocios', tipos: ['negocio'] },
   { ruta: '/empleo', etiqueta: 'Empleo', icono: 'empleo', tipos: ['empleo_busco', 'empleo_ofrezco'] },
   { ruta: '/tiempo', etiqueta: 'El Tiempo', icono: 'tiempo', tipos: [] },

@@ -140,19 +140,20 @@ Three things that bite:
 
 Everything publishable lives in one central `posts` collection
 (`server/src/models/Post.js`) discriminated by `tipo` (`muro`, `queja`,
-`turismo`, `foto`, `evento`, `empleo_busco`, `empleo_ofrezco`, `negocio`).
+`foto`, `evento`, `empleo_busco`, `empleo_ofrezco`, `negocio`).
 `Post` only holds generic feed fields: `autor_id`, `tipo`, `titulo`,
 `contenido`, `imagenes`, `reacciones_resumen`, moderation state, `reportes`.
 Type-specific fields live in a separate `*_detalle` collection, linked back
 by a unique `post_id` (one-to-one): `QuejaDetalle`, `FotoDetalle`,
-`EmpleoDetalle`, `EventoDetalle`, `NegocioDetalle`, `TurismoDetalle`. Every
+`EmpleoDetalle`, `EventoDetalle`, `NegocioDetalle`. Every
 `tipo` now has its controller/routes built (`quejas`, `fotos`, `eventos`,
-`negocios`, `turismo`, `empleo` — see "Section controllers" below for what
+`negocios`, `empleo` — see "Section controllers" below for what
 makes each one's listing/creation different from the others). Only Stripe
 (`pagos`) is still unbuilt.
 
-Two of the nine sections are deliberately **not** part of this pattern, and
-shouldn't be "regularized" into a `tipo`: **Contactos de interés**
+Three of the nine sections are deliberately **not** part of this pattern, and
+shouldn't be "regularized" into a `tipo`: **Turismo** (`RecursoTuristico` —
+see "Turismo" below; it used to be a `tipo` and was taken out), **Contactos de interés**
 (`ContactoInteres` — a standalone collection with no `Post`, no author, no
 moderation, no reactions, because it's a static directory an admin
 maintains rather than something a neighbour publishes) and **El Tiempo**
@@ -170,13 +171,12 @@ additionally queries/populates the matching `*_detalle` by `post_id`. Adding
 a new section type means adding a new `tipo` enum value and a new
 `*_detalle` model — never new fields on `Post` itself.
 
-The deliberate exception: `negociosController.listarNegocios` and
-`turismoController.listarTurismo` both build their aggregation starting
-from the `*_detalle` collection, not `Post` (every other section's listing
-starts from `Post`). Reason: MongoDB requires `$geoNear` to be the
+The deliberate exception: `negociosController.listarNegocios` builds its
+aggregation starting from the `*_detalle` collection, not `Post` (every
+other section's listing starts from `Post`). Reason: MongoDB requires `$geoNear` to be the
 pipeline's first stage, and the 2dsphere-indexed `ubicacion` field lives on
-`NegocioDetalle`/`TurismoDetalle`, not `Post` — so a `?lat=&lng=&radioKm=`
-"cerca de mí" search has to start there. Both still work with no geo
+`NegocioDetalle`, not `Post` — so a `?lat=&lng=&radioKm=`
+"cerca de mí" search has to start there. It still works with no geo
 params (they just skip the `$geoNear` stage and sort some other way — see
 below), so this isn't a geo-only code path. Follow the same
 flip-the-starting-collection approach for any future section with a
@@ -208,9 +208,9 @@ index.
   parent schema embeds it and declares its own `2dsphere` index (the index
   can't live on the shared sub-schema). Required on `QuejaDetalle` and
   `NegocioDetalle` (a complaint or a business without a map pin defeats the
-  point); optional on `EventoDetalle` and `TurismoDetalle` (an event or a
-  gastronomy recommendation can be posted without one — a route or a beach
-  usually gets one, but the schema doesn't force it).
+  point); optional on `EventoDetalle` and `RecursoTuristico` (an event can be
+  posted without one; a route or a beach usually gets one, but the schema
+  doesn't force it).
 - "Valid while a date is in the future" is the recurring pattern for
   Stripe-driven or time-limited state, instead of a boolean that something
   has to remember to flip off: `NegocioDetalle.destacado_hasta`,
@@ -807,7 +807,7 @@ live with the reason written out.
 
 ### Section controllers — what's different about each one
 
-All six built sections (`quejas`, `fotos`, `eventos`, `negocios`, `turismo`,
+All five post-based sections (`quejas`, `fotos`, `eventos`, `negocios`,
 `empleo`) follow the create-with-compensation / list-with-filters /
 get-by-id shape from "Post + `*_detalle`" above, plus get like/react/
 comment/moderate for free from the generic `postsController`. What's worth
@@ -835,9 +835,7 @@ re-derive otherwise:
   aren't a separate collection: a `Comentario` on a `negocio` post can carry
   `valoracion` (1–5); the client only shows the star picker there
   (`PanelInteraccion`'s `permitirValoracion` prop).
-- **Turismo**: same geo-search shape as Negocios (see the `$geoNear`
-  exception above) but no "destacado" concept — without geo params it's
-  just `fecha_creacion` descending, plain and simple.
+- **Turismo** is not a post section any more — see "Turismo" below.
 - **Empleo**: `modalidad` (`busco`/`ofrezco`) is a *required* query param on
   `GET /api/empleo`, not an optional filter like `categoria` elsewhere — the
   two shapes (candidate vs. job offer) are different enough that showing
@@ -873,6 +871,42 @@ Protección Civil de Lepe — is seeded with a placeholder and `activo: false`
 so it can't surface in the app, and the script prints which ones need a
 verified number. Keep that rule if you extend the seed: a wrong emergency
 number published is worse than no number.
+
+### Turismo (information, not posts)
+
+`RecursoTuristico` (`server/src/models/RecursoTuristico.js`, routes under
+`/api/turismo`) is a standalone collection like `ContactoInteres`: no `Post`,
+no author, no moderation, no reactions, no comments. Turismo used to be a
+`Post.tipo` with a `TurismoDetalle` where neighbours recommended places;
+it became information a **admin** maintains, so `TurismoDetalle` is gone,
+`'turismo'` is no longer in `TIPOS_POST`, and the fifteen posts the first
+seed had created were removed by `scripts/sembrar-turismo.mjs` (which
+refuses to delete anything if a post of turismo isn't one of its own, or
+has comments).
+
+- `seccion` is the seven sections of turismo.lepe.es that have content of
+  their own (`SECCIONES_TURISMO`: sol_y_playa, turismo_activo,
+  turismo_cultural, gastronomia, alojamientos, servicios_turisticos,
+  rutas). Agenda is the Eventos section; the site's map, search and planner
+  are tools, not content. Labels, icons and descriptions live in the client
+  (`pages/Turismo/seccionesTurismo.js`); the server only knows the enum.
+- Reading is public and only returns `activo: true`. `GET /todos`
+  (hidden ones too, to reactivate them), `POST`, `PATCH /:id` and
+  `DELETE /:id` are `autorizar('admin')` — moderators can't edit it, same
+  as contacts. `/secciones` (counts per section, zeros included, for the
+  cards) and `/todos` are declared before `/:id`.
+- `ubicacion` arrives as `{lat,lng}` and is converted in the controller
+  (`null` removes it, absent leaves it); the field whitelist is
+  `CAMPOS_EDITABLES`. The 2dsphere index stays, but there is no "cerca de
+  mí" any more: it belonged to the feed version.
+- `fuente` is the turismo.lepe.es page a record was written from; `web`
+  is the resource's own site. The texts are summaries, not copies.
+- Client: `TurismoPage` is a grid of seven cards linking to
+  `/turismo/:seccion` (`TurismoSeccionPage`), which lists
+  `RecursoTarjeta`s. Only `usuario.rol === 'admin'` sees create / edit /
+  hide / delete (inline "¿Seguro?") and the hidden records; the API
+  re-checks it. `TurismoFormulario` uploads images through
+  `/subidas/imagenes` before saving.
 
 ### El Tiempo
 
@@ -1043,9 +1077,9 @@ Every section's `Post` accepts `imagenes` (an array of already-uploaded
 URLs) at creation, but **only Fotos' client form actually calls the
 upload endpoint** (`client/src/pages/Fotos/FotoFormulario.jsx`: picks
 files → `POST /api/subidas/imagenes` → `POST /api/fotos` with the returned
-URLs). Turismo, Negocios, and Eventos' backends accept `imagenes` the same
-way, but their client forms (`TurismoFormulario`, `NegocioFormulario`,
-`EventoFormulario`) don't expose a file picker at all yet — an open gap,
+URLs). Negocios and Eventos' backends accept `imagenes` the same way, but
+their client forms (`NegocioFormulario`, `EventoFormulario`) don't expose a
+file picker at all yet (the admin-only `TurismoFormulario` does upload) — an open gap,
 not a design decision, if asked to add photo upload to one of those.
 
 ### Design system and app shell
@@ -1232,7 +1266,7 @@ Three things worth knowing before touching them:
   paths break under Vite's bundling) — reuse it rather than re-solving
   that.
 - The create-a-post pattern repeats across every section's page component
-  (`QuejasPage`, `FotosPage`, `EventosPage`, `NegociosPage`, `TurismoPage`,
+  (`QuejasPage`, `FotosPage`, `EventosPage`, `NegociosPage`,
   `EmpleoPage`): a "+ Nueva/o ..." button toggles a form component, the
   form's `onCreado(nuevo)` callback prepends the result to local state and
   closes the form. `EventosPage` deviates: it refetches the whole list

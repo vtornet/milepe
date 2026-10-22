@@ -1,136 +1,88 @@
-import Post from '../models/Post.js';
-import TurismoDetalle, { CATEGORIAS_TURISMO } from '../models/TurismoDetalle.js';
+import RecursoTuristico, { SECCIONES_TURISMO } from '../models/RecursoTuristico.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { aPuntoGeoJSON, deGeoJSONaLatLng } from '../utils/geo.js';
-import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 
-const formatearTurismo = (post, detalle) => ({
-  _id: post._id,
-  titulo: post.titulo,
-  contenido: post.contenido,
-  imagenes: post.imagenes,
-  reacciones: post.reacciones_resumen,
-  num_comentarios: post.num_comentarios,
-  fecha_creacion: post.fecha_creacion,
-  autor: post.autor_id,
-  categoria: detalle.categoria,
-  ubicacion: deGeoJSONaLatLng(detalle.ubicacion),
-});
+// Campos que un admin puede fijar. Nunca se pasa req.body entero (misma
+// disciplina que contactosInteresController). `ubicacion` no esta aqui: llega
+// como { lat, lng } y se convierte a GeoJSON aparte.
+const CAMPOS_EDITABLES = [
+  'seccion',
+  'titulo',
+  'descripcion',
+  'imagenes',
+  'direccion',
+  'telefono',
+  'web',
+  'fuente',
+  'orden',
+  'activo',
+];
 
-// Crea el Post (tipo 'turismo') y su TurismoDetalle. Misma compensacion
-// sin transacciones que el resto de secciones. ubicacion es opcional
-// (como en Eventos): solo se convierte a GeoJSON si vino.
-export const crearTurismo = async (req, res, next) => {
-  let post;
+const soloCamposEditables = (cuerpo) =>
+  Object.fromEntries(Object.entries(cuerpo).filter(([clave]) => CAMPOS_EDITABLES.includes(clave)));
 
+// ubicacion: { lat, lng } coloca el punto, null lo quita, ausente no lo toca.
+const aplicarUbicacion = (datos, cuerpo) => {
+  if (cuerpo.ubicacion === undefined) return;
+  datos.ubicacion = cuerpo.ubicacion === null ? null : aPuntoGeoJSON(cuerpo.ubicacion);
+};
+
+const paraElCliente = (recurso) => {
+  const obj = recurso.toObject();
+  return { ...obj, ubicacion: deGeoJSONaLatLng(obj.ubicacion) };
+};
+
+const validarSeccion = (seccion) => {
+  if (seccion && !SECCIONES_TURISMO.includes(seccion)) {
+    throw new ErrorHttp(400, `seccion debe ser una de: ${SECCIONES_TURISMO.join(', ')}`);
+  }
+};
+
+// Cuantos recursos activos hay en cada seccion: es lo que pintan las
+// tarjetas de la pagina de Turismo. Las secciones sin nada salen con 0 en
+// vez de faltar, para que el cliente no tenga que rellenar huecos.
+export const resumenSecciones = async (req, res, next) => {
   try {
-    const { titulo, contenido, imagenes, categoria, ubicacion } = req.body;
+    const cuentas = await RecursoTuristico.aggregate([
+      { $match: { activo: true } },
+      { $group: { _id: '$seccion', total: { $sum: 1 } } },
+    ]);
+    const porSeccion = Object.fromEntries(cuentas.map((c) => [c._id, c.total]));
 
-    post = await Post.create({
-      autor_id: req.usuario._id,
-      tipo: 'turismo',
-      titulo,
-      contenido,
-      imagenes,
+    res.json({
+      ok: true,
+      secciones: SECCIONES_TURISMO.map((seccion) => ({ seccion, total: porSeccion[seccion] || 0 })),
     });
-
-    const detalle = await TurismoDetalle.create({
-      post_id: post._id,
-      categoria,
-      ubicacion: ubicacion ? aPuntoGeoJSON(ubicacion) : undefined,
-    });
-
-    await post.populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
-
-    res.status(201).json({ ok: true, turismo: formatearTurismo(post, detalle) });
   } catch (error) {
-    if (post) await Post.deleteOne({ _id: post._id });
     next(error);
   }
 };
 
-// Listado publico. Igual que en Negocios, empieza por TurismoDetalle (no
-// por Post) para poder usar $geoNear como primera etapa del pipeline
-// cuando se piden lat/lng (ver CLAUDE.md, nota en el patron Post+*_detalle).
-// Sin busqueda por cercania, orden por fecha de publicacion (no hay
-// concepto de "destacado" aqui, a diferencia de Negocios).
 export const listarTurismo = async (req, res, next) => {
   try {
-    const pagina = Math.max(1, parseInt(req.query.pagina, 10) || 1);
-    const limite = Math.min(50, Math.max(1, parseInt(req.query.limite, 10) || 20));
+    validarSeccion(req.query.seccion);
 
-    if (req.query.categoria && !CATEGORIAS_TURISMO.includes(req.query.categoria)) {
-      throw new ErrorHttp(400, `categoria debe ser una de: ${CATEGORIAS_TURISMO.join(', ')}`);
-    }
+    const filtro = { activo: true };
+    if (req.query.seccion) filtro.seccion = req.query.seccion;
 
-    const lat = req.query.lat !== undefined ? parseFloat(req.query.lat) : null;
-    const lng = req.query.lng !== undefined ? parseFloat(req.query.lng) : null;
-    const hayGeo = lat !== null && lng !== null && !Number.isNaN(lat) && !Number.isNaN(lng);
-    const radioKm = req.query.radioKm ? parseFloat(req.query.radioKm) : null;
+    const recursos = await RecursoTuristico.find(filtro).sort({ orden: 1, titulo: 1 });
+    res.json({ ok: true, recursos: recursos.map(paraElCliente) });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const pipeline = [];
+// Solo admin: incluye los ocultos, que es lo que hace falta para poder
+// reactivarlos. Ruta aparte (/todos), como en contactos-interes.
+export const listarTodosLosRecursos = async (req, res, next) => {
+  try {
+    validarSeccion(req.query.seccion);
 
-    if (hayGeo) {
-      pipeline.push({
-        $geoNear: {
-          near: { type: 'Point', coordinates: [lng, lat] },
-          distanceField: 'distancia_metros',
-          spherical: true,
-          ...(radioKm ? { maxDistance: radioKm * 1000 } : {}),
-        },
-      });
-    }
+    const filtro = {};
+    if (req.query.seccion) filtro.seccion = req.query.seccion;
 
-    pipeline.push(
-      { $lookup: { from: 'posts', localField: 'post_id', foreignField: '_id', as: 'post' } },
-      { $unwind: '$post' },
-      { $match: { 'post.estado_moderacion': 'publicado' } },
-    );
-
-    if (req.query.categoria) pipeline.push({ $match: { categoria: req.query.categoria } });
-
-    if (!hayGeo) {
-      pipeline.push({ $sort: { 'post.fecha_creacion': -1 } });
-    }
-
-    pipeline.push(
-      { $lookup: { from: 'usuarios', localField: 'post.autor_id', foreignField: '_id', as: 'autor' } },
-      { $unwind: '$autor' },
-      {
-        $facet: {
-          items: [
-            { $skip: (pagina - 1) * limite },
-            { $limit: limite },
-            {
-              $project: {
-                _id: '$post._id',
-                titulo: '$post.titulo',
-                contenido: '$post.contenido',
-                imagenes: '$post.imagenes',
-                num_comentarios: '$post.num_comentarios',
-                fecha_creacion: '$post.fecha_creacion',
-                reacciones: '$post.reacciones_resumen',
-                categoria: 1,
-                ubicacion: 1,
-                distancia_metros: 1,
-                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', avatar_url: '$autor.avatar_url' },
-              },
-            },
-          ],
-          total: [{ $count: 'valor' }],
-        },
-      },
-    );
-
-    const [resultado] = await TurismoDetalle.aggregate(pipeline);
-    const total = resultado.total[0]?.valor || 0;
-    const items = resultado.items.map((item) => ({ ...item, ubicacion: deGeoJSONaLatLng(item.ubicacion) }));
-
-    res.json({
-      ok: true,
-      turismo: items,
-      paginacion: { pagina, limite, total, totalPaginas: Math.ceil(total / limite) },
-    });
+    const recursos = await RecursoTuristico.find(filtro).sort({ orden: 1, titulo: 1 });
+    res.json({ ok: true, recursos: recursos.map(paraElCliente) });
   } catch (error) {
     next(error);
   }
@@ -138,21 +90,51 @@ export const listarTurismo = async (req, res, next) => {
 
 export const obtenerTurismo = async (req, res, next) => {
   try {
-    const post = await Post.findOne({ _id: req.params.id, tipo: 'turismo' }).populate(
-      'autor_id',
-      CAMPOS_PUBLICOS_USUARIO,
-    );
+    const recurso = await RecursoTuristico.findOne({ _id: req.params.id, activo: true });
+    if (!recurso) throw new ErrorHttp(404, 'Recurso turistico no encontrado');
 
-    if (!post || post.estado_moderacion === 'eliminado') {
-      throw new ErrorHttp(404, 'Contenido de turismo no encontrado');
-    }
+    res.json({ ok: true, recurso: paraElCliente(recurso) });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const detalle = await TurismoDetalle.findOne({ post_id: post._id });
-    if (!detalle) {
-      throw new ErrorHttp(404, 'Contenido de turismo no encontrado');
-    }
+export const crearRecurso = async (req, res, next) => {
+  try {
+    const datos = soloCamposEditables(req.body);
+    aplicarUbicacion(datos, req.body);
 
-    res.json({ ok: true, turismo: formatearTurismo(post, detalle) });
+    const recurso = await RecursoTuristico.create(datos);
+    res.status(201).json({ ok: true, recurso: paraElCliente(recurso) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const actualizarRecurso = async (req, res, next) => {
+  try {
+    const recurso = await RecursoTuristico.findById(req.params.id);
+    if (!recurso) throw new ErrorHttp(404, 'Recurso turistico no encontrado');
+
+    const datos = soloCamposEditables(req.body);
+    aplicarUbicacion(datos, req.body);
+
+    Object.assign(recurso, datos);
+    await recurso.save();
+
+    res.json({ ok: true, recurso: paraElCliente(recurso) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Borrado de verdad: para ocultar sin perder los datos ya esta `activo`.
+export const eliminarRecurso = async (req, res, next) => {
+  try {
+    const resultado = await RecursoTuristico.deleteOne({ _id: req.params.id });
+    if (resultado.deletedCount === 0) throw new ErrorHttp(404, 'Recurso turistico no encontrado');
+
+    res.json({ ok: true });
   } catch (error) {
     next(error);
   }

@@ -12,6 +12,7 @@ import VecinoPage from '../pages/Perfil/VecinoPage.jsx';
 import PrivacidadPage from '../pages/Legal/PrivacidadPage.jsx';
 import CondicionesPage from '../pages/Legal/CondicionesPage.jsx';
 import TurismoPage from '../pages/Turismo/TurismoPage.jsx';
+import TurismoSeccionPage from '../pages/Turismo/TurismoSeccionPage.jsx';
 import FotosPage from '../pages/Fotos/FotosPage.jsx';
 import EventosPage from '../pages/Eventos/EventosPage.jsx';
 import TiempoPage from '../pages/Tiempo/TiempoPage.jsx';
@@ -47,6 +48,7 @@ function AppRouter() {
       <Route path="/condiciones" element={<CondicionesPage />} />
       <Route path="/quejas" element={<QuejasPage />} />
       <Route path="/turismo" element={<TurismoPage />} />
+      <Route path="/turismo/:seccion" element={<TurismoSeccionPage />} />
       <Route path="/fotos" element={<FotosPage />} />
       <Route path="/eventos" element={<EventosPage />} />
       <Route path="/tiempo" element={<TiempoPage />} />

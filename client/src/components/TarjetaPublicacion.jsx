@@ -13,7 +13,7 @@ import { haceCuanto, fechaCompleta } from '../utils/fechas.js';
 // título, texto, imágenes, datos propios de la sección y barra de acciones.
 //
 // Antes cada sección repetía esta estructura a mano (QuejaTarjeta,
-// FotoTarjeta, EventoTarjeta, NegocioTarjeta, TurismoTarjeta,
+// FotoTarjeta, EventoTarjeta, NegocioTarjeta,
 // EmpleoTarjeta): seis veces el mismo <article className="tarjeta"> con las
 // insignias arriba, un h2, un p y las líneas de meta al final. El resultado
 // era que cada una había ido quedando un poco distinta -una ponía el autor,
