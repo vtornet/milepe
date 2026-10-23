@@ -2,6 +2,7 @@ import 'dotenv/config';
 import app from './app.js';
 import conectarDB from './config/db.js';
 import { iniciarCronCaducarEmpleos } from './jobs/caducarEmpleos.js';
+import { iniciarCronCopiaSeguridad } from './jobs/copiaSeguridad.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -15,6 +16,7 @@ const iniciar = async () => {
   // Tareas programadas (node-cron). Se registran aqui, despues de
   // confirmar la conexion a Mongo, no al importar el modulo.
   iniciarCronCaducarEmpleos();
+  iniciarCronCopiaSeguridad();
 };
 
 iniciar().catch((error) => {

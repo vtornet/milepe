@@ -994,6 +994,44 @@ admin only, charts are hand-drawn SVG/CSS, no chart library: same reasoning
 as `Icono.jsx`). Everything is computed live on each request (fine at this
 scale; add a short cache if the collections ever get big).
 
+### Copias de seguridad
+
+Daily at 04:00 the API dumps the whole database and uploads it to
+Cloudinary (`utils/copiaSeguridad.js`, cron in `jobs/copiaSeguridad.js`,
+registered in `server.js`). No `mongodump`: Railway gives no binary and the
+data is small, so it is dumped with the driver itself.
+
+- **Format**: one gzip of JSON lines, EJSON canonical (keeps ObjectId and
+  dates as types, not strings): a header, then per collection its index
+  definitions and one line per document. Restoring recreates the indexes
+  after the data (unique, partial, 2dsphere).
+- **Private on purpose**: a copy holds password hashes, emails and private
+  messages, so it goes up as `resource_type: raw, type: authenticated`
+  (folder `milepe-copias`). The unsigned URL answers 401. Downloading uses
+  `cloudinary.utils.private_download_url`; the signed *delivery* URL
+  (`cloudinary.url` with `sign_url`) answered 401 for raw authenticated
+  files, so don't "simplify" to it.
+- **Rotation**: keeps the last 14 (`COPIAS_A_GUARDAR`). It deletes the extra
+  ones only *after* uploading the new one, so a failed upload never costs a
+  good copy.
+- **Production only.** Locally `MONGODB_URI` points at the production
+  database through the tunnel; letting `npm run dev` schedule it would
+  upload the real database from a laptop every night. The cron logs why it
+  is off. A failure logs `[cron] ERROR en la copia de seguridad` and does
+  not stop the server — check Railway's logs, nothing alerts you.
+- **By hand** (tunnel open): `node scripts/copia-seguridad.mjs crear |
+  listar | descargar [id] [carpeta]`. Cloudinary is not a backup service
+  and the copy lives in the same account as the images: it protects against
+  a bad deploy, a dropped collection or a script gone wrong, not against
+  losing the Cloudinary account — for that, download one now and then.
+- **Restoring**: `node scripts/restaurar-copia.mjs <fichero> --uri <...>
+  [--vaciar]`. `--uri` is mandatory (it never restores into "the .env
+  database", which is production), the .env's own URI also needs
+  `--si-es-produccion`, and a collection with data aborts unless `--vaciar`.
+  Verified round trip (dump → restore into another database → identical
+  documents and indexes) with `mongodb-memory-server`, and the Cloudinary
+  side against the real account.
+
 ### El Tiempo
 
 `GET /api/tiempo` (`tiempoController.js`) is the only endpoint in the app
@@ -1497,7 +1535,7 @@ Rough priority; none started.
   with a throwaway script + `mongodb-memory-server` (see Commands); a real
   runner is overdue — the stats and turismo controllers have only been
   checked by hand.
-- **MongoDB backups** — none configured that I know of.
+- **MongoDB backups** — done, see "Copias de seguridad". Still to do: a restore rehearsal against a scratch database now and then, and a second destination if Cloudinary alone feels thin.
 - **Rate limiting and security headers** (`helmet`) beyond the password
   recovery throttle; **error monitoring** (Sentry or similar) — a Railway
   500 is only visible in the logs.
