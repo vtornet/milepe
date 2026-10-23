@@ -2,24 +2,13 @@ import Farmacia from '../models/Farmacia.js';
 import GuardiaFarmacia from '../models/GuardiaFarmacia.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { aPuntoGeoJSON, deGeoJSONaLatLng } from '../utils/geo.js';
-import {
-  ahoraEnMadrid,
-  diaDeGuardia,
-  esDiaValido,
-  esMesValido,
-  horaDeCambio,
-  limitesDelMes,
-  sumarDias,
-} from '../utils/guardiaFarmacia.js';
+import { cargarCalendarioMes } from '../utils/cargarGuardias.js';
+import { ahoraEnMadrid, esMesValido, estaEnCurso, limitesDelMes, sumarDias } from '../utils/guardiaFarmacia.js';
 
 // Campos que un admin puede fijar. Nunca req.body entero (misma disciplina
 // que contactosInteresController). `ubicacion` va aparte: llega como
 // { lat, lng } y hay que convertirla.
 const CAMPOS_EDITABLES = ['nombre', 'zona', 'direccion', 'telefono', 'horario', 'activa'];
-
-// Tope de filas de un calendario mensual: 31 dias por varias farmacias cada
-// uno. Pasarse es casi seguro un fichero equivocado.
-const MAX_GUARDIAS_POR_MES = 31 * 6;
 
 const datosDeFarmacia = (cuerpo) => {
   const datos = Object.fromEntries(Object.entries(cuerpo).filter(([clave]) => CAMPOS_EDITABLES.includes(clave)));
@@ -43,15 +32,6 @@ const formatearFarmacia = (documento) => {
     ubicacion: deGeoJSONaLatLng(obj.ubicacion),
   };
 };
-
-// "Farmacia Pérez " y "farmacia perez" son la misma al pegar un calendario.
-const normalizar = (texto) =>
-  String(texto)
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
 
 // --- Directorio de farmacias ---
 
@@ -119,28 +99,35 @@ export const eliminarFarmacia = async (req, res, next) => {
 
 // --- Guardias ---
 
-const filasAFarmacias = (filas) =>
-  filas
-    .filter((fila) => fila.farmacia_id)
-    .map((fila) => ({ ...formatearFarmacia(fila.farmacia_id), nota: fila.nota }))
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+// Una fila de guardia ya con los datos de su farmacia y su horario.
+const filaATurno = (fila) => ({
+  ...formatearFarmacia(fila.farmacia_id),
+  desde: fila.desde,
+  hasta: fila.hasta,
+  nota: fila.nota,
+});
 
-const guardiasDeUnDia = async (dia) => {
-  const filas = await GuardiaFarmacia.find({ dia }).populate('farmacia_id');
-  return { dia, farmacias: filasAFarmacias(filas) };
-};
+// Por horario de inicio y, a igualdad, por nombre: asi "24 horas" y las de
+// "9:30 a 22:00" salen siempre agrupadas y en el mismo orden.
+const ordenar = (turnos) =>
+  turnos.sort((a, b) => a.desde.localeCompare(b.desde) || a.hasta.localeCompare(b.hasta) || a.nombre.localeCompare(b.nombre, 'es'));
 
-// Lo que pregunta casi todo el mundo: quien esta de guardia AHORA, y quien
-// lo estara en el siguiente relevo. La guardia en curso depende de la hora
-// (ver diaDeGuardia): de madrugada es la del dia anterior.
+const turnosDe = (filas) =>
+  ordenar(filas.filter((fila) => fila.farmacia_id).map(filaATurno));
+
+// Lo que pregunta casi todo el mundo: quien esta de guardia AHORA, y como
+// es el dia de hoy y el de mañana. "Ahora" son las guardias cuya ventana
+// horaria esta abierta en este momento (ver estaEnCurso): de madrugada,
+// en Lepe, solo la de 24 horas; una farmacia diurna del dia anterior esta
+// cerrada y no cuenta.
 export const guardiaActual = async (req, res, next) => {
   try {
     const ahora = ahoraEnMadrid();
-    const dia = diaDeGuardia(ahora);
+    const ayer = sumarDias(ahora.dia, -1);
+    const manana = sumarDias(ahora.dia, 1);
 
-    const [actual, siguiente, ultima] = await Promise.all([
-      guardiasDeUnDia(dia),
-      guardiasDeUnDia(sumarDias(dia, 1)),
+    const [filas, ultima] = await Promise.all([
+      GuardiaFarmacia.find({ dia: { $in: [ayer, ahora.dia, manana] } }).populate('farmacia_id'),
       // Hasta cuando llega el calendario cargado: permite decir "pendiente de
       // cargar" en vez de "no hay guardia", que es muy distinto de cara a
       // alguien que busca una farmacia abierta.
@@ -150,9 +137,9 @@ export const guardiaActual = async (req, res, next) => {
     res.json({
       ok: true,
       ahora,
-      cambio: horaDeCambio(),
-      actual,
-      siguiente,
+      en_curso: turnosDe(filas.filter((fila) => estaEnCurso(fila, ahora))),
+      hoy: { dia: ahora.dia, turnos: turnosDe(filas.filter((fila) => fila.dia === ahora.dia)) },
+      manana: { dia: manana, turnos: turnosDe(filas.filter((fila) => fila.dia === manana)) },
       calendario_hasta: ultima?.dia || null,
     });
   } catch (error) {
@@ -179,7 +166,7 @@ export const listarGuardiasDelMes = async (req, res, next) => {
     res.json({
       ok: true,
       mes,
-      dias: [...porDia.entries()].map(([dia, delDia]) => ({ dia, farmacias: filasAFarmacias(delDia) })),
+      dias: [...porDia.entries()].map(([dia, delDia]) => ({ dia, turnos: turnosDe(delDia) })),
     });
   } catch (error) {
     next(error);
@@ -187,70 +174,15 @@ export const listarGuardiasDelMes = async (req, res, next) => {
 };
 
 // Sustituye TODO el calendario de un mes. Cuerpo:
-//   { guardias: [{ dia: '2026-10-03', farmacia: 'Farmacia X' | '<id>', nota? }] }
-// La farmacia puede ir por id o por nombre (pegando una lista el admin no
-// tiene los ids). Se valida todo ANTES de tocar nada: sin transacciones
-// (Mongo es de un solo nodo), un calendario a medio escribir seria peor que
-// el anterior.
+//   { guardias: [{ dia: '2026-10-03', farmacia: 'Farmacia X' | '<id>',
+//                  desde?: '09:30', hasta?: '22:00', nota? }] }
+// La logica (validar todo antes de escribir nada, resolver nombres) vive en
+// utils/cargarGuardias.js, porque tambien la usa el script de carga.
 export const guardarGuardiasDelMes = async (req, res, next) => {
   try {
     const { mes } = req.params;
-    if (!esMesValido(mes)) throw new ErrorHttp(400, 'El mes debe tener el formato AAAA-MM');
-
-    const entrada = req.body?.guardias;
-    if (!Array.isArray(entrada) || entrada.length === 0) {
-      throw new ErrorHttp(400, 'guardias debe ser una lista con al menos una entrada');
-    }
-    if (entrada.length > MAX_GUARDIAS_POR_MES) {
-      throw new ErrorHttp(400, `Demasiadas guardias para un mes (máximo ${MAX_GUARDIAS_POR_MES})`);
-    }
-
-    const farmacias = await Farmacia.find();
-    const porId = new Map(farmacias.map((f) => [String(f._id), f]));
-    const porNombre = new Map(farmacias.map((f) => [normalizar(f.nombre), f]));
-
-    const filas = new Map();
-    const diasFuera = [];
-    const diasInvalidos = [];
-    const desconocidas = new Set();
-
-    for (const item of entrada) {
-      const dia = typeof item?.dia === 'string' ? item.dia.trim() : '';
-      if (!esDiaValido(dia)) {
-        diasInvalidos.push(String(item?.dia));
-        continue;
-      }
-      if (!dia.startsWith(`${mes}-`)) {
-        diasFuera.push(dia);
-        continue;
-      }
-
-      const referencia = String(item.farmacia ?? '').trim();
-      const farmacia = porId.get(referencia) || porNombre.get(normalizar(referencia));
-      if (!farmacia) {
-        desconocidas.add(referencia || '(vacía)');
-        continue;
-      }
-
-      const nota = typeof item.nota === 'string' && item.nota.trim() ? item.nota.trim().slice(0, 100) : null;
-      filas.set(`${dia}|${farmacia._id}`, { dia, farmacia_id: farmacia._id, nota });
-    }
-
-    const problemas = [];
-    if (diasInvalidos.length) problemas.push(`Fechas no válidas: ${[...new Set(diasInvalidos)].join(', ')}`);
-    if (diasFuera.length) problemas.push(`Fechas que no son de ${mes}: ${[...new Set(diasFuera)].join(', ')}`);
-    if (desconocidas.size) {
-      problemas.push(`Farmacias que no existen en el directorio: ${[...desconocidas].join(', ')}`);
-    }
-    if (problemas.length) {
-      throw Object.assign(new ErrorHttp(400, problemas.join('. ')), { razon: 'calendario_invalido' });
-    }
-
-    const { desde, hasta } = limitesDelMes(mes);
-    await GuardiaFarmacia.deleteMany({ dia: { $gte: desde, $lte: hasta } });
-    await GuardiaFarmacia.insertMany([...filas.values()]);
-
-    res.json({ ok: true, mes, guardias: filas.size });
+    const { guardias } = await cargarCalendarioMes(mes, req.body?.guardias);
+    res.json({ ok: true, mes, guardias });
   } catch (error) {
     next(error);
   }

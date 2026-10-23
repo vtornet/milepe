@@ -1070,7 +1070,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 97 tests, under two minutes. Each file runs
+`server/test/*.test.js`: 121 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1082,9 +1082,9 @@ several processes downloading the `mongod` binary at once can corrupt it.
   `moderacion` (threshold, appeals, append-only log) · `mensajeria` (mutual
   follow, outsiders get 404, blocking) · `permisos` (admin-only routes,
   contacts, whitelist of fields, no real name leaks) · `limites` (429s,
-  helmet) · `copiaSeguridad` (dump → restore round trip) · `farmacias`
-  and `guardiaFarmacia` (calendar loading; the time-zone / shift-change
-  maths, which needs no database) · `calendarioGuardias` (imports a *client*
+  helmet) · `copiaSeguridad` (dump → restore round trip) · `farmacias`,
+  `guardiaFarmacia` (time zone and window maths, no database) and
+  `guardiasLepeOctubre` (the real October cuadro, end to end) · `calendarioGuardias` (imports a *client*
   util, which is pure — the client has no runner of its own).
 - Rate limits are **off in tests** (`LIMITES_DESACTIVADOS=1`, set by
   `arrancar()`): the whole suite comes from one IP and would exhaust them.
@@ -1110,57 +1110,81 @@ several processes downloading the `mongod` binary at once can corrupt it.
 
 `/api/farmacias` + `/farmacias` in the client. **There is no API to read
 this from**: the Colegio de Farmacéuticos de Huelva publishes one PDF per
-month per town ("Cuadro de Farmacias de Guardia en Lepe"), its site's
-`robots.txt` is `Disallow: /` (so no scraper), and the national portal just
-redirects there. So an admin keeps it by hand, from that PDF. If the Colegio
-ever gives a data feed, only the loading step changes.
+month per locality, its site's `robots.txt` is `Disallow: /` (so no scraper),
+and farmacias.es says outright that it doesn't have Lepe's rota. So an admin
+keeps it by hand, from that PDF. If the Colegio ever gives a data feed, only
+the loading step changes.
 
 - Two standalone collections, no `Post` (same family as Contactos and
-  Turismo): `Farmacia` (directory: name, zone, address, phone, hours, optional
-  map point, `activa`) and `GuardiaFarmacia` (one row per pharmacy per day).
-  A day can have several rows (24 h + daytime, or Lepe + La Antilla), so the
-  unique index is `(dia, farmacia_id)`, not `dia`.
+  Turismo): `Farmacia` (directory: name, zone, address, phone, hours,
+  optional map point, `activa`) and `GuardiaFarmacia` (one row per pharmacy
+  per day **with its own time window**, `desde`/`hasta`).
+- **The Lepe cuadro is a weekly pattern with hours, not a day-by-day
+  calendar** ("Farmacias de atención continuada"): *diurno 9:30–22:00* — Mon–Fri
+  three pharmacies, Saturdays two, Sundays and holidays one — plus **one
+  24-hour pharmacy every day**. A first version assumed a global "shift
+  change at 09:30" and showed the previous day's rota in the small hours; with
+  this cuadro that would have listed pharmacies that are **closed**. So each
+  row carries its window and "now" (`en_curso`) is whatever has an open
+  window (`estaEnCurso`). `hasta` ≤ `desde` means the next day (`22:00`–`09:30`
+  is a night guard, `09:30`–`09:30` is 24 h); 24 hours is stored as
+  `00:00`–`24:00`; no window means the whole day.
 - **`dia` is the text "AAAA-MM-DD", not a Date.** A guardia is "3 October",
   not an instant, and a Date at midnight changes day with the server's time
-  zone (Railway runs in UTC). Everything is reasoned in Europe/Madrid
+  zone (Railway runs in UTC). Everything is reasoned in Europe/Madrid, with
+  instants as plain minutes so DST never enters the maths
   (`utils/guardiaFarmacia.js`).
-- **The guardia in force depends on the hour.** A 24 h guardia does not end
-  at midnight but when the next one opens, assumed to be **09:30**
-  (`FARMACIA_HORA_CAMBIO`, default `09:30`; `00:00` turns the shift off and
-  uses calendar days). At 3 a.m. the pharmacy on duty is *yesterday's*, which
-  is exactly when people look for one. **The 09:30 is an assumption, not
-  something read from the PDF — check it against a real cuadro.**
-- `GET /guardia` returns `actual` and `siguiente` plus `calendario_hasta`
-  (last day loaded). The client tells three cases apart — nothing loaded,
-  calendar ends before today, no entry for today — instead of saying "no
-  guardia", which would be false: the real situation is that the data is
-  missing, and whoever is looking for an open pharmacy needs to be sent to
-  the official cuadro. The page always links it and says the data is typed in
-  by hand.
+- `GET /guardia` returns `en_curso`, `hoy.turnos`, `manana.turnos` and
+  `calendario_hasta` (last day loaded). The client tells apart *nothing
+  loaded*, *calendar ends before today*, *today's pharmacies are all out of
+  hours* and *no entry for today* instead of saying "no guardia", which would
+  be false: the real situation is that the data is missing, and whoever is
+  looking for an open pharmacy needs to be sent to the official cuadro. The
+  page always links it and says the data is typed in by hand.
 - **Loading a month** is `PUT /guardias/:mes` (admin) with `{ guardias: [{
-  dia, farmacia (id or name), nota? }] }`. It **replaces the whole month** and
-  validates everything *before* touching anything (no transactions on a
-  single-node Mongo): unknown pharmacies, impossible dates (`2026-02-30`) and
-  dates outside the month reject the whole load, naming each problem, and the
-  previous calendar stays intact. Names match ignoring accents, case and
-  extra spaces. The admin UI (`FarmaciasAdmin`) takes pasted text, parsed by
-  `client/src/utils/calendarioGuardias.js` (one guardia per line:
-  `fecha;farmacia;nota`, dates ISO or `D/M/AAAA`), shows how many lines were
-  understood and **lists the ones that weren't** rather than dropping them.
+  dia, farmacia, desde?, hasta?, nota? }] }`, handled by
+  `utils/cargarGuardias.js` (shared with `scripts/cargar-guardias.mjs`). It
+  **replaces the whole month** and validates everything *before* touching
+  anything (no transactions on a single-node Mongo): unknown or ambiguous
+  pharmacies, impossible dates (`2026-02-30`), bad hours and dates outside
+  the month reject the whole load, naming each problem, and the previous
+  calendar stays intact. `simular` validates without writing.
+- **Pharmacy names are matched like the cuadro writes them** ("Farmacia Lda.
+  Mª Esperanza Sanchez Martín (C/ Alcalde César Barrios, 2)"): by id, exact
+  name, or every distinctive word of the directory name present in the text,
+  counting repeats ("Sánchez Sánchez" needs two). If two match equally it is
+  *ambiguous and rejected* rather than guessed — a guardia on the wrong
+  pharmacy is worse than a failed load.
+- **The text the admin pastes is the cuadro's own shape**, parsed in the
+  browser by `client/src/utils/calendarioGuardias.js` and expanded to one row
+  per day: `L-V;Farmacia;9:30-22:00`, `S`, `D`, `festivos`, `todos;Farmacia;24h`,
+  `festivo;12/10/2026` (a holiday uses only the `festivos`/`todos` lines, not
+  its weekday's), or plain dated lines. Lines it can't read come back with
+  their number instead of being dropped. October 2026 for Lepe is in
+  `scripts/datos/guardias-lepe-2026-10.txt`; the PDF itself is not committed.
+- **Three localities, three cuadros.** For the Colegio Lepe (53), La Antilla
+  (50) and Islantilla (48) are separate, each with its own rota; only Lepe's
+  PDF has been seen, so La Antilla and Islantilla have no calendar yet.
 - A pharmacy with guardias can't be deleted (409) — it would leave calendar
   days pointing at nothing; use `activa: false`. An inactive pharmacy leaves
   the public directory but **still shows up on its scheduled days**: the
   calendar is authoritative.
-- **Directory seeded** by `scripts/sembrar-farmacias.mjs` (2026-10-23): 6 in
-  Lepe and 1 in La Antilla, from the directory of farmacias.es — a single
-  commercial source (Farmactitud S.L.) that doesn't say where its data comes
-  from. **The phone numbers are not cross-checked with a second source**, and
-  the La Antilla one has none. No pharmacy in Islantilla appeared. Names are
-  "Farmacia" + the owner, as that site lists them, and the Colegio's cuadro
-  may spell them differently: the month loader names every pharmacy it can't
-  match, and they are edited from the admin area. farmacias.es itself says it
-  does *not* have Lepe's guardia rota ("No tenemos el turno de guardia de
-  Lepe"), which confirms there is no third-party source for it either.
+- **Directory seeded** by `scripts/sembrar-farmacias.mjs` (2026-10-23) from
+  the Colegio's official locator (`cofhuelva.org/localizador/buscador-de-
+  farmacias?locality=N`): 12 pharmacies — 9 in Lepe (locality 53), 2 in La
+  Antilla (50), 1 in Islantilla (48) — with owner, address, phone and usual
+  hours. It shows only *one* date range per pharmacy ("Del 01-10 al 31-03"),
+  so the hours stored are that range, not the whole year. It gives no
+  coordinates: the 7 points we have come from farmacias.es (same address and
+  phone), the other 5 have none and "Cómo llegar" searches by address. Names
+  are "Farmacia" + the owner's surnames. A first seeding came from
+  farmacias.es and was replaced: its owners were out of date and it missed 3
+  pharmacies (including the 24-hour one at Avenida Andalucía 55); its phones
+  did match the official ones. The Colegio's `robots.txt` is `Disallow: /`:
+  those pages were read once each, by hand, at the admin's request — don't
+  turn it into a periodic fetch.
+- Two phones in one field (`959 48 65 73 / 959 40 01 26`, Islantilla): the
+  dial link uses only the first.
 - The right rail shows "Farmacia de guardia" (hidden on `/farmacias`);
   Contactos links to the page. `farmacia` is a new line icon.
 

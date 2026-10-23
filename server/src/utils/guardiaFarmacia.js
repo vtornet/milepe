@@ -1,12 +1,20 @@
-// Fechas de las guardias de farmacia. Todo se razona en hora de Madrid y con
-// el dia como texto "AAAA-MM-DD", no como Date: una guardia es "el 3 de
-// octubre", no un instante, y un Date guardado a medianoche cambia de dia
-// segun la zona horaria del servidor (Railway corre en UTC).
-
-export const HORA_CAMBIO_POR_DEFECTO = '09:30';
+// Fechas y horarios de las guardias de farmacia. Todo se razona en hora de
+// Madrid y con el dia como texto "AAAA-MM-DD", no como Date: una guardia es
+// "el 3 de octubre", no un instante, y un Date guardado a medianoche cambia
+// de dia segun la zona horaria del servidor (Railway corre en UTC).
+//
+// Cada guardia lleva su propia ventana (desde, hasta). Asi lo publica el
+// Colegio: en Lepe, por ejemplo, tres farmacias de "diurno 9:30 a 22:00" y
+// una de 24 horas. No hay un relevo global a una hora fija: de madrugada solo
+// esta de guardia lo que tenga una ventana abierta, y una farmacia diurna del
+// dia anterior esta CERRADA.
 
 const FORMATO_DIA = /^\d{4}-\d{2}-\d{2}$/;
 const FORMATO_MES = /^\d{4}-\d{2}$/;
+const FORMATO_HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export const DESDE_POR_DEFECTO = '00:00';
+export const HASTA_POR_DEFECTO = '24:00';
 
 // Fecha y hora de ahora en Madrid: { dia: 'AAAA-MM-DD', hora: 'HH:MM' }.
 export const ahoraEnMadrid = (instante = new Date()) => {
@@ -51,15 +59,40 @@ export const limitesDelMes = (mes) => {
   return { desde: `${mes}-01`, hasta: `${mes}-${String(ultimo).padStart(2, '0')}` };
 };
 
-export const horaDeCambio = () => {
-  const configurada = (process.env.FARMACIA_HORA_CAMBIO || '').trim();
-  return /^([01]\d|2[0-3]):[0-5]\d$/.test(configurada) ? configurada : HORA_CAMBIO_POR_DEFECTO;
+// "09:30" -> true. La hora de inicio va de 00:00 a 23:59.
+export const esHoraValida = (hora) => typeof hora === 'string' && FORMATO_HORA.test(hora);
+
+// El fin admite ademas "24:00" (medianoche al terminar el dia), que es como
+// se escribe "todo el dia".
+export const esHoraFinValida = (hora) => hora === HASTA_POR_DEFECTO || esHoraValida(hora);
+
+const minutosDeLaHora = (hora) => {
+  const [h, m] = hora.split(':').map(Number);
+  return h * 60 + m;
 };
 
-// A que dia de la lista corresponde ahora mismo. Una guardia de 24 horas no
-// acaba a medianoche sino cuando abre la siguiente farmacia (aqui se asume
-// que a las 09:30): a las 3 de la madrugada, la que esta de guardia es la
-// del dia ANTERIOR, que es justo cuando mas gente la busca. Con la hora de
-// cambio '00:00' se desactiva y manda el dia del calendario.
-export const diaDeGuardia = (ahora = ahoraEnMadrid(), cambio = horaDeCambio()) =>
-  ahora.hora < cambio ? sumarDias(ahora.dia, -1) : ahora.dia;
+const MINUTOS_POR_DIA = 24 * 60;
+
+const indiceDelDia = (dia) => Date.UTC(...dia.split('-').map((n, i) => (i === 1 ? Number(n) - 1 : Number(n)))) / 86400000;
+
+// Instante como minutos desde 1970, solo para comparar. No es un Date a
+// proposito: asi no hay zona horaria ni horario de verano de por medio.
+const instante = (dia, hora) => indiceDelDia(dia) * MINUTOS_POR_DIA + minutosDeLaHora(hora);
+
+// Cuando empieza y acaba una guardia. Si el fin no es posterior al inicio, la
+// guardia acaba al dia siguiente: "09:30 a 09:30" son 24 horas, y "22:00 a
+// 09:30" una guardia de noche.
+export const ventanaDeGuardia = ({ dia, desde = DESDE_POR_DEFECTO, hasta = HASTA_POR_DEFECTO }) => {
+  const inicio = instante(dia, desde);
+  let fin = instante(dia, hasta);
+  if (fin <= inicio) fin += MINUTOS_POR_DIA;
+  return { inicio, fin };
+};
+
+// ¿Esta la guardia en curso a esta hora? Una ventana dura como mucho 24 h,
+// asi que basta mirar las guardias de ayer y de hoy.
+export const estaEnCurso = (guardia, ahora = ahoraEnMadrid()) => {
+  const { inicio, fin } = ventanaDeGuardia(guardia);
+  const ya = instante(ahora.dia, ahora.hora);
+  return inicio <= ya && ya < fin;
+};

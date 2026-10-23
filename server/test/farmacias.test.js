@@ -1,7 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { arrancar } from './ayuda.js';
-import { ahoraEnMadrid, diaDeGuardia, sumarDias } from '../src/utils/guardiaFarmacia.js';
+import { ahoraEnMadrid, sumarDias } from '../src/utils/guardiaFarmacia.js';
 
 let t;
 let vecino;
@@ -18,6 +18,7 @@ after(() => t.detener());
 const crear = (datos) => t.api.post('/farmacias', datos, { token: admin.token });
 const guardarMes = (mes, guardias, quien = admin) => t.api.put(`/farmacias/guardias/${mes}`, { guardias }, { token: quien.token });
 const delMes = async (mes) => (await t.api.get(`/farmacias/guardias?mes=${mes}`)).body.dias;
+const nombres = (turnos) => turnos.map((x) => x.nombre);
 
 // ---------------------------------------------------------------- permisos
 
@@ -45,8 +46,9 @@ test('solo un admin crea, edita, borra o carga calendarios', async () => {
 
 test('sin ningún calendario cargado, no se inventa una guardia y se dice que no hay datos', async () => {
   const r = await t.api.get('/farmacias/guardia');
-  assert.equal(r.body.actual.farmacias.length, 0);
-  assert.equal(r.body.siguiente.farmacias.length, 0);
+  assert.deepEqual(r.body.en_curso, []);
+  assert.deepEqual(r.body.hoy.turnos, []);
+  assert.deepEqual(r.body.manana.turnos, []);
   assert.equal(r.body.calendario_hasta, null);
 });
 
@@ -66,6 +68,7 @@ test('crear una farmacia con ubicación la devuelve como lat/lng', async () => {
 
   farmacia.antilla = (await crear({ nombre: 'Farmacia La Antilla', zona: 'la_antilla' })).body.farmacia;
   farmacia.islantilla = (await crear({ nombre: 'Farmacia Islantilla', zona: 'islantilla' })).body.farmacia;
+  farmacia.vacas = (await crear({ nombre: 'Farmacia Vacas Barranco', horario: '24 horas' })).body.farmacia;
 });
 
 test('una zona fuera de la lista o una farmacia sin nombre se rechazan', async () => {
@@ -82,25 +85,61 @@ test('no se pueden colar campos que no están en la lista', async () => {
 
 // ----------------------------------------------------------------- calendario
 
-test('cargar un mes por nombre (sin tildes ni mayúsculas) y leerlo', async () => {
+test('cargar un mes por nombre (sin tildes ni mayúsculas), con horarios, y leerlo', async () => {
   const r = await guardarMes('2026-10', [
-    { dia: '2026-10-01', farmacia: 'farmacia perez' },
-    { dia: '2026-10-02', farmacia: 'FARMACIA   LA ANTILLA', nota: 'De 9:30 a 22:00' },
-    { dia: '2026-10-02', farmacia: farmacia.perez._id },
+    { dia: '2026-10-01', farmacia: 'farmacia perez', desde: '09:30', hasta: '22:00' },
+    { dia: '2026-10-01', farmacia: 'FARMACIA   VACAS BARRANCO', desde: '00:00', hasta: '24:00' },
+    { dia: '2026-10-02', farmacia: farmacia.perez._id, nota: 'Refuerzo' },
   ]);
   assert.equal(r.status, 200);
   assert.equal(r.body.guardias, 3);
 
   const dias = await delMes('2026-10');
   assert.deepEqual(dias.map((d) => d.dia), ['2026-10-01', '2026-10-02']);
-  assert.equal(dias[1].farmacias.length, 2, 'dos farmacias el mismo día');
-  assert.ok(dias[1].farmacias.some((f) => f.nota === 'De 9:30 a 22:00'));
+
+  const primero = dias[0].turnos;
+  assert.equal(primero.length, 2, 'dos farmacias el mismo día');
+  assert.deepEqual(primero.map((x) => [x.nombre, x.desde, x.hasta]), [
+    ['Farmacia Vacas Barranco', '00:00', '24:00'], // por hora de inicio: la de 24 h primero
+    ['Farmacia Pérez', '09:30', '22:00'],
+  ]);
+
+  // Sin horario, el turno vale todo el día.
+  assert.deepEqual([dias[1].turnos[0].desde, dias[1].turnos[0].hasta], ['00:00', '24:00']);
+});
+
+test('los nombres del cuadro del Colegio (con título, nombre de pila y dirección) se entienden', async () => {
+  const sanchezMartin = (await crear({ nombre: 'Farmacia Sánchez Martín' })).body.farmacia;
+  await crear({ nombre: 'Farmacia Sánchez Sánchez' });
+  await crear({ nombre: 'Farmacia Prieto Martín y Morán Moliz' });
+
+  const r = await guardarMes('2026-09', [
+    { dia: '2026-09-01', farmacia: 'Farmacia Lda. Mª Esperanza Sanchez Martín (C/ Alcalde César Barrios, 2)' },
+    { dia: '2026-09-01', farmacia: 'Farmacia Ldo. José Prieto Martín y Lda. Mª Teresa Morán Moliz (Plaza España, 1)' },
+  ]);
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+
+  const turnos = (await delMes('2026-09'))[0].turnos;
+  assert.ok(turnos.some((x) => x._id === sanchezMartin._id), 'Sánchez Martín, no Sánchez Sánchez');
+  assert.ok(turnos.some((x) => x.nombre === 'Farmacia Prieto Martín y Morán Moliz'));
+  assert.equal(turnos.length, 2);
+});
+
+test('un nombre que encaja con dos farmacias se rechaza en vez de adivinar', async () => {
+  const r = await guardarMes('2026-09', [{ dia: '2026-09-05', farmacia: 'Farmacia Sánchez' }]);
+  assert.equal(r.status, 400);
+  assert.match(r.body.mensaje, /ambiguas|no existen/);
+});
+
+test('un horario mal escrito se rechaza', async () => {
+  const r = await guardarMes('2026-10', [{ dia: '2026-10-05', farmacia: 'Farmacia Pérez', desde: '25:00', hasta: '22:00' }]);
+  assert.equal(r.status, 400);
+  assert.match(r.body.mensaje, /Horarios no válidos/);
 });
 
 test('cargar el mismo mes otra vez lo sustituye entero', async () => {
   await guardarMes('2026-10', [{ dia: '2026-10-15', farmacia: 'Farmacia Islantilla' }]);
-  const dias = await delMes('2026-10');
-  assert.deepEqual(dias.map((d) => d.dia), ['2026-10-15']);
+  assert.deepEqual((await delMes('2026-10')).map((d) => d.dia), ['2026-10-15']);
 });
 
 test('una entrada repetida no duplica la guardia', async () => {
@@ -145,26 +184,39 @@ test('vaciar un mes borra solo ese mes', async () => {
 
 // ----------------------------------------------------------- guardia en curso
 
-test('la guardia actual y la siguiente salen de los días que tocan según la hora', async () => {
-  const dia = diaDeGuardia(ahoraEnMadrid());
-  const siguiente = sumarDias(dia, 1);
+test('"ahora" son solo las guardias con el horario abierto: las ya cerradas o por abrir no cuentan', async () => {
+  const ahora = ahoraEnMadrid();
+  const manana = sumarDias(ahora.dia, 1);
 
-  // Pueden caer en meses distintos (a fin de mes), y cada mes se carga aparte.
-  await guardarMes(dia.slice(0, 7), [{ dia, farmacia: 'Farmacia Pérez', nota: 'Hoy' }]);
-  await guardarMes(siguiente.slice(0, 7), [
-    ...(siguiente.slice(0, 7) === dia.slice(0, 7) ? [{ dia, farmacia: 'Farmacia Pérez', nota: 'Hoy' }] : []),
-    { dia: siguiente, farmacia: 'Farmacia La Antilla' },
-  ]);
+  // Una ventana que NUNCA contiene la hora actual: por abrir si es por la
+  // mañana, ya cerrada si es por la tarde.
+  const [desde, hasta] = ahora.hora < '12:00' ? ['13:00', '14:00'] : ['01:00', '02:00'];
+
+  const entradas = [
+    { dia: ahora.dia, farmacia: 'Farmacia Vacas Barranco', desde: '00:00', hasta: '24:00' },
+    { dia: ahora.dia, farmacia: 'Farmacia Pérez', desde, hasta },
+    { dia: manana, farmacia: 'Farmacia La Antilla', desde: '09:30', hasta: '22:00' },
+  ];
+  // Hoy y mañana pueden ser de meses distintos (a fin de mes): cada mes se carga aparte.
+  for (const mes of new Set(entradas.map((e) => e.dia.slice(0, 7)))) {
+    const lasSuyas = entradas.filter((e) => e.dia.startsWith(mes));
+    assert.equal((await guardarMes(mes, lasSuyas)).status, 200);
+  }
 
   const r = await t.api.get('/farmacias/guardia');
-  assert.equal(r.body.actual.dia, dia);
-  assert.deepEqual(r.body.actual.farmacias.map((f) => f.nombre), ['Farmacia Pérez']);
-  assert.equal(r.body.actual.farmacias[0].telefono, '959 00 00 01');
-  assert.equal(r.body.siguiente.dia, siguiente);
-  assert.deepEqual(r.body.siguiente.farmacias.map((f) => f.nombre), ['Farmacia La Antilla']);
-  // El último día con datos de todo lo cargado (noviembre ya lo estaba).
-  assert.equal(r.body.calendario_hasta, [siguiente, '2026-11-03'].sort().at(-1));
-  assert.equal(r.body.cambio, '09:30');
+  assert.deepEqual(nombres(r.body.en_curso), ['Farmacia Vacas Barranco']);
+  // Por hora de inicio: la de 24 horas (00:00) siempre va antes que la de 01:00 o 13:00.
+  assert.deepEqual(nombres(r.body.hoy.turnos), ['Farmacia Vacas Barranco', 'Farmacia Pérez']);
+  assert.equal(r.body.hoy.dia, ahora.dia);
+  assert.deepEqual(nombres(r.body.manana.turnos), ['Farmacia La Antilla']);
+  assert.equal(r.body.manana.dia, manana);
+});
+
+test('de guardia ahora incluye los datos para llamar y llegar', async () => {
+  const r = await t.api.get('/farmacias/guardia');
+  const vacas = r.body.en_curso[0];
+  assert.equal(vacas.nombre, 'Farmacia Vacas Barranco');
+  assert.equal(vacas.horario, '24 horas');
 });
 
 // ------------------------------------------------------ desactivar y eliminar
@@ -176,14 +228,14 @@ test('una farmacia con guardias no se puede eliminar, pero sí desactivar', asyn
   const desactivar = await t.api.patch(`/farmacias/${farmacia.perez._id}`, { activa: false }, { token: admin.token });
   assert.equal(desactivar.body.farmacia.activa, false);
 
-  const publico = (await t.api.get('/farmacias')).body.farmacias.map((f) => f.nombre);
+  const publico = nombres((await t.api.get('/farmacias')).body.farmacias);
   assert.equal(publico.includes('Farmacia Pérez'), false, 'el directorio público la oculta');
 
-  const admin_ = (await t.api.get('/farmacias/todas', { token: admin.token })).body.farmacias.map((f) => f.nombre);
-  assert.equal(admin_.includes('Farmacia Pérez'), true, 'el admin sí la ve, para reactivarla');
+  const todas = nombres((await t.api.get('/farmacias/todas', { token: admin.token })).body.farmacias);
+  assert.equal(todas.includes('Farmacia Pérez'), true, 'el admin sí la ve, para reactivarla');
 
   const guardia = await t.api.get('/farmacias/guardia');
-  assert.equal(guardia.body.actual.farmacias.length, 1, 'el calendario manda: sigue saliendo de guardia');
+  assert.equal(nombres(guardia.body.hoy.turnos).includes('Farmacia Pérez'), true, 'el calendario manda: sigue en su día');
 });
 
 test('una farmacia sin guardias sí se elimina', async () => {

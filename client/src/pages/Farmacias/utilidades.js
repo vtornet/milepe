@@ -6,7 +6,10 @@ export const ZONAS = {
   otra: 'Otra zona',
 };
 
-export const enlaceTelefono = (telefono) => `tel:${telefono.replace(/[^\d+]/g, '')}`;
+// Una farmacia puede tener dos telefonos ("959 48 65 73 / 959 40 01 26"): el
+// enlace para marcar usa solo el primero; juntar los digitos de los dos daria
+// un numero que no existe.
+export const enlaceTelefono = (telefono) => `tel:${telefono.split(/[/;,]/)[0].replace(/[^\d+]/g, '')}`;
 
 // Ruta hasta la farmacia en el mapa del móvil. Con coordenadas va derecho al
 // punto; sin ellas, busca la dirección (peor, pero sirve).
@@ -43,3 +46,29 @@ const moverMes = (mes, delta) => {
 
 export const mesAnterior = (mes) => moverMes(mes, -1);
 export const mesSiguiente = (mes) => moverMes(mes, 1);
+
+// --- Turnos ---
+
+const sinCeroInicial = (hora) => hora.replace(/^0/, '');
+
+// "00:00"-"24:00" -> "24 horas"; "09:30"-"22:00" -> "9:30–22:00". Si el fin
+// coincide con el inicio (09:30 a 09:30) son 24 horas seguidas, pero que
+// empiezan a esa hora: se dice.
+export const etiquetaTurno = ({ desde, hasta }) => {
+  if (desde === '00:00' && hasta === '24:00') return '24 horas';
+  if (desde === hasta) return `24 horas (de ${sinCeroInicial(desde)} a ${sinCeroInicial(hasta)})`;
+  return `${sinCeroInicial(desde)}–${sinCeroInicial(hasta)}`;
+};
+
+// Agrupa los turnos de un día por horario, manteniendo el orden que trae la
+// API (por hora de inicio): [{ etiqueta, farmacias: [...] }].
+export const agruparPorTurno = (turnos) => {
+  const grupos = [];
+  for (const turno of turnos) {
+    const etiqueta = etiquetaTurno(turno);
+    const grupo = grupos.find((g) => g.etiqueta === etiqueta);
+    if (grupo) grupo.farmacias.push(turno);
+    else grupos.push({ etiqueta, farmacias: [turno] });
+  }
+  return grupos;
+};

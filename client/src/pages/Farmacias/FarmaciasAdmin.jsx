@@ -187,7 +187,7 @@ function CargarCalendario({ mesInicial, onCambio }) {
     if (mesInicial) setMes((actual) => actual || mesInicial);
   }, [mesInicial]);
 
-  const { guardias, errores } = interpretarCalendario(texto);
+  const { guardias, errores } = interpretarCalendario(texto, mes);
   const puedeEnviar = Boolean(mes) && guardias.length > 0 && errores.length === 0;
 
   const enviar = async () => {
@@ -224,9 +224,13 @@ function CargarCalendario({ mesInicial, onCambio }) {
     <div className="tarjeta-formulario">
       <h3>Cargar el calendario de un mes</h3>
       <p className="tarjeta-meta">
-        Una guardia por línea: <code>fecha;farmacia</code> o <code>fecha;farmacia;nota</code>. La fecha puede ser{' '}
-        <code>2026-10-03</code> o <code>3/10/2026</code>, y la farmacia tiene que existir en el directorio. Si el mes ya
-        tenía calendario, se <strong>sustituye entero</strong>.
+        Pega el cuadro del mes, <strong>una guardia por línea</strong>, con <code>;</code> entre las partes. Vale con
+        fecha (<code>2026-10-03;Farmacia;9:30-22:00</code>) o como patrón semanal, que es como lo publica el Colegio:{' '}
+        <code>L-V;Farmacia;9:30-22:00</code>, <code>S</code>, <code>D</code>, <code>festivos</code> o{' '}
+        <code>todos;Farmacia;24h</code>. Los festivos del mes se indican con <code>festivo;12/10/2026</code>: ese día
+        solo cuentan las líneas «festivos» y «todos». La farmacia puede escribirse como en el cuadro (con «Lda.», nombre
+        de pila y dirección) siempre que exista en el directorio. Si el mes ya tenía calendario, se{' '}
+        <strong>sustituye entero</strong>.
       </p>
 
       <label htmlFor="cal-mes">Mes</label>
@@ -235,9 +239,9 @@ function CargarCalendario({ mesInicial, onCambio }) {
       <label htmlFor="cal-texto">Guardias</label>
       <textarea
         id="cal-texto"
-        rows={8}
+        rows={10}
         value={texto}
-        placeholder={'2026-10-01;Farmacia Pérez\n2026-10-02;Farmacia La Antilla;De 9:30 a 22:00'}
+        placeholder={'L-V;Farmacia Sánchez Martín;9:30-22:00\nS;Farmacia Sánchez Martín;9:30-22:00\ntodos;Farmacia Vacas Barranco;24h\nfestivo;12/10/2026'}
         onChange={(e) => setTexto(e.target.value)}
       />
 

@@ -5,21 +5,32 @@ import CabeceraSeccion from '../../components/CabeceraSeccion.jsx';
 import Icono from '../../components/Icono.jsx';
 import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import FarmaciasAdmin from './FarmaciasAdmin.jsx';
-import { etiquetaDia, etiquetaMes, mesAnterior, mesSiguiente, ZONAS, enlaceComoLlegar, enlaceTelefono } from './utilidades.js';
+import {
+  agruparPorTurno,
+  enlaceComoLlegar,
+  enlaceTelefono,
+  etiquetaDia,
+  etiquetaMes,
+  etiquetaTurno,
+  mesAnterior,
+  mesSiguiente,
+  ZONAS,
+} from './utilidades.js';
 
 // Donde el Colegio publica el cuadro oficial. Es la fuente de todo lo que
 // se ve aquí y el sitio al que mandar cuando los datos de MiLepe no llegan.
 const CUADRO_OFICIAL = 'https://cofhuelva.org/cuadro-de-guardias';
 
-// "Hasta las 09:30 de mañana" o, de madrugada, "hasta las 09:30 de hoy".
-const hastaCuando = (guardia, ahora, cambio) =>
-  guardia.dia === ahora.dia ? `hasta las ${cambio} de mañana` : `hasta las ${cambio} de hoy`;
-
-function TarjetaFarmacia({ farmacia }) {
+function TarjetaFarmacia({ farmacia, turno }) {
   return (
     <article className="tarjeta">
       <strong>{farmacia.nombre}</strong>
-      {farmacia.nota && <div className="tarjeta-meta">{farmacia.nota}</div>}
+      {turno && (
+        <div className="tarjeta-meta">
+          <Icono nombre="reloj" tam={14} /> De guardia: {etiquetaTurno(turno)}
+          {turno.nota ? ` · ${turno.nota}` : ''}
+        </div>
+      )}
 
       <div className="telefonos-contacto">
         {farmacia.telefono && (
@@ -39,7 +50,7 @@ function TarjetaFarmacia({ farmacia }) {
           <Icono nombre="ubicacion" tam={14} /> {farmacia.direccion} · {ZONAS[farmacia.zona] || ''}
         </div>
       )}
-      {farmacia.horario && (
+      {!turno && farmacia.horario && (
         <div className="tarjeta-meta">
           <Icono nombre="reloj" tam={14} /> {farmacia.horario}
         </div>
@@ -48,18 +59,40 @@ function TarjetaFarmacia({ farmacia }) {
   );
 }
 
-// Lo que se dice cuando no hay farmacias para un día. Distinguir las tres
-// causas importa: «no hay guardia» sería falso casi siempre, lo real es que
-// los datos no están, y quien busca una farmacia a las tres de la madrugada
-// necesita saber que tiene que mirar otra fuente.
-function SinDatos({ guardia, calendarioHasta }) {
+// Los turnos de un día, agrupados por horario: "24 horas: ..." y "9:30–22:00: ...".
+function TurnosDelDia({ turnos }) {
+  return agruparPorTurno(turnos).map((grupo) => (
+    <div key={grupo.etiqueta} className="fila" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <strong>{grupo.etiqueta}</strong>
+      <span style={{ textAlign: 'right' }}>
+        {grupo.farmacias.map((f) => (
+          <div key={f._id}>
+            {f.nombre}
+            {f.nota ? ` (${f.nota})` : ''}
+          </div>
+        ))}
+      </span>
+    </div>
+  ));
+}
+
+// Lo que se dice cuando no hay ninguna farmacia de guardia abierta ahora.
+// Distinguir las causas importa: «no hay guardia» sería falso casi siempre;
+// lo real es que los datos no están, o que las de hoy están fuera de horario.
+// Quien busca una farmacia a las tres de la madrugada necesita saber que
+// tiene que mirar otra fuente.
+function SinGuardiaAhora({ guardia }) {
+  const { calendario_hasta: hasta, hoy } = guardia;
   let motivo;
-  if (!calendarioHasta) {
+
+  if (!hasta) {
     motivo = 'Todavía no hay ningún calendario de guardias cargado en MiLepe.';
-  } else if (calendarioHasta < guardia.dia) {
-    motivo = `El calendario cargado en MiLepe llega hasta el ${etiquetaDia(calendarioHasta)}.`;
+  } else if (hasta < hoy.dia) {
+    motivo = `El calendario cargado en MiLepe llega hasta el ${etiquetaDia(hasta)}.`;
+  } else if (hoy.turnos.length > 0) {
+    motivo = 'Ahora mismo no hay ninguna farmacia de guardia abierta según el calendario (las de hoy atienden en los horarios de abajo).';
   } else {
-    motivo = 'No hay ninguna guardia anotada para este día en el calendario de MiLepe.';
+    motivo = 'No hay ninguna guardia anotada para hoy en el calendario de MiLepe.';
   }
 
   return (
@@ -107,7 +140,7 @@ function FarmaciasPage() {
 
     Promise.all([cargarGuardia(), cargarDirectorio()])
       .then(([datos]) => {
-        if (!cancelado) setMes(datos.actual.dia.slice(0, 7));
+        if (!cancelado) setMes(datos.hoy.dia.slice(0, 7));
       })
       .catch(() => {
         if (!cancelado) setError('No se pudieron cargar las farmacias de guardia.');
@@ -155,24 +188,30 @@ function FarmaciasPage() {
             De guardia ahora
           </h2>
           <p className="tarjeta-meta">
-            {etiquetaDia(guardia.actual.dia)}, {hastaCuando(guardia.actual, guardia.ahora, guardia.cambio)}
+            {etiquetaDia(guardia.ahora.dia)}, {guardia.ahora.hora}
           </p>
 
-          {guardia.actual.farmacias.length > 0 ? (
-            guardia.actual.farmacias.map((f) => <TarjetaFarmacia key={f._id} farmacia={f} />)
+          {guardia.en_curso.length > 0 ? (
+            guardia.en_curso.map((f) => <TarjetaFarmacia key={f._id} farmacia={f} turno={f} />)
           ) : (
-            <SinDatos guardia={guardia.actual} calendarioHasta={guardia.calendario_hasta} />
+            <SinGuardiaAhora guardia={guardia} />
           )}
 
-          {guardia.siguiente.farmacias.length > 0 && (
+          {guardia.hoy.turnos.length > 0 && (
             <>
-              <h2 className="contactos-titulo">Siguiente relevo</h2>
-              <p className="tarjeta-meta">
-                {etiquetaDia(guardia.siguiente.dia)}, desde las {guardia.cambio}
-              </p>
-              {guardia.siguiente.farmacias.map((f) => (
-                <TarjetaFarmacia key={f._id} farmacia={f} />
-              ))}
+              <h2 className="contactos-titulo">Hoy, por horarios</h2>
+              <div className="tarjeta pila">
+                <TurnosDelDia turnos={guardia.hoy.turnos} />
+              </div>
+            </>
+          )}
+
+          {guardia.manana.turnos.length > 0 && (
+            <>
+              <h2 className="contactos-titulo">Mañana, {etiquetaDia(guardia.manana.dia)}</h2>
+              <div className="tarjeta pila">
+                <TurnosDelDia turnos={guardia.manana.turnos} />
+              </div>
             </>
           )}
 
@@ -206,22 +245,14 @@ function FarmaciasPage() {
               {dias.map((d) => (
                 <div
                   key={d.dia}
-                  className="fila"
                   style={{
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    fontWeight: guardia?.actual.dia === d.dia ? 700 : undefined,
+                    padding: 'var(--e-2) 0',
+                    borderBottom: '1px solid var(--borde)',
+                    fontWeight: guardia?.hoy.dia === d.dia ? 700 : undefined,
                   }}
                 >
-                  <span>{etiquetaDia(d.dia, { corto: true })}</span>
-                  <span style={{ textAlign: 'right' }}>
-                    {d.farmacias.map((f) => (
-                      <div key={f._id}>
-                        {f.nombre}
-                        {f.nota ? ` (${f.nota})` : ''}
-                      </div>
-                    ))}
-                  </span>
+                  <div>{etiquetaDia(d.dia, { corto: true })}</div>
+                  <TurnosDelDia turnos={d.turnos} />
                 </div>
               ))}
             </div>

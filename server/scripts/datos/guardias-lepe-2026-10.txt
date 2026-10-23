@@ -1,0 +1,9 @@
+L-V;Farmacia Sánchez Martín;9:30-22:00
+L-V;Farmacia Perales González;9:30-22:00
+L-V;Farmacia Saniger Bernal;9:30-22:00
+S;Farmacia Sánchez Martín;9:30-22:00
+S;Farmacia Saniger Bernal;9:30-22:00
+D;Farmacia Sánchez Martín;9:30-22:00
+festivos;Farmacia Sánchez Martín;9:30-22:00
+todos;Farmacia Vacas Barranco;24h
+festivo;12/10/2026

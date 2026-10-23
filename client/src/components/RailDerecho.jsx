@@ -110,13 +110,13 @@ function RailDerecho() {
             Farmacia de guardia
           </h2>
           <div className="panel-cuerpo pila">
-            {guardia.actual.farmacias.length > 0 ? (
-              guardia.actual.farmacias.map((farmacia) => (
+            {guardia.en_curso.length > 0 ? (
+              guardia.en_curso.map((farmacia) => (
                 <div key={farmacia._id}>
                   <strong>{farmacia.nombre}</strong>
                   {farmacia.telefono && (
                     <a
-                      href={`tel:${farmacia.telefono.replace(/[^\d+]/g, '')}`}
+                      href={`tel:${farmacia.telefono.split(/[/;,]/)[0].replace(/[^\d+]/g, '')}`}
                       className="fila"
                       style={{ textDecoration: 'none' }}
                     >
@@ -126,7 +126,7 @@ function RailDerecho() {
                 </div>
               ))
             ) : (
-              <p className="tarjeta-meta">Sin datos de guardia para hoy.</p>
+              <p className="tarjeta-meta">Ahora mismo no hay datos de guardia.</p>
             )}
             <Link to="/farmacias" className="btn btn-plano btn-sm">
               Ver las farmacias de guardia
