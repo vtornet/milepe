@@ -39,7 +39,7 @@ function SelectorAvatar({ url, nombreUsuario, onCambio }) {
       const formulario = new FormData();
       formulario.append('imagenes', archivo);
       const { data } = await api.post('/subidas/imagenes', formulario);
-      onCambio(data.urls[0]);
+      onCambio(data.imagenes[0]);
     } catch (err) {
       setError(err.response?.data?.mensaje || 'No se pudo subir la foto.');
       setVistaPrevia(null);
