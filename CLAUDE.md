@@ -1070,7 +1070,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 64 tests, about a minute and a half. Each file runs
+`server/test/*.test.js`: 97 tests, under two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1082,7 +1082,10 @@ several processes downloading the `mongod` binary at once can corrupt it.
   `moderacion` (threshold, appeals, append-only log) · `mensajeria` (mutual
   follow, outsiders get 404, blocking) · `permisos` (admin-only routes,
   contacts, whitelist of fields, no real name leaks) · `limites` (429s,
-  helmet) · `copiaSeguridad` (dump → restore round trip).
+  helmet) · `copiaSeguridad` (dump → restore round trip) · `farmacias`
+  and `guardiaFarmacia` (calendar loading; the time-zone / shift-change
+  maths, which needs no database) · `calendarioGuardias` (imports a *client*
+  util, which is pure — the client has no runner of its own).
 - Rate limits are **off in tests** (`LIMITES_DESACTIVADOS=1`, set by
   `arrancar()`): the whole suite comes from one IP and would exhaust them.
   Only `limites.test.js` turns them on, and its tests share one counter, so
@@ -1102,6 +1105,54 @@ several processes downloading the `mongod` binary at once can corrupt it.
   (`MONGOMS_DOWNLOAD_DIR`) so only the first run downloads it.
 - A new model or controller should come with a test in the matching file;
   keep the pattern of one process per file.
+
+### Farmacias de guardia
+
+`/api/farmacias` + `/farmacias` in the client. **There is no API to read
+this from**: the Colegio de Farmacéuticos de Huelva publishes one PDF per
+month per town ("Cuadro de Farmacias de Guardia en Lepe"), its site's
+`robots.txt` is `Disallow: /` (so no scraper), and the national portal just
+redirects there. So an admin keeps it by hand, from that PDF. If the Colegio
+ever gives a data feed, only the loading step changes.
+
+- Two standalone collections, no `Post` (same family as Contactos and
+  Turismo): `Farmacia` (directory: name, zone, address, phone, hours, optional
+  map point, `activa`) and `GuardiaFarmacia` (one row per pharmacy per day).
+  A day can have several rows (24 h + daytime, or Lepe + La Antilla), so the
+  unique index is `(dia, farmacia_id)`, not `dia`.
+- **`dia` is the text "AAAA-MM-DD", not a Date.** A guardia is "3 October",
+  not an instant, and a Date at midnight changes day with the server's time
+  zone (Railway runs in UTC). Everything is reasoned in Europe/Madrid
+  (`utils/guardiaFarmacia.js`).
+- **The guardia in force depends on the hour.** A 24 h guardia does not end
+  at midnight but when the next one opens, assumed to be **09:30**
+  (`FARMACIA_HORA_CAMBIO`, default `09:30`; `00:00` turns the shift off and
+  uses calendar days). At 3 a.m. the pharmacy on duty is *yesterday's*, which
+  is exactly when people look for one. **The 09:30 is an assumption, not
+  something read from the PDF — check it against a real cuadro.**
+- `GET /guardia` returns `actual` and `siguiente` plus `calendario_hasta`
+  (last day loaded). The client tells three cases apart — nothing loaded,
+  calendar ends before today, no entry for today — instead of saying "no
+  guardia", which would be false: the real situation is that the data is
+  missing, and whoever is looking for an open pharmacy needs to be sent to
+  the official cuadro. The page always links it and says the data is typed in
+  by hand.
+- **Loading a month** is `PUT /guardias/:mes` (admin) with `{ guardias: [{
+  dia, farmacia (id or name), nota? }] }`. It **replaces the whole month** and
+  validates everything *before* touching anything (no transactions on a
+  single-node Mongo): unknown pharmacies, impossible dates (`2026-02-30`) and
+  dates outside the month reject the whole load, naming each problem, and the
+  previous calendar stays intact. Names match ignoring accents, case and
+  extra spaces. The admin UI (`FarmaciasAdmin`) takes pasted text, parsed by
+  `client/src/utils/calendarioGuardias.js` (one guardia per line:
+  `fecha;farmacia;nota`, dates ISO or `D/M/AAAA`), shows how many lines were
+  understood and **lists the ones that weren't** rather than dropping them.
+- A pharmacy with guardias can't be deleted (409) — it would leave calendar
+  days pointing at nothing; use `activa: false`. An inactive pharmacy leaves
+  the public directory but **still shows up on its scheduled days**: the
+  calendar is authoritative.
+- The right rail shows "Farmacia de guardia" (hidden on `/farmacias`);
+  Contactos links to the page. `farmacia` is a new line icon.
 
 ### El Tiempo
 
@@ -1588,8 +1639,9 @@ Rough priority; none started.
 2. **Quejas with a response**: responsible, visible status history, the
    town hall's answer, and a public resolved-rate / mean-time summary
    (the admin stats already compute mean resolution time).
-3. **Daily utilities** in the Muro/rail: pharmacy on duty, bus times,
-   beach status (flag, jellyfish, crowding), tides. El Tiempo (cached
+3. **Daily utilities** in the Muro/rail: bus times, beach status (flag,
+   jellyfish, crowding), tides. (Pharmacy on duty is done — see "Farmacias de
+   guardia"; ask the Colegio for a data feed.) El Tiempo (cached
    proxy) is the model for an external-data widget.
 4. **Tablón de anuncios** (second hand, free stuff, lost objects/animals,
    neighbours helping neighbours) — new `tipo` + `*_detalle`.

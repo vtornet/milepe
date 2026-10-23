@@ -16,12 +16,14 @@ function RailDerecho() {
   const location = useLocation();
   const [tiempo, setTiempo] = useState(null);
   const [urgencias, setUrgencias] = useState([]);
+  const [guardia, setGuardia] = useState(null);
 
   // En la propia página de El Tiempo (o de Contactos) su panel del rail
   // sería el mismo dato dos veces en la misma pantalla, que es justo lo que
   // hace que una columna lateral parezca relleno en vez de un resumen.
   const enTiempo = location.pathname.startsWith('/tiempo');
   const enContactos = location.pathname.startsWith('/contactos');
+  const enFarmacias = location.pathname.startsWith('/farmacias');
 
   useEffect(() => {
     let cancelado = false;
@@ -39,6 +41,13 @@ function RailDerecho() {
       .get('/contactos-interes')
       .then(({ data }) => {
         if (!cancelado) setUrgencias(data.contactos.filter((c) => c.categoria === 'otro').slice(0, 3));
+      })
+      .catch(() => {});
+
+    api
+      .get('/farmacias/guardia')
+      .then(({ data }) => {
+        if (!cancelado) setGuardia(data);
       })
       .catch(() => {});
 
@@ -90,6 +99,38 @@ function RailDerecho() {
                 </Link>
               </>
             )}
+          </div>
+        </section>
+      )}
+
+      {guardia && !enFarmacias && (
+        <section className="panel">
+          <h2 className="panel-titulo">
+            <Icono nombre="farmacia" tam={15} />
+            Farmacia de guardia
+          </h2>
+          <div className="panel-cuerpo pila">
+            {guardia.actual.farmacias.length > 0 ? (
+              guardia.actual.farmacias.map((farmacia) => (
+                <div key={farmacia._id}>
+                  <strong>{farmacia.nombre}</strong>
+                  {farmacia.telefono && (
+                    <a
+                      href={`tel:${farmacia.telefono.replace(/[^\d+]/g, '')}`}
+                      className="fila"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <Icono nombre="telefono" tam={14} /> {farmacia.telefono}
+                    </a>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="tarjeta-meta">Sin datos de guardia para hoy.</p>
+            )}
+            <Link to="/farmacias" className="btn btn-plano btn-sm">
+              Ver las farmacias de guardia
+            </Link>
           </div>
         </section>
       )}

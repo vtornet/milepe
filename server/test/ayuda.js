@@ -64,6 +64,7 @@ export async function arrancar({ limites = false } = {}) {
     get: (ruta, opciones) => pedir('GET', ruta, opciones),
     post: (ruta, cuerpo, opciones) => pedir('POST', ruta, { ...opciones, cuerpo }),
     patch: (ruta, cuerpo, opciones) => pedir('PATCH', ruta, { ...opciones, cuerpo }),
+    put: (ruta, cuerpo, opciones) => pedir('PUT', ruta, { ...opciones, cuerpo }),
     delete: (ruta, opciones) => pedir('DELETE', ruta, opciones),
   };
 

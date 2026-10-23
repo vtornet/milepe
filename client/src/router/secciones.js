@@ -18,6 +18,7 @@ export const SECCIONES = [
   { ruta: '/negocios', etiqueta: 'Negocios', icono: 'negocios', tipos: ['negocio'] },
   { ruta: '/empleo', etiqueta: 'Empleo', icono: 'empleo', tipos: ['empleo_busco', 'empleo_ofrezco'] },
   { ruta: '/tiempo', etiqueta: 'El Tiempo', icono: 'tiempo', tipos: [] },
+  { ruta: '/farmacias', etiqueta: 'Farmacias', icono: 'farmacia', tipos: [] },
   { ruta: '/contactos', etiqueta: 'Contactos', icono: 'contactos', tipos: [] },
 ];
 

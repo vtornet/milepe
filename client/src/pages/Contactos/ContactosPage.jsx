@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
 import Icono from '../../components/Icono.jsx';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import ContactoFormulario from './ContactoFormulario.jsx';
 
@@ -170,6 +171,11 @@ function ContactosPage() {
           </div>
         )}
       </div>
+
+      <p className="tarjeta-meta">
+        <Icono nombre="farmacia" tam={14} /> ¿Buscas una farmacia abierta? Mira las{' '}
+        <Link to="/farmacias">farmacias de guardia</Link>.
+      </p>
 
       {formulario && (
         <ContactoFormulario
