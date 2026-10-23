@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
 import Icono from '../../components/Icono.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
+import ContactoFormulario from './ContactoFormulario.jsx';
 
 // Mismo enum que server/src/models/ContactoInteres.js
 // (CATEGORIAS_CONTACTO). El orden de esta lista es el orden en que se
@@ -38,16 +40,87 @@ const irACategoria = (valor) => {
   destino.scrollIntoView({ behavior: reducir ? 'auto' : 'smooth', block: 'start' });
 };
 
+// Botones de administrador de una ficha: editar, ocultar/mostrar y
+// eliminar (con el "¿Seguro?" dentro de la propia tarjeta, no con un
+// confirm() del navegador). Misma mecánica que RecursoTarjeta en Turismo.
+function AccionesAdmin({ contacto, onEditar, onCambiado, onEliminado }) {
+  const [confirmando, setConfirmando] = useState(false);
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState(null);
+
+  const alternarActivo = async () => {
+    setError(null);
+    setOcupado(true);
+    try {
+      const { data } = await api.patch(`/contactos-interes/${contacto._id}`, { activo: !contacto.activo });
+      onCambiado(data.contacto);
+    } catch (err) {
+      setError(err.response?.data?.mensaje || 'No se pudo cambiar la visibilidad');
+    } finally {
+      setOcupado(false);
+    }
+  };
+
+  const eliminar = async () => {
+    setError(null);
+    setOcupado(true);
+    try {
+      await api.delete(`/contactos-interes/${contacto._id}`);
+      onEliminado(contacto._id);
+    } catch (err) {
+      setError(err.response?.data?.mensaje || 'No se pudo eliminar');
+      setOcupado(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="recurso-admin">
+        {confirmando ? (
+          <>
+            <span className="tarjeta-meta">¿Eliminar para siempre?</span>
+            <button type="button" className="btn btn-peligro btn-sm" disabled={ocupado} onClick={eliminar}>
+              Sí, eliminar
+            </button>
+            <button type="button" className="btn btn-contorno btn-sm" onClick={() => setConfirmando(false)}>
+              No
+            </button>
+          </>
+        ) : (
+          <>
+            <button type="button" className="btn btn-contorno btn-sm" onClick={() => onEditar(contacto)}>
+              <Icono nombre="lapiz" tam={14} /> Editar
+            </button>
+            <button type="button" className="btn btn-contorno btn-sm" disabled={ocupado} onClick={alternarActivo}>
+              {contacto.activo ? 'Ocultar' : 'Mostrar'}
+            </button>
+            <button type="button" className="btn btn-plano btn-sm" onClick={() => setConfirmando(true)}>
+              Eliminar
+            </button>
+          </>
+        )}
+      </div>
+      {error && <p className="mensaje-error">{error}</p>}
+    </>
+  );
+}
+
 function ContactosPage() {
+  const { usuario } = useAuth();
+  const esAdmin = usuario?.rol === 'admin';
+
   const [contactos, setContactos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  // null = cerrado, 'nuevo' = creando, o el contacto que se está editando.
+  const [formulario, setFormulario] = useState(null);
 
   useEffect(() => {
     let cancelado = false;
 
+    // El admin pide también los ocultos: es la única forma de reactivarlos.
     api
-      .get('/contactos-interes')
+      .get(esAdmin ? '/contactos-interes/todos' : '/contactos-interes')
       .then(({ data }) => {
         if (!cancelado) setContactos(data.contactos);
       })
@@ -61,7 +134,15 @@ function ContactosPage() {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [esAdmin]);
+
+  const manejarGuardado = (guardado) => {
+    setContactos((actuales) => {
+      const existe = actuales.some((c) => c._id === guardado._id);
+      return existe ? actuales.map((c) => (c._id === guardado._id ? guardado : c)) : [...actuales, guardado];
+    });
+    setFormulario(null);
+  };
 
   if (cargando) return <p>Cargando contactos...</p>;
   if (error) return <p className="mensaje-error">{error}</p>;
@@ -72,7 +153,33 @@ function ContactosPage() {
 
   return (
     <section>
-      <h1>Contactos de interés</h1>
+      <div className="cabecera-pagina">
+        <div className="cabecera-pagina-texto">
+          <h1>Contactos de interés</h1>
+        </div>
+        {esAdmin && (
+          <div className="cabecera-pagina-acciones">
+            <button
+              type="button"
+              className={formulario === 'nuevo' ? 'btn btn-contorno' : 'btn btn-primario'}
+              onClick={() => setFormulario(formulario === 'nuevo' ? null : 'nuevo')}
+            >
+              <Icono nombre={formulario === 'nuevo' ? 'cerrar' : 'anadir'} tam={18} />
+              {formulario === 'nuevo' ? 'Cancelar' : 'Nuevo contacto'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {formulario && (
+        <ContactoFormulario
+          key={formulario === 'nuevo' ? 'nuevo' : formulario._id}
+          categorias={CATEGORIAS}
+          contacto={formulario === 'nuevo' ? null : formulario}
+          onGuardado={manejarGuardado}
+          onCancelar={() => setFormulario(null)}
+        />
+      )}
 
       {contactos.length === 0 && (
         <p>
@@ -110,8 +217,9 @@ function ContactosPage() {
             </h2>
 
             {deEstaCategoria.map((contacto) => (
-              <article key={contacto._id} className="tarjeta">
+              <article key={contacto._id} className={`tarjeta${contacto.activo ? '' : ' recurso-oculto'}`}>
                 <strong>{contacto.nombre}</strong>
+                {!contacto.activo && <span className="insignia insignia-aviso">Oculto</span>}
 
                 <div className="telefonos-contacto">
                   <a className="telefono-principal" href={enlaceTelefono(contacto.telefono)}>
@@ -141,6 +249,15 @@ function ContactosPage() {
                 {contacto.horario && <div className="tarjeta-meta">
                     <Icono nombre="reloj" tam={14} /> {contacto.horario}
                   </div>}
+
+                {esAdmin && (
+                  <AccionesAdmin
+                    contacto={contacto}
+                    onEditar={setFormulario}
+                    onCambiado={manejarGuardado}
+                    onEliminado={(id) => setContactos((actuales) => actuales.filter((c) => c._id !== id))}
+                  />
+                )}
               </article>
             ))}
           </div>
