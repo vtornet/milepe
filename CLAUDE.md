@@ -1151,6 +1151,16 @@ ever gives a data feed, only the loading step changes.
   days pointing at nothing; use `activa: false`. An inactive pharmacy leaves
   the public directory but **still shows up on its scheduled days**: the
   calendar is authoritative.
+- **Directory seeded** by `scripts/sembrar-farmacias.mjs` (2026-10-23): 6 in
+  Lepe and 1 in La Antilla, from the directory of farmacias.es — a single
+  commercial source (Farmactitud S.L.) that doesn't say where its data comes
+  from. **The phone numbers are not cross-checked with a second source**, and
+  the La Antilla one has none. No pharmacy in Islantilla appeared. Names are
+  "Farmacia" + the owner, as that site lists them, and the Colegio's cuadro
+  may spell them differently: the month loader names every pharmacy it can't
+  match, and they are edited from the admin area. farmacias.es itself says it
+  does *not* have Lepe's guardia rota ("No tenemos el turno de guardia de
+  Lepe"), which confirms there is no third-party source for it either.
 - The right rail shows "Farmacia de guardia" (hidden on `/farmacias`);
   Contactos links to the page. `farmacia` is a new line icon.
 
