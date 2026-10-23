@@ -1521,8 +1521,8 @@ upstream has shipped a fix before touching it; don't run `npm audit fix
 
 ## Roadmap — pending work and queued ideas
 
-State at the time of writing (2026-10-22): production has 2 accounts, 3
-posts, 43 turismo records (24 photos), 113 contacts (9 inactive). Order
+State at the time of writing (2026-10-23): production has 3 accounts, 9
+posts, 81 turismo records (21 with photos, 34 images), 113 contacts (9 inactive). Order
 below is the order I'd work in.
 
 ### 1. Housekeeping before anything else
@@ -1554,15 +1554,19 @@ below is the order I'd work in.
 
 ### 3. Finish the content
 
-- **Turismo coverage.** Only the first listing page of each turismo.lepe.es
-  section was read; pages 2+ (Sol y playa, Alojamientos, Servicios
-  turísticos; Turismo cultural has 5 pages) and most "Más información"
-  detail pages were not. Sections without any photo: Gastronomía,
-  Alojamientos, Servicios turísticos; records without one: Santa Pura,
-  pinares costeros, monumento al marinero, Capilla de las Monjas… (no free
-  Commons photo was good enough). Photos are Commons only — the town's
-  site photos are not reusable (see "Turismo"). Ask the Ayuntamiento for
-  permission if they want theirs used.
+- **Turismo coverage.** Every listing page of turismo.lepe.es has now been
+  read (2026-10-23): 81 records, 21 with photos. What is still missing is
+  the "Más información" detail of the 43 records seeded first (only the 38
+  added later were read in full, from their own pages). Sections without
+  any photo: Gastronomía, Rutas; Alojamientos and Servicios turísticos have
+  one each. Records without one: Santa Pura, pinares costeros, monumento al
+  marinero, Capilla de las Monjas… (no free Commons photo was good enough).
+  Photos are Commons only — the town's site photos are not reusable (see
+  "Turismo"). Ask the Ayuntamiento for permission if they want theirs used.
+  The listing pages mix sections (page 2 of "Sol y playa" held chapels), so
+  the site's own categorisation is not reliable: a record's section here is
+  the one that fits its content, with festivals and monuments in Turismo
+  cultural.
 - Fotos in the Negocios and Eventos forms — done. Avatar upload for
   profiles (nobody has one; Google users get theirs from Google).
 - Seed content before promoting the app — an empty network doesn't attract

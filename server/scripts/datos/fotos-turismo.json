@@ -168,5 +168,81 @@
       "licencia": "CC BY 2.5",
       "pagina": "https://commons.wikimedia.org/wiki/File:El_Rompido_003.jpg"
     }
+  ],
+  "Iglesia Santo Domingo de Guzmán": [
+    {
+      "archivo": "Iglesia de Santo Domingo de Guzmán - Fachada.jpg",
+      "autor": "Jose A.",
+      "licencia": "CC BY 2.0",
+      "pagina": "https://commons.wikimedia.org/wiki/File:Iglesia_de_Santo_Domingo_de_Guzm%C3%A1n_-_Fachada.jpg"
+    },
+    {
+      "archivo": "Iglesia Santo Domingo Lepe espadaña.jpg",
+      "autor": "Daniel Toscano Díaz",
+      "licencia": "CC BY-SA 4.0",
+      "pagina": "https://commons.wikimedia.org/wiki/File:Iglesia_Santo_Domingo_Lepe_espada%C3%B1a.jpg"
+    }
+  ],
+  "Capilla San Cristóbal": [
+    {
+      "archivo": "Capilla San Cristóbal 2.JPG",
+      "autor": "Daniel Toscano Díaz",
+      "licencia": "CC BY-SA 3.0",
+      "pagina": "https://commons.wikimedia.org/wiki/File:Capilla_San_Crist%C3%B3bal_2.JPG"
+    },
+    {
+      "archivo": "Capilla San Cristóbal 3.JPG",
+      "autor": "Daniel Toscano Díaz",
+      "licencia": "CC BY-SA 3.0",
+      "pagina": "https://commons.wikimedia.org/wiki/File:Capilla_San_Crist%C3%B3bal_3.JPG"
+    }
+  ],
+  "Ermita de Nuestra Señora de la Bella": [
+    {
+      "archivo": "Ermita de la Bella.jpg",
+      "autor": "Daniel Toscano Díaz",
+      "licencia": "CC BY-SA 4.0",
+      "pagina": "https://commons.wikimedia.org/wiki/File:Ermita_de_la_Bella.jpg"
+    }
+  ],
+  "Plaza de España": [
+    {
+      "archivo": "Plaza de Lepe (Huelva).jpg",
+      "autor": "Jose A.",
+      "licencia": "CC BY 2.0",
+      "pagina": "https://commons.wikimedia.org/wiki/File:Plaza_de_Lepe_(Huelva).jpg"
+    }
+  ],
+  "Puerto Antilla Grand Hotel": [
+    {
+      "archivo": "Hotel Puertoantilla (3429006267).jpg",
+      "autor": "Pablo (from Vigo, España)",
+      "licencia": "CC BY-SA 2.0",
+      "pagina": "https://commons.wikimedia.org/wiki/File:Hotel_Puertoantilla_(3429006267).jpg"
+    }
+  ],
+  "Monumento a Nuestra Señora de La Bella y la ancianidad": [
+    {
+      "archivo": "BellaJMMartinez.JPG",
+      "autor": "Raquelalva",
+      "licencia": "Dominio público",
+      "pagina": "https://commons.wikimedia.org/wiki/File:BellaJMMartinez.JPG"
+    }
+  ],
+  "Museo - Casa Hermandad de Nuestra Señora de La Bella": [
+    {
+      "archivo": "Casa Hermandad de la Bella.jpg",
+      "autor": "Daniel Toscano Díaz",
+      "licencia": "CC BY-SA 4.0",
+      "pagina": "https://commons.wikimedia.org/wiki/File:Casa_Hermandad_de_la_Bella.jpg"
+    }
+  ],
+  "Centro Comercial Marina Ocio": [
+    {
+      "archivo": "Lepe - Marina Ocio.jpg",
+      "autor": "Jose A.",
+      "licencia": "CC BY 2.0",
+      "pagina": "https://commons.wikimedia.org/wiki/File:Lepe_-_Marina_Ocio.jpg"
+    }
   ]
 }
