@@ -3,11 +3,40 @@ import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import helmet from 'helmet';
+import * as Sentry from '@sentry/node';
 import routes from './routes/index.js';
+import { sentryActivo, deberiaAvisar } from './instrument.js';
+import { limiteGeneral, limiteEscrituras } from './middlewares/limites.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
+
+// En produccion la API esta detras del proxy de Railway: sin esto, req.ip
+// seria siempre la direccion del proxy y los limites de peticiones
+// contarian a todo el pueblo como una sola persona. El 1 es el numero de
+// proxies de confianza (solo el de Railway): fiarse de mas dejaria que
+// cualquiera se pusiera la IP que quisiera con una cabecera X-Forwarded-For
+// inventada.
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
+// Cabeceras de seguridad. Esto es una API que solo responde JSON, asi que la
+// politica de contenido puede ser la mas cerrada ('none': no carga nada).
+// En desarrollo se quita porque el panel de pruebas (/panel) lleva scripts
+// en linea que esa politica bloquearia. 'cross-origin' en los recursos
+// porque el cliente (otro dominio) es quien los consume.
+app.use(
+  helmet({
+    contentSecurityPolicy:
+      process.env.NODE_ENV === 'production'
+        ? { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } }
+        : false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }),
+);
 
 // CLIENT_URL admite varios origenes separados por comas, porque un dominio
 // propio son al menos dos (milepe.com y www.milepe.com) y en desarrollo
@@ -58,6 +87,12 @@ app.use(
 );
 
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Antes de leer el cuerpo de la peticion: rechazar una rafaga no debe
+// costar ni parsear el JSON. Despues de CORS, para que el 429 lleve las
+// cabeceras que el navegador necesita para dejar leerlo.
+app.use('/api', limiteGeneral);
+app.use('/api', limiteEscrituras);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -75,6 +110,16 @@ app.use('/api', routes);
 // lios de CORS ni depender de Postman/curl. Nunca se sirve en produccion.
 if (process.env.NODE_ENV !== 'production') {
   app.use('/panel', express.static(path.join(__dirname, '..', 'panel-pruebas')));
+}
+
+// Sentry, antes del manejador propio: este responde al cliente y no llama a
+// next(), asi que lo que no pase por aqui antes no llega a Sentry. Solo se
+// avisa de lo que de verdad es un fallo nuestro: lo que el manejador de
+// abajo contesta como 4xx (validacion, duplicado, id mal formado, subida
+// rechazada, ErrorHttp 404/403...) es el cliente equivocandose y llenaria
+// el panel de ruido.
+if (sentryActivo) {
+  Sentry.setupExpressErrorHandler(app, { shouldHandleError: deberiaAvisar });
 }
 
 // Manejador de errores centralizado. Los controladores hacen next(error) y

@@ -1032,6 +1032,45 @@ data is small, so it is dumped with the driver itself.
   documents and indexes) with `mongodb-memory-server`, and the Cloudinary
   side against the real account.
 
+### Hardening (helmet, rate limits, Sentry)
+
+- **`helmet`** in `app.js`. In production the CSP is `default-src 'none'`
+  (it only answers JSON); in development it is off because `/panel` has
+  inline scripts. `crossOriginResourcePolicy: cross-origin` because the
+  client lives on another origin. The SPA's own headers are in
+  `client/netlify.toml`, not here.
+- **`trust proxy` = 1 in production.** Behind Railway, without it `req.ip`
+  is always the proxy and every limit would count the whole town as one
+  person; more than 1 would let anyone choose their IP with a forged
+  `X-Forwarded-For`.
+- **Rate limits** (`middlewares/limites.js`, per IP, in the process's
+  memory — fine for one instance, needs a shared store for several).
+  Deliberately loose, because many neighbours share an IP (a bar's wifi, a
+  mobile carrier): general 1000/15 min, writes (non-GET) 240/15 min;
+  `/login`, `/google`, `/restablecer`, `/verificar` 10 *failed* attempts/15
+  min (`skipSuccessfulRequests`); `/registro`, `/recuperar`,
+  `/reenviar-verificacion` 10/hour counting all; uploads 40/hour. A 429
+  answers `{ ok: false, mensaje, razon: 'demasiadas_peticiones' }`. `/health`
+  is exempt, or a monitor polling it would get itself blocked. Mounted
+  after CORS (so the browser can read the 429) and before `express.json()`.
+- **Sentry** (`instrument.js`, imported right after `dotenv` in
+  `server.js`). Same contract as mail and push: no `SENTRY_DSN`, nothing
+  breaks and nothing is sent. Only real server faults are reported:
+  `deberiaAvisar()` drops Mongoose validation/cast/duplicate errors,
+  Multer errors and anything `ErrorHttp` answers below 500. It has to be
+  given to **both** `expressIntegration` (the automatic instrumentation
+  captures on its own) and `setupExpressErrorHandler` (which sits before
+  our error handler, since ours answers without calling `next`) — with only
+  one, the other kept reporting a `CastError`. Request bodies, cookies,
+  `Authorization` and the IP headers (`x-forwarded-for`, `x-real-ip`) are
+  stripped in `beforeSend`: bodies carry passwords and private messages.
+  Server only; the client has no Sentry (it would add weight to a PWA that
+  people install on mobile data).
+- Verified with a throwaway script and `mongodb-memory-server` in
+  production mode: headers, the 11th failed login answering 429 while
+  another IP is still 401, and a local HTTP server standing in for Sentry
+  receiving exactly one event (the 500) and none for a 404 or a `CastError`.
+
 ### El Tiempo
 
 `GET /api/tiempo` (`tiempoController.js`) is the only endpoint in the app
@@ -1536,9 +1575,9 @@ Rough priority; none started.
   runner is overdue — the stats and turismo controllers have only been
   checked by hand.
 - **MongoDB backups** — done, see "Copias de seguridad". Still to do: a restore rehearsal against a scratch database now and then, and a second destination if Cloudinary alone feels thin.
-- **Rate limiting and security headers** (`helmet`) beyond the password
-  recovery throttle; **error monitoring** (Sentry or similar) — a Railway
-  500 is only visible in the logs.
+- **Rate limiting, security headers and error monitoring** — done, see
+  "Hardening". Pending there: create the Sentry project and set
+  `SENTRY_DSN` on Railway.
 - **Real time**: socket.io is deliberately not installed; the seam exists
   (`utils/tiempoReal.js`, `hooks/useSondeo.js`) — see "Real time".
 - Admin stats are computed live per request; add a short cache if the

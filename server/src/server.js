@@ -1,4 +1,6 @@
 import 'dotenv/config';
+// Sentry el primero tras dotenv (necesita SENTRY_DSN) y antes de cargar el resto.
+import './instrument.js';
 import app from './app.js';
 import conectarDB from './config/db.js';
 import { iniciarCronCaducarEmpleos } from './jobs/caducarEmpleos.js';
