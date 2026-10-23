@@ -15,8 +15,14 @@ import { rateLimit } from 'express-rate-limit';
 // para que el cliente lo pinte como cualquier otro, y Retry-After /
 // RateLimit-* en cabeceras para quien quiera saber cuanto esperar.
 
-const crear = ({ minutos, max, mensaje, ...resto }) =>
+// Los tests lo apagan (LIMITES_DESACTIVADOS=1): una suite entera sale desde
+// la misma IP y agotaria los cupos de escritura y de acceso en segundos.
+// limites.test.js lo deja encendido, que es lo que comprueba.
+const desactivados = () => process.env.LIMITES_DESACTIVADOS === '1';
+
+const crear = ({ minutos, max, mensaje, skip, ...resto }) =>
   rateLimit({
+    skip: (req, res) => desactivados() || Boolean(skip?.(req, res)),
     windowMs: minutos * 60 * 1000,
     limit: max,
     standardHeaders: 'draft-7',

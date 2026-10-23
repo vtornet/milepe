@@ -1,0 +1,72 @@
+# Integración continua: en cada push a main y en cada pull request corre los
+# tests del servidor y el lint + build del cliente.
+#
+# OJO: esto avisa, no frena. Netlify y Railway despliegan en cuanto llega un
+# push a main, sin esperar a este flujo. Para que un test en rojo impida el
+# despliegue hay que activar "Wait for CI" en el servicio de Railway y, en
+# Netlify, bloquear los despliegues hasta que pasen las comprobaciones.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Si llegan dos pushes seguidos a la misma rama, el anterior ya no interesa.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  servidor:
+    name: Servidor (tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    env:
+      # mongodb-memory-server baja un binario de mongod (~100 MB) la primera
+      # vez; en esta carpeta se cachea entre ejecuciones.
+      MONGOMS_DOWNLOAD_DIR: ${{ github.workspace }}/.mongodb-binaries
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - uses: actions/cache@v4
+        with:
+          path: .mongodb-binaries
+          key: mongod-${{ runner.os }}-v1
+
+      - run: npm ci
+
+      - run: npm test
+
+  cliente:
+    name: Cliente (lint y build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      # VITE_API_URL se hornea en el bundle, pero aquí solo se comprueba que
+      # compila: el que se publica lo construye Netlify con su propia variable.
+      - run: npm run build
+        env:
+          VITE_API_URL: http://localhost:5000/api

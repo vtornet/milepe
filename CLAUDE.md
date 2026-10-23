@@ -96,12 +96,8 @@ Both are ESM (`"type": "module"` in both package.json files) — use
   and say so. Creating a file under `server/` (even a throwaway script)
   restarts nodemon: run scratch scripts with `node --input-type=module -e`
   or keep them in the scratchpad.
-- No test runner and no linter are configured yet. New Mongoose models have
-  been verified during development with a throwaway script plus
-  `npm install --no-save mongodb-memory-server` (spin up a real in-memory
-  MongoDB, exercise the model, assert behavior, then delete the script and
-  `npm uninstall mongodb-memory-server` so it never lands in package.json).
-  Follow that pattern for new models until a real test runner is set up.
+- `npm test` — server tests (see "Tests and CI"). There is no server
+  linter yet.
 - Image uploads (see "Image uploads" below) need real
   `CLOUDINARY_CLOUD_NAME`/`CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` in
   `.env` — get them from the account's Dashboard, specifically the row
@@ -1071,6 +1067,42 @@ data is small, so it is dumped with the driver itself.
   another IP is still 401, and a local HTTP server standing in for Sentry
   receiving exactly one event (the 500) and none for a 404 or a `CastError`.
 
+### Tests and CI
+
+`cd server && npm test` runs `node --test` (built in, no framework) over
+`server/test/*.test.js`: 64 tests, about a minute and a half. Each file runs
+in its **own process** with its **own** in-memory MongoDB
+(`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
+which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
+`api.get/post/patch/delete`, `crearUsuario({ rol })` (already verified and
+with a complete profile) and `detener()`. `--test-concurrency=1` on purpose:
+several processes downloading the `mongod` binary at once can corrupt it.
+
+- `auth` · `publicaciones` (edit, delete, comments, reactions) ·
+  `moderacion` (threshold, appeals, append-only log) · `mensajeria` (mutual
+  follow, outsiders get 404, blocking) · `permisos` (admin-only routes,
+  contacts, whitelist of fields, no real name leaks) · `limites` (429s,
+  helmet) · `copiaSeguridad` (dump → restore round trip).
+- Rate limits are **off in tests** (`LIMITES_DESACTIVADOS=1`, set by
+  `arrancar()`): the whole suite comes from one IP and would exhaust them.
+  Only `limites.test.js` turns them on, and its tests share one counter, so
+  **their order matters**. Without `trust proxy` (production only)
+  `X-Forwarded-For` is ignored in tests, so every request is the same IP.
+- The error handler `console.error`s every error, including the 4xx the
+  tests provoke on purpose, so `arrancar()` silences `console.error/log`
+  until `detener()`. If a test fails mysteriously, comment that out first.
+- Checked that they bite, not just pass: breaking the delete permission,
+  the report threshold (3 → 4) and `skipSuccessfulRequests` each made the
+  matching tests fail.
+- **CI**: `.github/workflows/ci.yml` on every push to `main` and every pull
+  request: server tests, and client `lint` + `build`. It **warns, it does
+  not block**: Netlify and Railway deploy as soon as the push lands. To make
+  a red build stop a deploy, turn on "Wait for CI" in the Railway service
+  and gate Netlify deploys on checks. The `mongod` binary is cached
+  (`MONGOMS_DOWNLOAD_DIR`) so only the first run downloads it.
+- A new model or controller should come with a test in the matching file;
+  keep the pattern of one process per file.
+
 ### El Tiempo
 
 `GET /api/tiempo` (`tiempoController.js`) is the only endpoint in the app
@@ -1573,10 +1605,9 @@ Rough priority; none started.
 
 ### 6. Technical base
 
-- **No server tests, no server linter, no CI.** New models were verified
-  with a throwaway script + `mongodb-memory-server` (see Commands); a real
-  runner is overdue — the stats and turismo controllers have only been
-  checked by hand.
+- **Server tests and CI** — done, see "Tests and CI". Still missing: tests
+  for the stats and turismo controllers and the section listings
+  (aggregations), a server linter, and gating deploys on CI.
 - **MongoDB backups** — done, see "Copias de seguridad". Still to do: a restore rehearsal against a scratch database now and then, and a second destination if Cloudinary alone feels thin.
 - **Rate limiting, security headers and error monitoring** — done, see
   "Hardening". Pending there: create the Sentry project and set

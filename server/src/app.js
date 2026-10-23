@@ -86,7 +86,11 @@ app.use(
   }),
 );
 
-app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+app.use(
+  morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
+    skip: () => process.env.NODE_ENV === 'test',
+  }),
+);
 
 // Antes de leer el cuerpo de la peticion: rechazar una rafaga no debe
 // costar ni parsear el JSON. Despues de CORS, para que el 429 lleve las
