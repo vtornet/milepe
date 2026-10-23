@@ -1237,13 +1237,17 @@ class. Needs real `CLOUDINARY_CLOUD_NAME`/`_API_KEY`/`_API_SECRET` in
 there's no local Cloudinary stand-in.
 
 Every section's `Post` accepts `imagenes` (an array of already-uploaded
-URLs) at creation, but **only Fotos' client form actually calls the
-upload endpoint** (`client/src/pages/Fotos/FotoFormulario.jsx`: picks
-files → `POST /api/subidas/imagenes` → `POST /api/fotos` with the returned
-URLs). Negocios and Eventos' backends accept `imagenes` the same way, but
-their client forms (`NegocioFormulario`, `EventoFormulario`) don't expose a
-file picker at all yet (the admin-only `TurismoFormulario` does upload) — an open gap,
-not a design decision, if asked to add photo upload to one of those.
+URLs) at creation. The client forms that take photos are `FotoFormulario`
+(required), `NegocioFormulario` and `EventoFormulario` (optional), plus the
+admin-only `TurismoFormulario` and the edit form. The last two creation
+forms share `components/SelectorFotos.jsx` (previews, remove one by one,
+5 files / 8 MB / JPG-PNG-WebP-GIF checked client-side to save mobile data
+on an upload that would be rejected) and `utils/subidas.js`
+(`subirImagenes(archivos)` → URLs). The selector holds the `File`s and the
+parent uploads them on submit, so nothing reaches Cloudinary for a form
+that is then abandoned; if the upload works and the create fails, those
+images stay orphaned in Cloudinary (same as Fotos). `QuejaFormulario` and
+`EmpleoFormulario` still have no photo picker (backend accepts it).
 
 ### Design system and app shell
 
@@ -1527,9 +1531,8 @@ below is the order I'd work in.
   Commons photo was good enough). Photos are Commons only — the town's
   site photos are not reusable (see "Turismo"). Ask the Ayuntamiento for
   permission if they want theirs used.
-- Fotos in the Negocios and Eventos forms (backend accepts `imagenes`; the
-  forms have no file picker). Avatar upload for profiles (nobody has one;
-  Google users get theirs from Google).
+- Fotos in the Negocios and Eventos forms — done. Avatar upload for
+  profiles (nobody has one; Google users get theirs from Google).
 - Seed content before promoting the app — an empty network doesn't attract
   anyone: events, businesses, old photos.
 

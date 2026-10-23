@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import api from '../../services/api.js';
 import SelectorUbicacion from '../Quejas/SelectorUbicacion.jsx';
+import SelectorFotos from '../../components/SelectorFotos.jsx';
+import { subirImagenes } from '../../utils/subidas.js';
 
 // Mismo enum que server/src/models/NegocioDetalle.js (CATEGORIAS_NEGOCIO).
 const CATEGORIAS = [
@@ -19,6 +21,7 @@ const DATOS_INICIALES = {
 function NegocioFormulario({ onCreado }) {
   const [datos, setDatos] = useState(DATOS_INICIALES);
   const [ubicacion, setUbicacion] = useState(null);
+  const [archivos, setArchivos] = useState([]);
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -37,10 +40,12 @@ function NegocioFormulario({ onCreado }) {
 
     setEnviando(true);
     try {
-      const { data } = await api.post('/negocios', { ...datos, ubicacion });
+      const imagenes = await subirImagenes(archivos);
+      const { data } = await api.post('/negocios', { ...datos, ubicacion, imagenes });
       onCreado(data.negocio);
       setDatos(DATOS_INICIALES);
       setUbicacion(null);
+      setArchivos([]);
     } catch (err) {
       setError(err.response?.data?.mensaje || 'No se pudo publicar el negocio');
     } finally {
@@ -98,13 +103,15 @@ function NegocioFormulario({ onCreado }) {
         onChange={manejarCambio}
       />
 
+      <SelectorFotos archivos={archivos} onChange={setArchivos} />
+
       <label>Ubicación (haz clic en el mapa)</label>
       <SelectorUbicacion value={ubicacion} onChange={setUbicacion} />
 
       {error && <p className="mensaje-error">{error}</p>}
 
       <button type="submit" disabled={enviando}>
-        {enviando ? 'Publicando...' : 'Publicar negocio'}
+        {enviando ? (archivos.length > 0 ? 'Subiendo fotos...' : 'Publicando...') : 'Publicar negocio'}
       </button>
     </form>
   );

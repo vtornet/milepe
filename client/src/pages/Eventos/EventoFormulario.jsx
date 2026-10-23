@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import api from '../../services/api.js';
 import SelectorUbicacion from '../Quejas/SelectorUbicacion.jsx';
+import SelectorFotos from '../../components/SelectorFotos.jsx';
+import { subirImagenes } from '../../utils/subidas.js';
 
 // Mismo enum que server/src/models/EventoDetalle.js (CATEGORIAS_EVENTO).
 const CATEGORIAS = [
@@ -17,6 +19,7 @@ const DATOS_INICIALES = { titulo: '', contenido: '', categoria: 'feria', fecha_i
 function EventoFormulario({ onCreado }) {
   const [datos, setDatos] = useState(DATOS_INICIALES);
   const [ubicacion, setUbicacion] = useState(null);
+  const [archivos, setArchivos] = useState([]);
   const [marcarUbicacion, setMarcarUbicacion] = useState(false);
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
@@ -30,8 +33,10 @@ function EventoFormulario({ onCreado }) {
     setError(null);
     setEnviando(true);
     try {
+      const imagenes = await subirImagenes(archivos);
       const { data } = await api.post('/eventos', {
         ...datos,
+        imagenes,
         fecha_fin: datos.fecha_fin || undefined,
         ubicacion: marcarUbicacion && ubicacion ? ubicacion : undefined,
       });
@@ -39,6 +44,7 @@ function EventoFormulario({ onCreado }) {
       setDatos(DATOS_INICIALES);
       setUbicacion(null);
       setMarcarUbicacion(false);
+      setArchivos([]);
     } catch (err) {
       setError(err.response?.data?.mensaje || 'No se pudo crear el evento');
     } finally {
@@ -94,6 +100,8 @@ function EventoFormulario({ onCreado }) {
         </div>
       </div>
 
+      <SelectorFotos archivos={archivos} onChange={setArchivos} />
+
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12 }}>
         <input
           type="checkbox"
@@ -108,7 +116,7 @@ function EventoFormulario({ onCreado }) {
       {error && <p className="mensaje-error">{error}</p>}
 
       <button type="submit" disabled={enviando}>
-        {enviando ? 'Publicando...' : 'Publicar evento'}
+        {enviando ? (archivos.length > 0 ? 'Subiendo fotos...' : 'Publicando...') : 'Publicar evento'}
       </button>
     </form>
   );
