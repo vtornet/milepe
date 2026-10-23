@@ -469,7 +469,8 @@ export const listarMiContenidoModerado = async (req, res, next) => {
     const noPublicado = { $in: ['oculto', 'eliminado'] };
 
     const [posts, comentarios, mensajes] = await Promise.all([
-      Post.find({ autor_id: req.usuario._id, estado_moderacion: noPublicado })
+      // borrado_por_autor fuera, por lo mismo que en los comentarios.
+      Post.find({ autor_id: req.usuario._id, estado_moderacion: noPublicado, borrado_por_autor: { $ne: true } })
         .sort({ fecha_actualizacion: -1 })
         .select('tipo titulo contenido estado_moderacion fecha_creacion'),
       // borrado_por_autor fuera: un comentario que retiraste tu no es una

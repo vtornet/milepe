@@ -141,6 +141,13 @@ const postSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    // El autor retiró su propia publicación. Igual que en Comentario: ambos
+    // borrados acaban en estado_moderacion 'eliminado' para que la
+    // visibilidad tenga un solo eje, pero este no es una sanción.
+    borrado_por_autor: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: { createdAt: 'fecha_creacion', updatedAt: 'fecha_actualizacion' },

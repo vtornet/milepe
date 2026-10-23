@@ -7,6 +7,7 @@ import BotonSeguir from './BotonSeguir.jsx';
 import PanelInteraccion from './PanelInteraccion.jsx';
 import EditarPublicacion from './EditarPublicacion.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import api from '../services/api.js';
 import { haceCuanto, fechaCompleta } from '../utils/fechas.js';
 
 // Armazón común de una publicación: avatar, autor, cuándo, insignias,
@@ -41,6 +42,10 @@ function TarjetaPublicacion({
   // onEditado y recargar su lista.
   const [post, setPost] = useState(postDelPadre);
   const [editando, setEditando] = useState(false);
+  const [confirmandoBorrado, setConfirmandoBorrado] = useState(false);
+  const [borrando, setBorrando] = useState(false);
+  const [errorBorrado, setErrorBorrado] = useState(null);
+  const [borrada, setBorrada] = useState(false);
 
   // Y si el padre trae otra versión (recargó la lista, cambió de filtro),
   // manda la suya: sin esto, una tarjeta que ya se ha editado una vez se
@@ -52,9 +57,28 @@ function TarjetaPublicacion({
   const imagenes = post.imagenes || [];
   const quien = autor || post.autor || post.autor_id;
 
-  const autorId = post.autor_id?._id || post.autor_id;
+  // El Muro trae el autor en `autor_id`; las listas de cada sección, que
+  // salen de agregaciones, lo traen en `autor`. Sin mirar los dos, en las
+  // secciones nadie era "el autor" de nada y no salían ni editar ni borrar.
+  const autorId = post.autor_id?._id || post.autor_id || quien?._id;
   const soyElAutor = Boolean(usuario && autorId && String(autorId) === String(usuario._id));
   const esEquipo = usuario?.rol === 'moderador' || usuario?.rol === 'admin';
+
+  const borrar = async () => {
+    setBorrando(true);
+    setErrorBorrado(null);
+    try {
+      await api.delete(`/posts/${post._id}`);
+      // La tarjeta desaparece sin que cada página de sección tenga que
+      // recargar su lista.
+      setBorrada(true);
+    } catch (err) {
+      setErrorBorrado(err.response?.data?.mensaje || 'No se pudo eliminar la publicación');
+      setBorrando(false);
+    }
+  };
+
+  if (borrada) return null;
 
   return (
     <article className="pub">
@@ -112,8 +136,46 @@ function TarjetaPublicacion({
           </button>
         )}
 
+        {(soyElAutor || esEquipo) && !editando && (
+          <button
+            type="button"
+            className="boton-reportar-compacto"
+            title="Eliminar la publicación"
+            onClick={() => setConfirmandoBorrado(true)}
+          >
+            <Icono nombre="papelera" tam={15} />
+          </button>
+        )}
+
         <BotonReportar contenidoTipo="post" contenidoId={post._id} compacto />
       </header>
+
+      {/* Preguntar aquí mismo, no con un confirm() del navegador: ese
+          bloquea la página y se lee como un error del sistema. */}
+      {confirmandoBorrado && (
+        <div className="pub-cuerpo">
+          <div className="aviso aviso-info">
+            <Icono nombre="papelera" tam={18} />
+            <span>
+              {soyElAutor
+                ? '¿Seguro que quieres eliminar tu publicación?'
+                : 'Vas a eliminar la publicación de otro vecino. Quedará en el registro de moderación y se le avisará.'}
+            </span>
+            <button type="button" className="reaccion-compacta" onClick={borrar} disabled={borrando}>
+              {borrando ? 'Eliminando…' : 'Sí, eliminar'}
+            </button>
+            <button
+              type="button"
+              className="reaccion-compacta"
+              onClick={() => setConfirmandoBorrado(false)}
+              disabled={borrando}
+            >
+              No
+            </button>
+          </div>
+          {errorBorrado && <p className="error">{errorBorrado}</p>}
+        </div>
+      )}
 
       {/* Que está en la cola de revisión solo lo ven su autor y el equipo.
           Para el resto del pueblo no es información: la publicación se ve

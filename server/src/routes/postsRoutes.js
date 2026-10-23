@@ -4,6 +4,7 @@ import {
   obtenerPost,
   listarMisReacciones,
   editarPost,
+  borrarPost,
   listarEdiciones,
   reaccionarPost,
   reaccionarComentario,
@@ -27,6 +28,9 @@ router.get('/:id', obtenerPost);
 // Editar: solo el autor, comprobado en el controlador. Pide perfil
 // completo igual que publicar, porque editar es publicar otra vez.
 router.patch('/:id', protegido, exigePerfilCompleto, editarPost);
+// Borrar: el autor, o el equipo sobre lo de otros (por moderacion). Quien
+// puede lo decide el controlador.
+router.delete('/:id', protegido, exigePerfilCompleto, borrarPost);
 // El historial lo ve el autor o el equipo; quien decide es el controlador,
 // porque aqui no se sabe todavia de quien es el post.
 router.get('/:id/ediciones', protegido, listarEdiciones);

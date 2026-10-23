@@ -217,6 +217,59 @@ export const editarPost = async (req, res, next) => {
   }
 };
 
+// Borrar una publicación. Mismos dos caminos que borrarComentario:
+//
+// - Su autor: borrado blando con borrado_por_autor. No es moderación, así
+//   que ni registro de auditoría ni aviso a sí mismo.
+// - El equipo sobre lo de otro: pasa por moderarContenido, que lo registra
+//   y avisa al autor con el motivo para que pueda apelar.
+//
+// El documento se queda (borrado blando): los comentarios y el historial
+// cuelgan de él.
+export const borrarPost = async (req, res, next) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      throw new ErrorHttp(404, 'Publicacion no encontrada');
+    }
+
+    const esAutor = post.autor_id.equals(req.usuario._id);
+    const esEquipo = req.usuario.rol === 'moderador' || req.usuario.rol === 'admin';
+
+    if (!esAutor && !esEquipo) {
+      throw new ErrorHttp(403, 'No puedes borrar esta publicacion');
+    }
+
+    // Repetirlo no es un error: con mala cobertura se pulsa dos veces.
+    if (post.estado_moderacion === 'eliminado') {
+      res.json({ ok: true });
+      return;
+    }
+
+    // Un moderador borrando lo SUYO es un autor: no se abre expediente a
+    // si mismo.
+    if (!esAutor) {
+      req.body = {
+        contenido_tipo: 'post',
+        contenido_id: String(post._id),
+        estado_moderacion: 'eliminado',
+        nota: req.body?.nota,
+      };
+      return moderarContenido(req, res, next);
+    }
+
+    post.borrado_por_autor = true;
+    post.estado_moderacion = 'eliminado';
+    // Ya no hay nada que revisar: que no se quede en la cola de ediciones.
+    post.revision_pendiente = false;
+    await post.save();
+
+    res.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Historial de ediciones: el autor, para ver lo que escribio, y el equipo
 // de moderacion, que es quien necesita comparar con que se publico algo y
 // en que se ha quedado cuando le llega una revision por cambio de imagen.
