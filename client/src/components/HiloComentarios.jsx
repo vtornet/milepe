@@ -28,7 +28,7 @@ const NIVELES_POR_DEFECTO = 3;
 // que vuelve a plantar la vista en ese comentario. Sin eso, en un móvil la
 // cuarta respuesta de una respuesta queda en una columna de dos palabras
 // de ancho.
-function HiloComentarios({ postId, permitirValoracion = false, onDelta = () => {} }) {
+function HiloComentarios({ postId, permitirValoracion = false, propietarioId = null, onDelta = () => {} }) {
   const { usuario } = useAuth();
   const { mias, anotar } = useReacciones();
 
@@ -227,6 +227,7 @@ function HiloComentarios({ postId, permitirValoracion = false, onDelta = () => {
     return (
       <div key={comentario._id} className="comentario-rama" data-nivel={Math.min(nivel, nivelesSangrado - 1)}>
         <Comentario
+          propietarioId={propietarioId}
           comentario={comentario}
           usuario={usuario}
           miReaccion={mias.comentarios[comentario._id] || null}
@@ -338,6 +339,7 @@ function HiloComentarios({ postId, permitirValoracion = false, onDelta = () => {
 // conversación, pero el texto y el autor ya no llegan del servidor.
 function Comentario({
   comentario,
+  propietarioId,
   usuario,
   miReaccion,
   onReaccionar,
@@ -385,6 +387,11 @@ function Comentario({
             comentario.autor_id?.nombre_usuario || 'Vecino'
           )}
           {comentario.autor_id?.oficial && <InsigniaOficial />}
+          {propietarioId && String(autorId) === String(propietarioId) && (
+            <span className="insignia insignia-marca" style={{ marginLeft: 4 }}>
+              Propietario
+            </span>
+          )}
         </span>
         {comentario.valoracion > 0 && (
           <span className="estrellas" title={`${comentario.valoracion} de 5`}>

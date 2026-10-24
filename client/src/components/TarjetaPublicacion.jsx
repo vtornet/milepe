@@ -34,6 +34,8 @@ function TarjetaPublicacion({
   datos,
   acciones,
   permitirValoracion = false,
+  // Negocios: quien es el propietario, para marcar sus respuestas a las reseñas.
+  propietarioId = null,
   children,
 }) {
   const { usuario } = useAuth();
@@ -243,6 +245,7 @@ function TarjetaPublicacion({
         reaccionesIniciales={post.reacciones || post.reacciones_resumen}
         numComentarios={post.num_comentarios}
         permitirValoracion={permitirValoracion}
+        propietarioId={propietarioId}
       />
     </article>
   );

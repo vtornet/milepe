@@ -18,7 +18,7 @@ import HiloComentarios from './HiloComentarios.jsx';
 //
 // permitirValoracion activa el selector de estrellas al comentar (reseñas
 // de Negocios); el resto de secciones no lo pasan.
-function PanelInteraccion({ postId, reaccionesIniciales, numComentarios = 0, permitirValoracion = false }) {
+function PanelInteraccion({ postId, reaccionesIniciales, numComentarios = 0, permitirValoracion = false, propietarioId = null }) {
   const { usuario } = useAuth();
   const { mias, anotar } = useReacciones();
 
@@ -76,6 +76,7 @@ function PanelInteraccion({ postId, reaccionesIniciales, numComentarios = 0, per
         <HiloComentarios
           postId={postId}
           permitirValoracion={permitirValoracion}
+          propietarioId={propietarioId}
           onDelta={(delta) => setCuantos((anterior) => Math.max(0, anterior + delta))}
         />
       )}

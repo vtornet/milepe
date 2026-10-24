@@ -13,6 +13,7 @@ export const TIPOS_NOTIFICACION = [
   'cambio_estado_queja',
   'moderacion',
   'mensaje_nuevo',
+  'reclamacion_negocio',
 ];
 
 const notificacionSchema = new Schema(

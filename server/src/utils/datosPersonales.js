@@ -19,6 +19,7 @@ import NegocioDetalle from '../models/NegocioDetalle.js';
 import AvisoDetalle from '../models/AvisoDetalle.js';
 import AnuncioDetalle from '../models/AnuncioDetalle.js';
 import AnimalDetalle from '../models/AnimalDetalle.js';
+import ReclamacionNegocio from '../models/ReclamacionNegocio.js';
 import cloudinary from '../config/cloudinary.js';
 import { hayCredencialesCloudinary } from './copiaSeguridad.js';
 
@@ -46,7 +47,7 @@ const sinInternos = ({ __v, ...resto }) => resto;
 export const exportarDatos = async (usuarioId) => {
   const usuario = await Usuario.findById(usuarioId).select('+nombre +apellidos').lean();
 
-  const [posts, comentarios, reacciones, siguiendo, seguidores, bloqueos, notificaciones, reportes, apelaciones, suscripciones] =
+  const [posts, comentarios, reacciones, siguiendo, seguidores, bloqueos, notificaciones, reportes, apelaciones, suscripciones, reclamaciones] =
     await Promise.all([
       Post.find({ autor_id: usuarioId }).lean(),
       Comentario.find({ autor_id: usuarioId }).lean(),
@@ -58,6 +59,7 @@ export const exportarDatos = async (usuarioId) => {
       Reporte.find({ reportante_id: usuarioId }).lean(),
       Apelacion.find({ autor_id: usuarioId }).lean(),
       Suscripcion.find({ usuario_id: usuarioId }).lean(),
+      ReclamacionNegocio.find({ usuario_id: usuarioId }).lean(),
     ]);
 
   // Cada publicacion con los datos de su seccion.
@@ -104,6 +106,7 @@ export const exportarDatos = async (usuarioId) => {
     notificaciones: notificaciones.map(sinInternos),
     reportes_hechos: reportes.map(sinInternos),
     apelaciones: apelaciones.map(sinInternos),
+    reclamaciones_de_negocios: reclamaciones.map(sinInternos),
     // Solo el servicio, no la direccion entera: es un identificador del navegador.
     avisos_push: suscripciones.map((s) => ({ servicio: new URL(s.endpoint).host, desde: s.fecha_creacion })),
   };
@@ -181,6 +184,9 @@ export const eliminarCuenta = async (usuarioId) => {
     Bloqueo.deleteMany({ $or: [{ bloqueador_id: usuarioId }, { bloqueado_id: usuarioId }] }),
     Notificacion.deleteMany({ usuario_id: usuarioId }),
     Suscripcion.deleteMany({ usuario_id: usuarioId }),
+    // Sus negocios vuelven a no tener propietario (los podra reclamar otro).
+    NegocioDetalle.updateMany({ propietario_id: usuarioId }, { propietario_id: null }),
+    ReclamacionNegocio.deleteMany({ usuario_id: usuarioId, estado: 'pendiente' }),
   ]);
 
   const imagenesBorradas = await borrarImagenes([...posts.flatMap((p) => p.imagenes || []), usuario.avatar_url]);

@@ -63,6 +63,26 @@ const negocioDetalleSchema = new Schema(
     // destacado mientras esta fecha sea futura; el webhook de Stripe la
     // extiende en cada pago y, si deja de pagar, expira sola sin que haya
     // que cancelar nada a mano.
+    // Quien gestiona la ficha tras reclamarla y que un admin lo acepte (ver
+    // ReclamacionNegocio). null: nadie la ha reclamado; la gestiona quien la
+    // publico.
+    propietario_id: {
+      type: Schema.Types.ObjectId,
+      ref: 'Usuario',
+      default: null,
+    },
+    // Una oferta vigente a la vez. "Vale mientras la fecha este en el futuro",
+    // como destacado_hasta.
+    oferta: {
+      type: new Schema(
+        {
+          texto: { type: String, trim: true, maxlength: 280, required: true },
+          vigente_hasta: { type: Date, required: true },
+        },
+        { _id: false },
+      ),
+      default: null,
+    },
     destacado_hasta: {
       type: Date,
       default: null,
