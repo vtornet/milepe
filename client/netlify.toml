@@ -5,6 +5,11 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  # No construir (ni gastar un despliegue) si el push no toca client/: un
+  # cambio solo del servidor o de la documentación no cambia la web. Netlify
+  # ejecuta esto desde la carpeta base (client/), así que "." es client/.
+  # Sale con 0 = "no hay cambios, sáltate el build".
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- ."
 
 # Esto es lo que hace que una SPA funcione de verdad al recargar. Sin esta
 # regla, abrir milepe.com/quejas directamente (o pulsar F5 estando ahí, o
