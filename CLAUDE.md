@@ -892,6 +892,18 @@ re-derive otherwise:
   open and current ones; `?incluirCerrados=true` shows the rest. Contact is
   through comments. Client `/tablon`, with photos (`SelectorFotos`) and a
   Muro shortcut.
+- **Animales** (`/api/animales`, tipo `animal` + `AnimalDetalle`): perdido,
+  encontrado, adopcion, acogida; especie (perro, gato, ave, otro), optional
+  name, sex, zone, map point (2dsphere) and a **public** contact phone the
+  author chooses to give — with a lost pet, waiting for a mutual follow to be
+  able to message is losing hours. A photo is required (as in Fotos, also on
+  edit: `postsController` checks `['foto', 'animal']`), and perdido/encontrado
+  require `fecha_suceso`, not in the future. `PATCH /:id/resolver` (author or
+  team, the team so it can close one abandoned after someone says in the
+  comments it turned up) hides it from the default listing without deleting
+  it (`?incluirResueltos=true`). Separate from the Tablón on purpose; the
+  Tablón now says "objeto perdido/encontrado". Icon `animal` (a paw) has not
+  been looked at on a contact sheet yet.
 - **Turismo** is not a post section any more — see "Turismo" below.
 - **Empleo**: `modalidad` (`busco`/`ofrezco`) is a *required* query param on
   `GET /api/empleo`, not an optional filter like `categoria` elsewhere — the
@@ -1089,7 +1101,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 150 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 157 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives

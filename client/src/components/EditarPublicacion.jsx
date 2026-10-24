@@ -32,8 +32,8 @@ function EditarPublicacion({ post, onGuardado, onCancelar }) {
 
     // El servidor lo rechaza igual (es la regla de la sección Fotos), pero
     // decirlo aquí evita el viaje y la subida de archivos para nada.
-    if (post.tipo === 'foto' && imagenes.length === 0 && archivos.length === 0) {
-      setError('Una publicación de Fotos no puede quedarse sin imágenes.');
+    if (['foto', 'animal'].includes(post.tipo) && imagenes.length === 0 && archivos.length === 0) {
+      setError('Esta publicación no puede quedarse sin imágenes.');
       return;
     }
 

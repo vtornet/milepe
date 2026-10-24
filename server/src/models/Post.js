@@ -17,6 +17,7 @@ export const TIPOS_POST = [
   'negocio',
   'aviso',
   'anuncio',
+  'animal',
 ];
 
 // Post-moderacion con reportes: se publica al instante y solo se revisa si

@@ -194,8 +194,8 @@ export const editarPost = async (req, res, next) => {
       // Una foto sin foto no es nada. La seccion lo exige al crearla y
       // tiene que seguir exigiendolo al editar, o se podria dejar vacia
       // por la puerta de atras.
-      if (post.tipo === 'foto' && cambios.imagenes.length === 0) {
-        throw new ErrorHttp(400, 'Una publicacion de Fotos no puede quedarse sin imagenes');
+      if (['foto', 'animal'].includes(post.tipo) && cambios.imagenes.length === 0) {
+        throw new ErrorHttp(400, 'Esta publicacion no puede quedarse sin imagenes');
       }
     }
 

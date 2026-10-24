@@ -15,8 +15,8 @@ const CATEGORIAS = {
   vendo: 'Vendo',
   regalo: 'Regalo',
   busco: 'Busco',
-  perdido: 'Perdido',
-  encontrado: 'Encontrado',
+  perdido: 'Objeto perdido',
+  encontrado: 'Objeto encontrado',
   ayuda: 'Ayuda vecinal',
 };
 const ZONAS = { lepe: 'Lepe', la_antilla: 'La Antilla', islantilla: 'Islantilla', otra: 'Otra zona' };
@@ -187,7 +187,7 @@ function TablonPage() {
     <section>
       <CabeceraSeccion
         ruta="/tablon"
-        descripcion="Segunda mano, regalos, objetos y animales perdidos, y ayuda entre vecinos."
+        descripcion="Segunda mano, regalos, objetos perdidos y ayuda entre vecinos. Los animales tienen su propia sección."
         textoNuevo="Nuevo anuncio"
         formularioAbierto={formulario}
         onAlternarFormulario={() => setFormulario(!formulario)}
