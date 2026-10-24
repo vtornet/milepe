@@ -1857,16 +1857,16 @@ below is the order I'd work in.
   admin, `/contactos`, Moderación → Estadísticas): the last releases were
   checked against the API and in a local build, not on milepe.com.
 - Tidy the Railway variable `CLOUDINARY_CLOUD_NAME` (leading space).
-- Make the Turismo grid cope with an odd 7th card (Rutas sits alone).
 
-### 2. Admin screens that only exist as API
+### 2. Admin screens — done
 
-- **Contactos de interés editor.** Today it is only `POST/PATCH/DELETE
-  /api/contactos-interes` + `GET /todos`. Build it the way
-  `TurismoSeccionPage` + `RecursoTarjeta` + `TurismoFormulario` work (admin
-  check in the page, `/todos` to see inactive, inline "¿Seguro?", hide vs
-  delete). `ContactosPage` already knows the categories.
-- Turismo: no way to **reorder** records (`orden` exists, no UI).
+The Contactos editor lives in `ContactosPage` (admin sees hidden ones, edit,
+hide, delete). Turismo records are reordered with "Subir"/"Bajar" on each
+card (admin): `PUT /api/turismo/orden {seccion, ids}` takes the section's
+**whole** list, hidden ones included, and answers 409 if it doesn't match
+what is stored (someone added or removed one meanwhile) instead of leaving a
+half-applied order. The Turismo grid is two columns and the odd last card
+spans the row.
 
 ### 3. Finish the content
 

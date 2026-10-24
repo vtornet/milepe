@@ -1994,8 +1994,20 @@ select:disabled {
 
 .tarjetas-turismo {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--e-3);
+}
+
+/* Siete secciones: la última ocupa la fila entera en vez de quedarse sola
+   en media fila. */
+.tarjetas-turismo > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 419px) {
+  .tarjetas-turismo {
+    grid-template-columns: 1fr;
+  }
 }
 
 .tarjeta-seccion-turismo {

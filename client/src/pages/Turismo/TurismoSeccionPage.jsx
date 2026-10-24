@@ -61,6 +61,22 @@ function TurismoSeccionPage() {
     setFormulario(null);
   };
 
+  // Mueve un recurso un puesto y manda la sección entera en su orden nuevo.
+  // Se pinta al momento; si la API lo rechaza se vuelve al orden anterior.
+  const mover = async (indice, paso) => {
+    const anterior = recursos;
+    const nuevo = [...recursos];
+    [nuevo[indice], nuevo[indice + paso]] = [nuevo[indice + paso], nuevo[indice]];
+    setRecursos(nuevo.map((r, i) => ({ ...r, orden: i })));
+    setError(null);
+    try {
+      await api.put('/turismo/orden', { seccion: valor, ids: nuevo.map((r) => r._id) });
+    } catch (err) {
+      setRecursos(anterior);
+      setError(err.response?.data?.mensaje || 'No se pudo cambiar el orden.');
+    }
+  };
+
   return (
     <section>
       <Link to="/turismo" className="enlace-volver">
@@ -112,9 +128,11 @@ function TurismoSeccionPage() {
         </EstadoVacio>
       )}
 
-      {recursos.map((recurso) => (
+      {recursos.map((recurso, i) => (
         <RecursoTarjeta
           key={recurso._id}
+          onSubir={esAdmin && i > 0 ? () => mover(i, -1) : undefined}
+          onBajar={esAdmin && i < recursos.length - 1 ? () => mover(i, 1) : undefined}
           recurso={recurso}
           onEditar={esAdmin ? setFormulario : undefined}
           onCambiado={manejarGuardado}

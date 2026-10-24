@@ -143,6 +143,32 @@ export const actualizarRecurso = async (req, res, next) => {
   }
 };
 
+// Reordenar una seccion: `ids` es la lista completa de sus recursos (ocultos
+// incluidos) en el orden nuevo. Si no coincide exactamente con lo que hay —
+// otro admin creo o borro algo mientras tanto— se rechaza en vez de dejar un
+// orden a medias.
+export const reordenarSeccion = async (req, res, next) => {
+  try {
+    const { seccion, ids } = req.body;
+    if (!SECCIONES_TURISMO.includes(seccion)) throw new ErrorHttp(400, 'Sección no válida');
+    if (!Array.isArray(ids) || ids.length === 0) throw new ErrorHttp(400, 'Falta la lista de recursos');
+
+    const actuales = await RecursoTuristico.find({ seccion }).select('_id');
+    const existentes = new Set(actuales.map((r) => String(r._id)));
+    const pedidos = new Set(ids.map(String));
+    if (pedidos.size !== ids.length || pedidos.size !== existentes.size || [...pedidos].some((id) => !existentes.has(id))) {
+      throw new ErrorHttp(409, 'La sección ha cambiado; recarga la página y vuelve a ordenar');
+    }
+
+    await RecursoTuristico.bulkWrite(
+      ids.map((id, i) => ({ updateOne: { filter: { _id: id }, update: { $set: { orden: i } } } })),
+    );
+    res.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Borrado de verdad: para ocultar sin perder los datos ya esta `activo`.
 export const eliminarRecurso = async (req, res, next) => {
   try {

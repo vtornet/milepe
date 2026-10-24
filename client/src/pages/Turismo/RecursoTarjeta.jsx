@@ -22,7 +22,7 @@ const enlaceMapa = ({ lat, lng }) => `https://www.openstreetmap.org/?mlat=${lat}
 // Ficha informativa de un recurso. No es un Post: sin autor, sin
 // reacciones ni comentarios. Los botones de edicion solo se pintan si el
 // padre pasa `onEditar` (es decir, si quien mira es admin).
-function RecursoTarjeta({ recurso, onEditar, onCambiado, onEliminado }) {
+function RecursoTarjeta({ recurso, onEditar, onCambiado, onEliminado, onSubir, onBajar }) {
   const [confirmando, setConfirmando] = useState(false);
   const [error, setError] = useState(null);
   const [ocupado, setOcupado] = useState(false);
@@ -135,6 +135,12 @@ function RecursoTarjeta({ recurso, onEditar, onCambiado, onEliminado }) {
             <>
               <button type="button" className="btn btn-contorno btn-sm" onClick={() => onEditar(recurso)}>
                 <Icono nombre="lapiz" tam={14} /> Editar
+              </button>
+              <button type="button" className="btn btn-plano btn-sm" disabled={!onSubir} onClick={onSubir} aria-label={`Subir ${recurso.titulo}`}>
+                Subir
+              </button>
+              <button type="button" className="btn btn-plano btn-sm" disabled={!onBajar} onClick={onBajar} aria-label={`Bajar ${recurso.titulo}`}>
+                Bajar
               </button>
               <button type="button" className="btn btn-contorno btn-sm" disabled={ocupado} onClick={alternarActivo}>
                 {recurso.activo ? 'Ocultar' : 'Mostrar'}
