@@ -22,6 +22,7 @@ import playaRoutes from './playaRoutes.js';
 import anunciosRoutes from './anunciosRoutes.js';
 import animalesRoutes from './animalesRoutes.js';
 import buscarRoutes from './buscarRoutes.js';
+import encuestasRoutes from './encuestasRoutes.js';
 
 const router = Router();
 
@@ -47,6 +48,7 @@ router.use('/empleo', empleoRoutes);
 router.use('/contactos-interes', contactosInteresRoutes); // ficha estatica (no es un Post), gestionada por admin
 router.use('/tiempo', tiempoRoutes); // proxy cacheado a OpenWeather; no toca Mongo
 router.use('/playa', playaRoutes); // mareas, agua, oleaje y UV en La Antilla: proxy cacheado a Open-Meteo, sin clave
+router.use('/encuestas', encuestasRoutes); // encuestas y consultas ciudadanas
 router.use('/buscar', buscarRoutes); // buscador global: publicaciones, turismo, contactos, farmacias y vecinos
 router.use('/animales', animalesRoutes); // perdidos, encontrados, adopcion y acogida
 router.use('/anuncios', anunciosRoutes); // tablon de anuncios entre vecinos

@@ -25,6 +25,7 @@ import AvisosPage from '../pages/Avisos/AvisosPage.jsx';
 import TablonPage from '../pages/Tablon/TablonPage.jsx';
 import AnimalesPage from '../pages/Animales/AnimalesPage.jsx';
 import BuscarPage from '../pages/Buscar/BuscarPage.jsx';
+import EncuestasPage from '../pages/Encuestas/EncuestasPage.jsx';
 import MensajesPage from '../pages/Mensajes/MensajesPage.jsx';
 import ConversacionPage from '../pages/Mensajes/ConversacionPage.jsx';
 import ModeracionPage from '../pages/Moderacion/ModeracionPage.jsx';
@@ -60,6 +61,7 @@ function AppRouter() {
       <Route path="/negocios" element={<NegociosPage />} />
       <Route path="/avisos" element={<AvisosPage />} />
       <Route path="/buscar" element={<BuscarPage />} />
+      <Route path="/encuestas" element={<EncuestasPage />} />
 
       {/* Grupos: cada pestaña conserva su ruta de siempre; el grupo solo
           añade la fila de pestañas encima. */}

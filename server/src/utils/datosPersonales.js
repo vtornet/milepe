@@ -21,6 +21,8 @@ import AnuncioDetalle from '../models/AnuncioDetalle.js';
 import AnimalDetalle from '../models/AnimalDetalle.js';
 import ReclamacionNegocio from '../models/ReclamacionNegocio.js';
 import AsistenciaEvento from '../models/AsistenciaEvento.js';
+import VotoEncuesta from '../models/VotoEncuesta.js';
+import EncuestaDetalle from '../models/EncuestaDetalle.js';
 import cloudinary from '../config/cloudinary.js';
 import { hayCredencialesCloudinary } from './copiaSeguridad.js';
 
@@ -48,7 +50,7 @@ const sinInternos = ({ __v, ...resto }) => resto;
 export const exportarDatos = async (usuarioId) => {
   const usuario = await Usuario.findById(usuarioId).select('+nombre +apellidos').lean();
 
-  const [posts, comentarios, reacciones, siguiendo, seguidores, bloqueos, notificaciones, reportes, apelaciones, suscripciones, reclamaciones, asistencias] =
+  const [posts, comentarios, reacciones, siguiendo, seguidores, bloqueos, notificaciones, reportes, apelaciones, suscripciones, reclamaciones, asistencias, votos] =
     await Promise.all([
       Post.find({ autor_id: usuarioId }).lean(),
       Comentario.find({ autor_id: usuarioId }).lean(),
@@ -62,6 +64,7 @@ export const exportarDatos = async (usuarioId) => {
       Suscripcion.find({ usuario_id: usuarioId }).lean(),
       ReclamacionNegocio.find({ usuario_id: usuarioId }).lean(),
       AsistenciaEvento.find({ usuario_id: usuarioId }).lean(),
+      VotoEncuesta.find({ usuario_id: usuarioId }).lean(),
     ]);
 
   // Cada publicacion con los datos de su seccion.
@@ -109,6 +112,7 @@ export const exportarDatos = async (usuarioId) => {
     reportes_hechos: reportes.map(sinInternos),
     apelaciones: apelaciones.map(sinInternos),
     reclamaciones_de_negocios: reclamaciones.map(sinInternos),
+    votos_en_encuestas: votos.map((v) => ({ encuesta: v.post_id, opcion: v.opcion, fecha: v.fecha_creacion })),
     eventos_a_los_que_voy: asistencias.map((a) => ({ evento: a.post_id, desde: a.fecha_creacion })),
     // Solo el servicio, no la direccion entera: es un identificador del navegador.
     avisos_push: suscripciones.map((s) => ({ servicio: new URL(s.endpoint).host, desde: s.fecha_creacion })),
@@ -188,6 +192,13 @@ export const eliminarCuenta = async (usuarioId) => {
     await EventoDetalle.updateOne({ post_id: a.post_id, asistentes: { $gt: 0 } }, { $inc: { asistentes: -1 } });
   }
   await AsistenciaEvento.deleteMany({ usuario_id: usuarioId });
+
+  // Sus votos, descontandolos del recuento de cada encuesta.
+  const votos = await VotoEncuesta.find({ usuario_id: usuarioId });
+  for (const v of votos) {
+    await EncuestaDetalle.updateOne({ post_id: v.post_id }, { $inc: { [`votos.${v.opcion}`]: -1, total_votos: -1 } });
+  }
+  await VotoEncuesta.deleteMany({ usuario_id: usuarioId });
 
   await Promise.all([
     Seguimiento.deleteMany({ $or: [{ seguidor_id: usuarioId }, { seguido_id: usuarioId }] }),

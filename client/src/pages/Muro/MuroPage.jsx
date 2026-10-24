@@ -4,6 +4,7 @@ import api from '../../services/api.js';
 import { SECCIONES, SECCION_POR_TIPO } from '../../router/secciones.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import TarjetaPublicacion from '../../components/TarjetaPublicacion.jsx';
+import { EncuestaDelMuro } from '../Encuestas/EncuestaTarjeta.jsx';
 import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import EstadoVacio from '../../components/EstadoVacio.jsx';
 import Avatar from '../../components/Avatar.jsx';
@@ -117,9 +118,14 @@ function MuroPage() {
         </EstadoVacio>
       )}
 
-      {posts?.map((post) => (
-        <TarjetaPublicacion key={post._id} post={post} seccion={SECCION_POR_TIPO[post.tipo]} />
-      ))}
+      {posts?.map((post) =>
+        // Una encuesta necesita sus opciones, que no vienen en el Muro.
+        post.tipo === 'encuesta' ? (
+          <EncuestaDelMuro key={post._id} id={post._id} />
+        ) : (
+          <TarjetaPublicacion key={post._id} post={post} seccion={SECCION_POR_TIPO[post.tipo]} />
+        ),
+      )}
     </>
   );
 }

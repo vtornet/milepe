@@ -913,6 +913,17 @@ re-derive otherwise:
   Z, lines folded at 75 *bytes* (a ñ is two) and CRLF; no end date means two
   hours. Attendances are in the RGPD export and removed (counter included) on
   account deletion.
+- **Encuestas** (`/api/encuestas`, tipo `encuesta` + `EncuestaDetalle`): the question
+  is the post title; 2–6 non-repeated options; closes at `cierra_en` (future,
+  max 60 days). `votos[i]` counts option i (moved with atomic `$inc`); who
+  voted what is in `VotoEncuesta` (unique per person and poll) and **never
+  leaves the API** except each person's own vote (`/mis-votos`). A vote can be
+  changed while open. **Results are withheld until you vote** (or you are the
+  author, or it is closed) so they don't sway the vote — the listing never
+  sends them for open polls and the client fetches the full poll for the
+  ones you voted. The Muro draws polls with `EncuestaDelMuro` (fetches the
+  options, which the feed doesn't carry). RGPD: votes exported, and removed
+  (counts included) on account deletion.
 - **Negocios managed by their owners** (no payment yet — that waits for
   Stripe): a neighbour claims a listing (`POST /:id/reclamar`, with a message
   proving it; `ReclamacionNegocio`, one pending per person and business), an
@@ -1123,7 +1134,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 187 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 195 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1837,8 +1848,7 @@ Rough priority; none started.
 4. **Tablón de anuncios** — done (see "Section controllers").
 5. **Businesses manage themselves** — done except paid highlighting, which
    waits for Stripe (see "Section controllers" → Negocios).
-6. **Groups** (barrios, AA.VV., hermandades, peñas, clubes), **polls /
-   consultas ciudadanas**, hashtags, verification that someone is a vecino.
+6. **Groups** (barrios, AA.VV., hermandades, peñas, clubes), hashtags, verification that someone is a vecino.
    (Global search is done — see "Buscador global".)
 7. **Share well on WhatsApp** (Open Graph previews) and **SEO**: the app is
    a SPA, so crawlers and link previews see an empty shell. Needs

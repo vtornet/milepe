@@ -2450,3 +2450,52 @@ select:disabled {
   background: var(--marca-tenue);
   color: var(--marca-fuerte);
 }
+
+/* ---------------- Encuestas ---------------- */
+
+.encuesta-opciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  margin: var(--e-3) 0;
+}
+
+.encuesta-opciones label {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  cursor: pointer;
+}
+
+.encuesta-resultados {
+  margin: var(--e-3) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.encuesta-resultados li {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--e-2);
+  margin-bottom: var(--e-2);
+  padding: var(--e-2) var(--e-3);
+  overflow: hidden;
+  border: 1px solid var(--borde);
+  border-radius: var(--r-sm);
+}
+
+.encuesta-resultados li.mia {
+  border-color: var(--marca-borde);
+}
+
+.encuesta-barra {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--marca-tenue);
+}
+
+.encuesta-texto,
+.encuesta-resultados strong {
+  position: relative;
+}
