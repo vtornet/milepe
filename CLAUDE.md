@@ -883,6 +883,15 @@ re-derive otherwise:
   aren't a separate collection: a `Comentario` on a `negocio` post can carry
   `valoracion` (1–5); the client only shows the star picker there
   (`PanelInteraccion`'s `permitirValoracion` prop).
+- **Tablón** (`/api/anuncios`, tipo `anuncio` + `AnuncioDetalle`): categories
+  vendo, regalo, busco, perdido, encontrado, ayuda; zone (same three as the
+  pharmacies). Price is required for `vendo` and forbidden otherwise
+  (`pre('validate')`, 0 = free). An ad lives 30 days (`fecha_caducidad`); the
+  author can close it (sold/found — hidden, not deleted), reopen it, or renew
+  it for 30 days *from now*, never stacked. The default listing shows only
+  open and current ones; `?incluirCerrados=true` shows the rest. Contact is
+  through comments. Client `/tablon`, with photos (`SelectorFotos`) and a
+  Muro shortcut.
 - **Turismo** is not a post section any more — see "Turismo" below.
 - **Empleo**: `modalidad` (`busco`/`ofrezco`) is a *required* query param on
   `GET /api/empleo`, not an optional filter like `categoria` elsewhere — the
@@ -1080,7 +1089,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 142 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 150 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1737,8 +1746,7 @@ Rough priority; none started.
    see "La playa hoy".) (Pharmacy on duty is done — see "Farmacias de
    guardia"; ask the Colegio for a data feed.) El Tiempo (cached
    proxy) is the model for an external-data widget.
-4. **Tablón de anuncios** (second hand, free stuff, lost objects/animals,
-   neighbours helping neighbours) — new `tipo` + `*_detalle`.
+4. **Tablón de anuncios** — done (see "Section controllers").
 5. **Businesses manage themselves**: claim a listing, hours, offers,
    replies to reviews; then paid highlighting through Stripe.
 6. **Groups** (barrios, AA.VV., hermandades, peñas, clubes), **polls /

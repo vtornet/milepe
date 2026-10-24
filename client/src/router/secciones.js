@@ -17,6 +17,7 @@ export const SECCIONES = [
   { ruta: '/fotos', etiqueta: 'Fotos', icono: 'fotos', tipos: ['foto'] },
   { ruta: '/turismo', etiqueta: 'Turismo', icono: 'turismo', tipos: [] },
   { ruta: '/negocios', etiqueta: 'Negocios', icono: 'negocios', tipos: ['negocio'] },
+  { ruta: '/tablon', etiqueta: 'Tablón', icono: 'tablon', tipos: ['anuncio'] },
   { ruta: '/empleo', etiqueta: 'Empleo', icono: 'empleo', tipos: ['empleo_busco', 'empleo_ofrezco'] },
   { ruta: '/tiempo', etiqueta: 'El Tiempo', icono: 'tiempo', tipos: [] },
   { ruta: '/farmacias', etiqueta: 'Farmacias', icono: 'farmacia', tipos: [] },

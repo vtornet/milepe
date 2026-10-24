@@ -16,6 +16,7 @@ export const TIPOS_POST = [
   'empleo_ofrezco',
   'negocio',
   'aviso',
+  'anuncio',
 ];
 
 // Post-moderacion con reportes: se publica al instante y solo se revisa si

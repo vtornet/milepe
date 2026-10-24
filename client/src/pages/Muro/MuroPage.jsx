@@ -14,7 +14,7 @@ import Icono from '../../components/Icono.jsx';
 // propio (no existe un POST /api/posts genérico: cada tipo se crea en su
 // sección, con su *_detalle), así que esta fila hace de punto de partida y
 // lleva a la sección que corresponda.
-const PARA_PUBLICAR = ['/quejas', '/fotos', '/eventos', '/negocios'];
+const PARA_PUBLICAR = ['/quejas', '/fotos', '/eventos', '/tablon', '/negocios'];
 
 function MuroPage() {
   const { usuario } = useAuth();
