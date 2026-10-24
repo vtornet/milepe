@@ -118,6 +118,20 @@ function VecinoPage() {
                 >
                   {ficha.usuario.oficial ? 'Quitar cuenta oficial' : 'Marcar como cuenta oficial'}
                 </button>
+                {ficha.usuario.rol !== 'admin' && String(ficha.usuario._id) !== String(usuario._id) && (
+                  <button
+                    type="button"
+                    className="btn btn-plano btn-sm"
+                    onClick={async () => {
+                      const { data } = await api.patch(`/usuarios/${ficha.usuario._id}/rol`, {
+                        rol: ficha.usuario.rol === 'moderador' ? 'usuario' : 'moderador',
+                      });
+                      setFicha({ ...ficha, usuario: { ...ficha.usuario, rol: data.usuario.rol } });
+                    }}
+                  >
+                    {ficha.usuario.rol === 'moderador' ? 'Quitar de moderación' : 'Nombrar moderador'}
+                  </button>
+                )}
               </>
             )}
             {ficha.usuario.rol !== 'usuario' && (

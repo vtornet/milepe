@@ -264,7 +264,11 @@ created (`estado_moderacion` defaults to `'publicado'`), and
 `'eliminado'` is a soft delete — documents are never actually removed, so
 comment references and history survive. `Usuario.rol`
 (`usuario`/`moderador`/`admin`) is designed so new moderators can be added
-by editing one field on an existing document — no migration.
+by editing one field on an existing document — no migration. An admin can now name or remove
+moderators from the person's profile (`PATCH /api/usuarios/:id/rol`, only
+between `usuario` and `moderador`, never on an admin nor on oneself — making
+someone admin is still a deliberate database edit); the person is notified
+and has to log in again for the client to show the panel.
 
 Everything else runs through four collections and one controller
 (`moderacionController` + `/api/moderacion`), all of it **generic over

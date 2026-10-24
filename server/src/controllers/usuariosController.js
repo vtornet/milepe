@@ -2,6 +2,7 @@ import Usuario from '../models/Usuario.js';
 import Bloqueo from '../models/Bloqueo.js';
 import Seguimiento from '../models/Seguimiento.js';
 import Post from '../models/Post.js';
+import Notificacion from '../models/Notificacion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 import { eliminarCuenta, exportarDatos } from '../utils/datosPersonales.js';
@@ -265,6 +266,47 @@ export const eliminarMiCuenta = async (req, res, next) => {
 
     const resumen = await eliminarCuenta(usuario._id);
     res.json({ ok: true, eliminado: resumen });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Nombrar o quitar moderadores. Solo admin (lo exige la ruta), y solo entre
+// 'usuario' y 'moderador': hacer admin a alguien, o quitarselo, sigue siendo
+// un cambio deliberado en la base de datos, no un boton. Nadie se cambia el
+// rol a si mismo.
+export const cambiarRol = async (req, res, next) => {
+  try {
+    const { rol } = req.body || {};
+    if (!['usuario', 'moderador'].includes(rol)) {
+      throw new ErrorHttp(400, 'rol debe ser usuario o moderador');
+    }
+    if (String(req.params.id) === String(req.usuario._id)) {
+      throw new ErrorHttp(400, 'No puedes cambiar tu propio rol');
+    }
+
+    const usuario = await Usuario.findOne({ _id: req.params.id, activo: true });
+    if (!usuario) throw new ErrorHttp(404, 'Usuario no encontrado');
+    if (usuario.rol === 'admin') {
+      throw new ErrorHttp(409, 'Un administrador no se cambia desde aquí');
+    }
+
+    if (usuario.rol !== rol) {
+      usuario.rol = rol;
+      await usuario.save();
+      await Notificacion.create({
+        usuario_id: usuario._id,
+        tipo: 'moderacion',
+        mensaje:
+          rol === 'moderador'
+            ? 'Ahora formas parte del equipo de moderación de MiLepe. Tienes el panel en el menú.'
+            : 'Ya no formas parte del equipo de moderación de MiLepe.',
+        referencia_id: usuario._id,
+        referencia_tipo: 'usuario',
+      });
+    }
+
+    res.json({ ok: true, usuario: { _id: usuario._id, nombre_usuario: usuario.nombre_usuario, rol: usuario.rol } });
   } catch (error) {
     next(error);
   }

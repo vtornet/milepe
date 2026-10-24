@@ -101,3 +101,23 @@ test('un id mal formado en la URL es un 400, no un 500', async () => {
 test('el Muro es público: se lee sin cuenta', async () => {
   assert.equal((await t.api.get('/posts')).status, 200);
 });
+
+test('nombrar y quitar moderadores: solo un admin, nunca a otro admin ni a sí mismo', async () => {
+  const candidato = await t.crearUsuario();
+  const cambiar = (quien, id, rol) => t.api.patch(`/usuarios/${id}/rol`, { rol }, { token: quien.token });
+
+  assert.equal((await cambiar(vecino, candidato.id, 'moderador')).status, 403);
+  assert.equal((await cambiar(moderador, candidato.id, 'moderador')).status, 403);
+  assert.equal((await cambiar(admin, candidato.id, 'admin')).status, 400, 'admin no se da por aquí');
+  assert.equal((await cambiar(admin, admin.id, 'usuario')).status, 400, 'ni a uno mismo');
+  const otroAdmin = await t.crearUsuario({ rol: 'admin' });
+  assert.equal((await cambiar(admin, otroAdmin.id, 'usuario')).status, 409);
+
+  assert.equal((await cambiar(admin, candidato.id, 'moderador')).body.usuario.rol, 'moderador');
+  assert.equal((await t.api.get('/moderacion/reportes', { token: candidato.token })).status, 200, 'ya ve la cola');
+  const avisos = (await t.api.get('/notificaciones', { token: candidato.token })).body.notificaciones;
+  assert.ok(avisos.some((n) => /equipo de moderación/.test(n.mensaje)));
+
+  assert.equal((await cambiar(admin, candidato.id, 'usuario')).body.usuario.rol, 'usuario');
+  assert.equal((await t.api.get('/moderacion/reportes', { token: candidato.token })).status, 403, 'y deja de verla al momento');
+});
