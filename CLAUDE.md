@@ -1152,7 +1152,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 218 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 223 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1984,9 +1984,10 @@ Rough priority; none started.
 
 ### 6. Technical base
 
-- **Server tests and CI** — done, see "Tests and CI". Still missing: tests
-  for the stats and turismo controllers and the section listings
-  (aggregations), and gating deploys on CI. (Server linter: done.)
+- **Server tests and CI** — done, see "Tests and CI". Stats, Turismo ordering and the section listings
+  (aggregations: Negocios destacado/geo, Eventos agenda, Empleo, Quejas)
+  now have tests (`listados.test.js`, `turismo.test.js`). Still missing:
+  gating deploys on CI. (Server linter: done.)
 - **MongoDB backups** — done, see "Copias de seguridad". Still to do: a restore rehearsal against a scratch database now and then, and a second destination if Cloudinary alone feels thin.
 - **Rate limiting, security headers and error monitoring** — done, see
   "Hardening". Pending there: create the Sentry project and set
