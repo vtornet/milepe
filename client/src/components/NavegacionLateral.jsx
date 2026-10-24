@@ -1,6 +1,6 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import Icono from './Icono.jsx';
-import { SECCIONES } from '../router/secciones.js';
+import { SECCIONES_MENU, rutaDelMenu } from '../router/secciones.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
 // Navegación lateral de tablet y escritorio. Las ocho secciones caben
@@ -16,6 +16,7 @@ function NavegacionLateral({ pendientesModeracion = 0, tengoSanciones = false })
   const esEquipo = usuario?.rol === 'moderador' || usuario?.rol === 'admin';
 
   const clase = ({ isActive }) => (isActive ? 'enlace-nav activo' : 'enlace-nav');
+  const enMenu = rutaDelMenu(useLocation().pathname);
 
   return (
     <nav className="lateral" aria-label="Navegación principal">
@@ -26,9 +27,10 @@ function NavegacionLateral({ pendientesModeracion = 0, tengoSanciones = false })
             Muro
           </NavLink>
         </li>
-        {SECCIONES.map((seccion) => (
+        {SECCIONES_MENU.map((seccion) => (
           <li key={seccion.ruta}>
-            <NavLink to={seccion.ruta} className={clase}>
+            {/* Un grupo se enciende en cualquiera de sus pestañas. */}
+            <NavLink to={seccion.ruta} className={() => clase({ isActive: enMenu === seccion.ruta })}>
               <Icono nombre={seccion.icono} />
               {seccion.etiqueta}
             </NavLink>

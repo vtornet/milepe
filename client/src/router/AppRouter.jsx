@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import GrupoPestanas from './GrupoPestanas.jsx';
 import MuroPage from '../pages/Muro/MuroPage.jsx';
 import QuejasPage from '../pages/Quejas/QuejasPage.jsx';
 import LoginPage from '../pages/Auth/LoginPage.jsx';
@@ -56,15 +57,23 @@ function AppRouter() {
       <Route path="/turismo/:seccion" element={<TurismoSeccionPage />} />
       <Route path="/fotos" element={<FotosPage />} />
       <Route path="/eventos" element={<EventosPage />} />
-      <Route path="/tiempo" element={<TiempoPage />} />
-      <Route path="/empleo" element={<EmpleoPage />} />
       <Route path="/negocios" element={<NegociosPage />} />
-      <Route path="/contactos" element={<ContactosPage />} />
-      <Route path="/farmacias" element={<FarmaciasPage />} />
       <Route path="/avisos" element={<AvisosPage />} />
-      <Route path="/tablon" element={<TablonPage />} />
-      <Route path="/animales" element={<AnimalesPage />} />
       <Route path="/buscar" element={<BuscarPage />} />
+
+      {/* Grupos: cada pestaña conserva su ruta de siempre; el grupo solo
+          añade la fila de pestañas encima. */}
+      <Route element={<GrupoPestanas grupo="tablon" />}>
+        <Route path="/tablon" element={<TablonPage />} />
+        <Route path="/animales" element={<AnimalesPage />} />
+        <Route path="/empleo" element={<EmpleoPage />} />
+      </Route>
+      <Route path="/util" element={<Navigate to="/tiempo" replace />} />
+      <Route element={<GrupoPestanas grupo="util" />}>
+        <Route path="/tiempo" element={<TiempoPage />} />
+        <Route path="/farmacias" element={<FarmaciasPage />} />
+        <Route path="/contactos" element={<ContactosPage />} />
+      </Route>
 
       {/* La ficha de un vecino es publica, como el resto del muro: sin
           sesion se ve quien es y lo que ha publicado, y lo que no aparece

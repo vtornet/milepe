@@ -1676,6 +1676,16 @@ Three things worth knowing before touching them:
   what happened to the first versions of the Mensajes and Moderación
   components; the server's specific message ("Ya habías reportado este
   contenido") never reached the screen. Always read `data?.mensaje`.
+- **Grouped sections** (in `secciones.js`): an entry with `grupo` is a tab of
+  that group, and only the group's head (`ruta === /<grupo>`) appears in the
+  menus (`SECCIONES_MENU`). Tablón = compraventa (`/tablon`, the head) +
+  Animales + Empleo; Útil = Tiempo y playa + Farmacias + Teléfonos, whose
+  head `/util` has no page (`soloMenu`) and redirects to `/tiempo`. Every tab
+  keeps its own route — old links and the Muro's "go to section" still work —
+  and `GrupoPestanas` (a pathless layout route) adds the tab row on top.
+  `rutaDelMenu(pathname)` lights the group's menu entry on any of its tabs.
+  Avisos is deliberately **not** in the Tablón: it is the town hall's official
+  voice and would lose weight next to classifieds.
 - `client/src/router/secciones.js` is the single source of truth mapping
   route path ↔ nav label ↔ the `Post.tipo`(s) it corresponds to — `tipos`
   is always an array, even for a section with just one, because Empleo

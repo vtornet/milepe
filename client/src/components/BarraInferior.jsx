@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import Icono from './Icono.jsx';
-import { SECCIONES } from '../router/secciones.js';
+import { SECCIONES_MENU, rutaDelMenu } from '../router/secciones.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
 // Barra de pestañas del móvil. Va abajo y no arriba porque es donde llega
@@ -17,8 +17,9 @@ function BarraInferior({ noLeidos = 0 }) {
   const location = useLocation();
   const [hojaAbierta, setHojaAbierta] = useState(false);
 
-  const principales = SECCIONES.filter((s) => s.principal);
-  const resto = SECCIONES.filter((s) => !s.principal);
+  const principales = SECCIONES_MENU.filter((s) => s.principal);
+  const resto = SECCIONES_MENU.filter((s) => !s.principal);
+  const enMenu = rutaDelMenu(location.pathname);
 
   const clase = ({ isActive }) => (isActive ? 'pestana activo' : 'pestana');
   // Dentro de la hoja son filas de menú, no pestañas: misma lista de
@@ -28,7 +29,7 @@ function BarraInferior({ noLeidos = 0 }) {
   // Si estamos en una sección que vive dentro de "Más", esa pestaña se
   // marca como activa: si no, al abrir Fotos ninguna pestaña quedaría
   // encendida y la barra parecería desconectada de la página.
-  const enResto = resto.some((s) => location.pathname.startsWith(s.ruta));
+  const enResto = resto.some((s) => s.ruta === enMenu);
 
   return (
     <>
@@ -79,7 +80,11 @@ function BarraInferior({ noLeidos = 0 }) {
             <ul className="lateral-grupo">
               {resto.map((seccion) => (
                 <li key={seccion.ruta}>
-                  <NavLink to={seccion.ruta} className={claseHoja} onClick={() => setHojaAbierta(false)}>
+                  <NavLink
+                    to={seccion.ruta}
+                    className={() => claseHoja({ isActive: enMenu === seccion.ruta })}
+                    onClick={() => setHojaAbierta(false)}
+                  >
                     <Icono nombre={seccion.icono} />
                     {seccion.etiqueta}
                   </NavLink>

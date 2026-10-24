@@ -2420,3 +2420,33 @@ select:disabled {
 .resumen-quejas {
   margin-bottom: var(--e-3);
 }
+
+/* ---------------- Pestañas de un grupo (Tablón, Útil) ---------------- */
+
+.pestanas-grupo {
+  display: flex;
+  gap: var(--e-2);
+  margin-bottom: var(--e-4);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pestanas-grupo a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--e-2) var(--e-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-full);
+  color: var(--texto-suave);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pestanas-grupo a.activa {
+  border-color: var(--marca-borde);
+  background: var(--marca-tenue);
+  color: var(--marca-fuerte);
+}
