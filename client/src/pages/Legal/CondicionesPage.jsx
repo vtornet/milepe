@@ -9,12 +9,12 @@ import PaginaLegal from './PaginaLegal.jsx';
 // el funcionamiento de la moderación, hay que cambiar también este texto.
 function CondicionesPage() {
   return (
-    <PaginaLegal titulo="Condiciones de uso" actualizado="20 de octubre de 2026">
+    <PaginaLegal titulo="Condiciones de uso" actualizado="24 de octubre de 2026">
       <h2>1. Qué es MiLepe</h2>
       <p>
         MiLepe es una red social para los vecinos de Lepe (Huelva): un sitio donde avisar al Ayuntamiento de lo
         que hay que arreglar, compartir fotos del pueblo, anunciar eventos, dar de alta negocios locales,
-        publicar ofertas y búsquedas de empleo, recomendar sitios y hablar entre vecinos.
+        publicar ofertas y búsquedas de empleo, poner anuncios en el tablón, ayudar con animales perdidos o en adopción, votar encuestas y hablar entre vecinos.
       </p>
       <p>
         El titular del servicio es <strong>Víctor José Tornet García</strong>, NIF <strong>77534989B</strong>,
@@ -105,22 +105,39 @@ function CondicionesPage() {
         repórtalo.
       </p>
 
-      <h2>8. Teléfonos de interés</h2>
+      <h2>8. Tablón, animales y encuestas</h2>
+      <p>
+        Los anuncios del tablón y las publicaciones de animales los ponen los vecinos: MiLepe no interviene en
+        las compraventas, regalos ni adopciones, ni comprueba lo que se anuncia. Las encuestas recogen la opinión
+        de quien quiere votar y <strong>no son vinculantes</strong> ni tienen valor oficial, aunque las publique
+        el Ayuntamiento.
+      </p>
+
+      <h2>9. Cuenta oficial y avisos</h2>
+      <p>
+        Las cuentas con la insignia de verificada pertenecen al Ayuntamiento de Lepe y son las únicas que pueden
+        publicar avisos oficiales y responder a las quejas en su nombre. Si alguien se hace pasar por una
+        institución, repórtalo.
+      </p>
+
+      <h2>10. Teléfonos de interés, farmacias y mareas</h2>
       <p>
         La sección de Contactos recoge teléfonos de utilidad. Los de emergencia nacionales (112, 062, 061) son
         fiables, pero <strong>en una emergencia llama siempre al 112</strong> y no dependas de que esta
-        aplicación esté disponible o actualizada.
+        aplicación esté disponible o actualizada. Las farmacias de guardia se copian a mano del cuadro del
+        Colegio de Farmacéuticos y las mareas son una estimación: ante la duda, llama a la farmacia y no uses
+        las mareas para navegar.
       </p>
 
-      <h2>9. Suspensión de cuentas</h2>
+      <h2>11. Suspensión de cuentas</h2>
       <p>
         Podemos desactivar una cuenta que incumpla estas condiciones de forma grave o reiterada. Salvo en casos
         muy claros (suplantación, contenido ilegal, acoso), avisaremos antes. Una cuenta desactivada conserva
         sus datos, no se borran: puedes pedir su recuperación o su supresión.
       </p>
-      <p>Tú puedes dejar de usar MiLepe cuando quieras y pedirnos que eliminemos tu cuenta.</p>
+      <p>Tú puedes dejar de usar MiLepe cuando quieras y eliminar tu cuenta desde tu perfil.</p>
 
-      <h2>10. Responsabilidad</h2>
+      <h2>12. Responsabilidad</h2>
       <p>
         MiLepe es un proyecto vecinal que se ofrece tal cual, sin garantía de estar siempre disponible ni libre
         de fallos. No respondemos del contenido que publican los usuarios, aunque retiraremos el que sea ilícito
@@ -128,7 +145,7 @@ function CondicionesPage() {
         que hagas con otros vecinos a raíz de un anuncio.
       </p>
 
-      <h2>11. Cambios y ley aplicable</h2>
+      <h2>13. Cambios y ley aplicable</h2>
       <p>
         Podemos modificar estas condiciones; actualizaremos la fecha del encabezado y, si el cambio es
         relevante, avisaremos dentro de la aplicación. Se aplica la legislación española, y para cualquier
