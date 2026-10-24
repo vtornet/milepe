@@ -49,11 +49,8 @@ function BarraSuperior({ pendientesModeracion = 0 }) {
             type="search"
             placeholder="Buscar en Lepe..."
             onKeyDown={(evento) => {
-              // Todavía no hay búsqueda global en el backend (solo
-              // /api/usuarios/buscar, que es de vecinos): de momento la
-              // tecla manda a Mensajes, donde esa búsqueda sí existe, en
-              // vez de dejar un campo que no hace nada.
-              if (evento.key === 'Enter' && usuario) navigate('/mensajes');
+              const texto = evento.currentTarget.value.trim();
+              if (evento.key === 'Enter' && texto) navigate(`/buscar?q=${encodeURIComponent(texto)}`);
             }}
           />
         </div>

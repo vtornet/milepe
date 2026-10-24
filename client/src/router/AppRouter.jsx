@@ -23,6 +23,7 @@ import FarmaciasPage from '../pages/Farmacias/FarmaciasPage.jsx';
 import AvisosPage from '../pages/Avisos/AvisosPage.jsx';
 import TablonPage from '../pages/Tablon/TablonPage.jsx';
 import AnimalesPage from '../pages/Animales/AnimalesPage.jsx';
+import BuscarPage from '../pages/Buscar/BuscarPage.jsx';
 import MensajesPage from '../pages/Mensajes/MensajesPage.jsx';
 import ConversacionPage from '../pages/Mensajes/ConversacionPage.jsx';
 import ModeracionPage from '../pages/Moderacion/ModeracionPage.jsx';
@@ -63,6 +64,7 @@ function AppRouter() {
       <Route path="/avisos" element={<AvisosPage />} />
       <Route path="/tablon" element={<TablonPage />} />
       <Route path="/animales" element={<AnimalesPage />} />
+      <Route path="/buscar" element={<BuscarPage />} />
 
       {/* La ficha de un vecino es publica, como el resto del muro: sin
           sesion se ve quien es y lo que ha publicado, y lo que no aparece

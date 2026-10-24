@@ -22,6 +22,9 @@ export const SECCIONES = [
   { ruta: '/empleo', etiqueta: 'Empleo', icono: 'empleo', tipos: ['empleo_busco', 'empleo_ofrezco'] },
   { ruta: '/tiempo', etiqueta: 'El Tiempo', icono: 'tiempo', tipos: [] },
   { ruta: '/farmacias', etiqueta: 'Farmacias', icono: 'farmacia', tipos: [] },
+  // No es una seccion de contenido, pero en el movil la caja de busqueda de
+  // la barra superior no cabe y desde aqui se llega a ella.
+  { ruta: '/buscar', etiqueta: 'Buscar', icono: 'buscar', tipos: [] },
   { ruta: '/contactos', etiqueta: 'Contactos', icono: 'contactos', tipos: [] },
 ];
 

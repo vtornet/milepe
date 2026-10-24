@@ -1123,7 +1123,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 180 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 187 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1212,6 +1212,21 @@ collection — **when a new collection stores data about a user, add it here**.
   thread; reports, appeals and the audit log are kept (legitimate interest),
   pointing at the anonymous account.
 - Client: "Tus datos" in `/perfil` (`MisDatos.jsx`), and the privacy page says so.
+
+### Buscador global
+
+`GET /api/buscar?q=` (`buscarController.js`, public; with a session it also
+returns neighbours) searches published posts of every section, Turismo,
+contacts and pharmacies in one go; the top bar's search box and `/buscar`
+(in `secciones.js` so phones, where the box doesn't fit, can reach it) use
+it. Every word must appear, in any field. **It uses regular expressions, not
+the `Post` text index**: that index is English (bad stemming for Spanish),
+matches whole words only ("bach" doesn't find "bache") and changing it means
+migrating the index in production. `patronSinTildes` makes each vowel and the
+n accept their accented/upper-case forms (added by hand: the database's
+case-insensitive mode doesn't always fold accented letters) and escapes the
+input. Fine at a town's volume; if it ever isn't, the step is a Spanish text
+index or Atlas Search.
 
 ### Farmacias de guardia
 
@@ -1813,8 +1828,8 @@ Rough priority; none started.
 5. **Businesses manage themselves** — done except paid highlighting, which
    waits for Stripe (see "Section controllers" → Negocios).
 6. **Groups** (barrios, AA.VV., hermandades, peñas, clubes), **polls /
-   consultas ciudadanas**, hashtags and
-   global search, verification that someone is a vecino.
+   consultas ciudadanas**, hashtags, verification that someone is a vecino.
+   (Global search is done — see "Buscador global".)
 7. **Share well on WhatsApp** (Open Graph previews) and **SEO**: the app is
    a SPA, so crawlers and link previews see an empty shell. Needs
    prerendering/SSR for public pages (Turismo, Eventos, Negocios).
