@@ -20,6 +20,9 @@ import AvisoDetalle from '../models/AvisoDetalle.js';
 import AnuncioDetalle from '../models/AnuncioDetalle.js';
 import AnimalDetalle from '../models/AnimalDetalle.js';
 import ReclamacionNegocio from '../models/ReclamacionNegocio.js';
+import MiembroGrupo from '../models/MiembroGrupo.js';
+import Grupo from '../models/Grupo.js';
+import PublicacionGrupoDetalle from '../models/PublicacionGrupoDetalle.js';
 import AsistenciaEvento from '../models/AsistenciaEvento.js';
 import VotoEncuesta from '../models/VotoEncuesta.js';
 import EncuestaDetalle from '../models/EncuestaDetalle.js';
@@ -41,6 +44,7 @@ const DETALLE_POR_TIPO = {
   aviso: AvisoDetalle,
   anuncio: AnuncioDetalle,
   animal: AnimalDetalle,
+  grupo: PublicacionGrupoDetalle,
 };
 
 const sinInternos = ({ __v, ...resto }) => resto;
@@ -50,7 +54,7 @@ const sinInternos = ({ __v, ...resto }) => resto;
 export const exportarDatos = async (usuarioId) => {
   const usuario = await Usuario.findById(usuarioId).select('+nombre +apellidos').lean();
 
-  const [posts, comentarios, reacciones, siguiendo, seguidores, bloqueos, notificaciones, reportes, apelaciones, suscripciones, reclamaciones, asistencias, votos] =
+  const [posts, comentarios, reacciones, siguiendo, seguidores, bloqueos, notificaciones, reportes, apelaciones, suscripciones, reclamaciones, asistencias, votos, grupos] =
     await Promise.all([
       Post.find({ autor_id: usuarioId }).lean(),
       Comentario.find({ autor_id: usuarioId }).lean(),
@@ -65,6 +69,7 @@ export const exportarDatos = async (usuarioId) => {
       ReclamacionNegocio.find({ usuario_id: usuarioId }).lean(),
       AsistenciaEvento.find({ usuario_id: usuarioId }).lean(),
       VotoEncuesta.find({ usuario_id: usuarioId }).lean(),
+      MiembroGrupo.find({ usuario_id: usuarioId }).populate('grupo_id', 'nombre creador_id').lean(),
     ]);
 
   // Cada publicacion con los datos de su seccion.
@@ -113,6 +118,11 @@ export const exportarDatos = async (usuarioId) => {
     apelaciones: apelaciones.map(sinInternos),
     reclamaciones_de_negocios: reclamaciones.map(sinInternos),
     votos_en_encuestas: votos.map((v) => ({ encuesta: v.post_id, opcion: v.opcion, fecha: v.fecha_creacion })),
+    grupos: grupos.map((g) => ({
+      grupo: g.grupo_id?.nombre || null,
+      creado_por_mi: String(g.grupo_id?.creador_id) === String(usuarioId),
+      desde: g.fecha_creacion,
+    })),
     eventos_a_los_que_voy: asistencias.map((a) => ({ evento: a.post_id, desde: a.fecha_creacion })),
     // Solo el servicio, no la direccion entera: es un identificador del navegador.
     avisos_push: suscripciones.map((s) => ({ servicio: new URL(s.endpoint).host, desde: s.fecha_creacion })),
@@ -199,6 +209,15 @@ export const eliminarCuenta = async (usuarioId) => {
     await EncuestaDetalle.updateOne({ post_id: v.post_id }, { $inc: { [`votos.${v.opcion}`]: -1, total_votos: -1 } });
   }
   await VotoEncuesta.deleteMany({ usuario_id: usuarioId });
+
+  // Sale de sus grupos, bajando el contador de cada uno. Los que creó
+  // siguen existiendo (otros vecinos están en ellos), con la cuenta anónima
+  // como creadora.
+  const membresias = await MiembroGrupo.find({ usuario_id: usuarioId });
+  for (const m of membresias) {
+    await Grupo.updateOne({ _id: m.grupo_id, num_miembros: { $gt: 0 } }, { $inc: { num_miembros: -1 } });
+  }
+  await MiembroGrupo.deleteMany({ usuario_id: usuarioId });
 
   await Promise.all([
     Seguimiento.deleteMany({ $or: [{ seguidor_id: usuarioId }, { seguido_id: usuarioId }] }),

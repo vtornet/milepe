@@ -40,6 +40,10 @@ export const listarMuro = async (req, res, next) => {
       filtro.etiquetas = normalizarEtiqueta(req.query.etiqueta.replace(/^#/, ''));
     }
 
+    // Lo de los grupos se queda en su grupo: el Muro general no se llena de
+    // la charla de cada peña. Con un filtro (vecino, etiqueta, tipo) sí sale.
+    if (!req.query.tipo && !req.query.autor && !filtro.etiquetas) filtro.tipo = { $ne: 'grupo' };
+
     const [posts, total] = await Promise.all([
       Post.find(filtro)
         .sort({ fecha_creacion: -1 })

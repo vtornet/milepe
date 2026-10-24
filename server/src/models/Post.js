@@ -20,6 +20,7 @@ export const TIPOS_POST = [
   'anuncio',
   'animal',
   'encuesta',
+  'grupo',
 ];
 
 // Post-moderacion con reportes: se publica al instante y solo se revisa si

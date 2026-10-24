@@ -20,6 +20,7 @@ import farmaciasRoutes from './farmaciasRoutes.js';
 import avisosRoutes from './avisosRoutes.js';
 import playaRoutes from './playaRoutes.js';
 import anunciosRoutes from './anunciosRoutes.js';
+import gruposRoutes from './gruposRoutes.js';
 import animalesRoutes from './animalesRoutes.js';
 import buscarRoutes from './buscarRoutes.js';
 import encuestasRoutes from './encuestasRoutes.js';
@@ -52,6 +53,7 @@ router.use('/encuestas', encuestasRoutes); // encuestas y consultas ciudadanas
 router.use('/buscar', buscarRoutes); // buscador global: publicaciones, turismo, contactos, farmacias y vecinos
 router.use('/animales', animalesRoutes); // perdidos, encontrados, adopcion y acogida
 router.use('/anuncios', anunciosRoutes); // tablon de anuncios entre vecinos
+router.use('/grupos', gruposRoutes); // barrios, asociaciones, hermandades, peñas, clubes
 router.use('/avisos', avisosRoutes); // avisos oficiales: solo los publica una cuenta oficial o un admin
 router.use('/farmacias', farmaciasRoutes); // directorio + calendario de guardias; lo mantiene un admin, no hay API oficial de la que leerlo
 router.use('/estadisticas', estadisticasRoutes); // panel de admin: recuentos y agregados de toda la red

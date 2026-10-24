@@ -18,6 +18,7 @@ export const SECCIONES = [
   { ruta: '/turismo', etiqueta: 'Turismo', icono: 'turismo', tipos: [] },
   { ruta: '/encuestas', etiqueta: 'Encuestas', icono: 'encuesta', tipos: ['encuesta'] },
   { ruta: '/negocios', etiqueta: 'Negocios', icono: 'negocios', tipos: ['negocio'] },
+  { ruta: '/grupos', etiqueta: 'Grupos', icono: 'grupo', tipos: ['grupo'] },
   // Grupo Tablón: en el menú solo sale su cabeza (/tablon); el resto son
   // pestañas dentro de él (ver GrupoPestanas). Siguen teniendo su ruta.
   { ruta: '/tablon', etiqueta: 'Tablón', pestana: 'Compraventa y más', icono: 'tablon', tipos: ['anuncio'], grupo: 'tablon' },

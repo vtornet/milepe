@@ -1152,7 +1152,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 213 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 218 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1263,6 +1263,34 @@ n accept their accented/upper-case forms (added by hand: the database's
 case-insensitive mode doesn't always fold accented letters) and escapes the
 input. Fine at a town's volume; if it ever isn't, the step is a Spanish text
 index or Atlas Search.
+
+### Grupos
+
+`/api/grupos` + client `/grupos` and `/grupos/:id`. Three collections:
+`Grupo` (name, description, `categoria` in `CATEGORIAS_GRUPO` — barrio,
+asociacion, hermandad, pena, club, otro — `creador_id`, `num_miembros`,
+`activo`), `MiembroGrupo` (unique `{grupo_id, usuario_id}`) and posts of the
+new `tipo: 'grupo'` with `PublicacionGrupoDetalle {post_id, grupo_id}` — the
+usual Post + `*_detalle` pattern, so reactions, comments, editing and
+moderation are the generic ones.
+
+- **Public and open**: anyone reads a group and its posts, anyone with a
+  complete profile joins instantly (idempotent, like following); **only
+  members publish**. No private groups, no join requests, no group
+  moderators — reports go to the normal moderation queue.
+- Names are unique by `clave` (lower case, no accents, single spaces),
+  computed in the model: "Peña El Terrao" = "peña el  terrao" → 409.
+- The creator edits name/description/category and **can't leave** (the
+  group would be left with nobody running it). Only a MiLepe admin sets
+  `activo` (retire/restore); a retired group is 404 for everyone else.
+- **Group posts stay out of the Muro**: `listarMuro` adds
+  `tipo: {$ne: 'grupo'}` when there's no `tipo`/`autor`/`etiqueta` filter, so
+  a neighbour's profile and a #tag page still show them.
+- RGPD: memberships are exported and, on account deletion, removed with the
+  counters decremented; groups they created survive with the anonymised
+  account as creator.
+- `GET /mios` gives the ids of your groups (one request per load, like
+  mis-reacciones).
 
 ### Etiquetas (#hashtags)
 
@@ -1939,7 +1967,7 @@ Rough priority; none started.
 4. **Tablón de anuncios** — done (see "Section controllers").
 5. **Businesses manage themselves** — done except paid highlighting, which
    waits for Stripe (see "Section controllers" → Negocios).
-6. **Groups** (barrios, AA.VV., hermandades, peñas, clubes), verification that someone is a vecino.
+6. **Verification that someone is a vecino.** (Groups are done — see "Grupos".)
    (Hashtags are done — see "Etiquetas".)
    (Global search is done — see "Buscador global".)
 7. **Share well on WhatsApp** — done for posts (see "Compartir"). Still open, **SEO**: the app is
