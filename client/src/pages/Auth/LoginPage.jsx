@@ -10,7 +10,17 @@ function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [datos, setDatos] = useState({ email: '', contraseña: '' });
-  const [error, setError] = useState(null);
+  // Si la sesion se cerro por una suspension (services/api.js), el motivo
+  // llega aqui; se lee una vez y se borra.
+  const [error, setError] = useState(() => {
+    try {
+      const motivo = sessionStorage.getItem('milepe_suspension');
+      sessionStorage.removeItem('milepe_suspension');
+      return motivo || null;
+    } catch {
+      return null;
+    }
+  });
   const [enviando, setEnviando] = useState(false);
 
   // Si venimos redirigidos desde una accion que exigia sesion (ver

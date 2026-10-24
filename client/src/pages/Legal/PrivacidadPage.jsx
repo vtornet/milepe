@@ -181,7 +181,7 @@ function PrivacidadPage() {
           ya sin tu nombre: también son suyos.
         </li>
       </ul>
-      <p>Hay tres excepciones que conviene que conozcas:</p>
+      <p>Hay cuatro excepciones que conviene que conozcas:</p>
       <ul>
         <li>
           El contenido que un moderador haya retirado no se borra de la base de datos: se marca como eliminado y
@@ -190,6 +190,11 @@ function PrivacidadPage() {
         <li>
           El historial de moderación es un registro de auditoría y no se modifica ni se borra, porque un
           historial que se puede reescribir no sirve para auditar nada. Queda asociado a la cuenta anónima.
+        </li>
+        <li>
+          Si eliminas la cuenta <strong>mientras está suspendida</strong>, guardamos una huella cifrada de tu
+          correo (no el correo en sí) durante lo que quede de suspensión, para que no pueda usarse para registrarse
+          de nuevo y saltársela. Acabado ese plazo deja de tener efecto.
         </li>
         <li>
           Hacemos una <strong>copia de seguridad diaria</strong> de la base de datos y guardamos las de los

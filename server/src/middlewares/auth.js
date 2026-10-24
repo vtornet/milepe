@@ -5,6 +5,14 @@ import ErrorHttp from '../utils/ErrorHttp.js';
 // Exige un JWT valido (cabecera "Authorization: Bearer <token>") y cuelga
 // el usuario autenticado en req.usuario para que el resto de la cadena
 // (controlador, autorizar()) no tenga que volver a consultarlo.
+const RUTAS_PERMITIDAS_SUSPENDIDO = [
+  ['GET', '/api/usuarios/perfil'],
+  ['GET', '/api/usuarios/perfil/exportar'],
+  ['DELETE', '/api/usuarios/perfil'],
+];
+const permitidoSuspendido = (req) =>
+  RUTAS_PERMITIDAS_SUSPENDIDO.some(([metodo, ruta]) => req.method === metodo && req.originalUrl.split('?')[0] === ruta);
+
 export const protegido = async (req, res, next) => {
   try {
     const cabecera = req.headers.authorization;
@@ -19,6 +27,14 @@ export const protegido = async (req, res, next) => {
     const usuario = await Usuario.findById(payload.id);
     if (!usuario || !usuario.activo) {
       throw new ErrorHttp(401, 'No autenticado');
+    }
+
+    // Una cuenta suspendida conserva la sesion solo para lo que es suyo por
+    // derecho: ver su perfil, descargar sus datos y borrar la cuenta (RGPD).
+    // Todo lo demas, 403 con razon para que el cliente cierre la sesion y
+    // ensene el motivo.
+    if (usuario.estaSuspendido() && !permitidoSuspendido(req)) {
+      throw Object.assign(new ErrorHttp(403, usuario.textoSuspension()), { razon: 'cuenta_suspendida' });
     }
 
     req.usuario = usuario;
@@ -52,7 +68,8 @@ export const opcional = async (req, res, next) => {
   try {
     const payload = verificarToken(cabecera.slice('Bearer '.length));
     const usuario = await Usuario.findById(payload.id);
-    if (usuario?.activo) req.usuario = usuario;
+    // Suspendida = como si no hubiera sesion: puede leer lo publico.
+    if (usuario?.activo && !usuario.estaSuspendido()) req.usuario = usuario;
   } catch {
     // Anonimo y adelante.
   }

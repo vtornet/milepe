@@ -179,3 +179,35 @@ export const correoVerificacion = (nombre, enlace) => ({
     </div>
   `,
 });
+
+// Aviso de suspension. Va por correo porque la persona ya no puede entrar a
+// leer una notificacion.
+const pie = '<hr style="border:none;border-top:1px solid #dbe1e7;margin:24px 0"><p style="color:#6f7883;font-size:12px">MiLepe · la red de los vecinos de Lepe</p>';
+const caja = (cuerpo) =>
+  `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;max-width:480px;margin:0 auto;color:#161b20">${cuerpo}${pie}</div>`;
+const escaparHtml = (texto) => String(texto).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+export const correoSuspension = (nombre, frase) => ({
+  asunto: 'Tu cuenta de MiLepe ha sido suspendida',
+  texto: [
+    `Hola ${nombre}:`,
+    '',
+    frase,
+    '',
+    'Mientras dure no podrás entrar ni publicar. Sí puedes descargar tus datos o eliminar tu cuenta desde tu perfil.',
+    'Si crees que es un error, responde a este correo.',
+    '',
+    'MiLepe · la red de los vecinos de Lepe',
+  ].join('\n'),
+  html: caja(
+    `<p>Hola <strong>${escaparHtml(nombre)}</strong>:</p><p>${escaparHtml(frase)}</p>` +
+      '<p>Mientras dure no podrás entrar ni publicar. Sí puedes descargar tus datos o eliminar tu cuenta desde tu perfil.</p>' +
+      '<p>Si crees que es un error, responde a este correo.</p>',
+  ),
+});
+
+export const correoSuspensionLevantada = (nombre) => ({
+  asunto: 'Tu cuenta de MiLepe vuelve a estar activa',
+  texto: [`Hola ${nombre}:`, '', 'Se ha levantado la suspensión de tu cuenta: ya puedes entrar y participar.', '', 'MiLepe · la red de los vecinos de Lepe'].join('\n'),
+  html: caja(`<p>Hola <strong>${escaparHtml(nombre)}</strong>:</p><p>Se ha levantado la suspensión de tu cuenta: ya puedes entrar y participar.</p>`),
+});

@@ -29,6 +29,20 @@ api.interceptors.response.use(
       localStorage.removeItem('milepe_token');
       localStorage.removeItem('milepe_usuario');
     }
+    // Si suspenden la cuenta con la sesion abierta, cada peticion protegida
+    // contesta 403 con este motivo: se cierra la sesion y se lleva a la
+    // pantalla de entrar, que ensena el mensaje (con la fecha y el motivo).
+    if (error.response?.status === 403 && error.response.data?.razon === 'cuenta_suspendida') {
+      localStorage.removeItem('milepe_token');
+      localStorage.removeItem('milepe_usuario');
+      try {
+        sessionStorage.setItem('milepe_suspension', error.response.data.mensaje || '');
+      } catch {
+        // Sin sessionStorage la pantalla de entrar no da el motivo; al
+        // intentar entrar, el servidor lo vuelve a decir.
+      }
+      if (!window.location.pathname.startsWith('/login')) window.location.assign('/login');
+    }
     return Promise.reject(error);
   },
 );

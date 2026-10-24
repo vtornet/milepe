@@ -20,6 +20,7 @@ import AvisoDetalle from '../models/AvisoDetalle.js';
 import AnuncioDetalle from '../models/AnuncioDetalle.js';
 import AnimalDetalle from '../models/AnimalDetalle.js';
 import ReclamacionNegocio from '../models/ReclamacionNegocio.js';
+import CorreoBloqueado from '../models/CorreoBloqueado.js';
 import MiembroGrupo from '../models/MiembroGrupo.js';
 import Grupo from '../models/Grupo.js';
 import PublicacionGrupoDetalle from '../models/PublicacionGrupoDetalle.js';
@@ -171,6 +172,12 @@ const borrarImagenes = async (urls) => {
 export const eliminarCuenta = async (usuarioId) => {
   const usuario = await Usuario.findById(usuarioId);
   if (!usuario) return null;
+
+  // Borrar la cuenta no puede ser la forma de saltarse una suspension: su
+  // correo queda vetado para registrarse mientras dure (ver CorreoBloqueado).
+  if (usuario.estaSuspendido()) {
+    await CorreoBloqueado.bloquear(usuario.email, usuario.suspension);
+  }
 
   const posts = await Post.find({ autor_id: usuarioId, estado_moderacion: { $ne: 'eliminado' } });
   for (const post of posts) {

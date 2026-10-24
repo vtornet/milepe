@@ -30,6 +30,10 @@ export const ACCIONES_MODERACION = [
   // rechazar un reporte.
   'revision_por_edicion',
   'edicion_aprobada',
+  // Sobre una cuenta, no sobre un contenido (contenido_tipo 'usuario', y
+  // contenido_id y autor_contenido_id son la propia cuenta).
+  'cuenta_suspendida',
+  'suspension_levantada',
 ];
 
 const registroSchema = new Schema(
@@ -49,7 +53,9 @@ const registroSchema = new Schema(
     },
     contenido_tipo: {
       type: String,
-      enum: TIPOS_CONTENIDO_MODERABLE,
+      // 'usuario' solo para suspender/levantar: no es contenido reportable,
+      // asi que no entra en TIPOS_CONTENIDO_MODERABLE.
+      enum: [...TIPOS_CONTENIDO_MODERABLE, 'usuario'],
       required: true,
     },
     contenido_id: {

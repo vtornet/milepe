@@ -127,6 +127,18 @@ const usuarioSchema = new Schema(
       type: Boolean,
       default: true,
     },
+    // Suspension por un administrador (usuariosController.suspender). No es
+    // `activo`: eso es la cuenta borrada o desactivada, y una suspension se
+    // levanta. Temporal = "vale mientras `hasta` este en el futuro", asi que
+    // se acaba sola sin que nadie tenga que acordarse; permanente = hasta que
+    // un admin la levante. El motivo se le ensena a la persona al intentar
+    // entrar.
+    suspension: {
+      hasta: { type: Date, default: null },
+      permanente: { type: Boolean, default: false },
+      motivo: { type: String, trim: true, maxlength: 500, default: null },
+      desde: { type: Date, default: null },
+    },
     // Recuperacion de contraseña. Se guarda el HASH del token, no el token:
     // el que viaja por correo es el original, y si algun dia se filtrara la
     // base de datos, con estos hashes no se puede restablecer la contraseña
@@ -199,6 +211,20 @@ const CAMPOS_NUNCA_SERIALIZADOS = [
   'token_verificacion',
   'token_verificacion_expira',
 ];
+
+usuarioSchema.methods.estaSuspendido = function estaSuspendido(ahora = new Date()) {
+  const s = this.suspension;
+  return Boolean(s?.permanente || (s?.hasta && s.hasta > ahora));
+};
+
+// La frase que ve la persona suspendida al intentar entrar o al hacer algo.
+usuarioSchema.methods.textoSuspension = function textoSuspension() {
+  const s = this.suspension;
+  const cuando = s.permanente
+    ? 'de forma indefinida'
+    : `hasta el ${s.hasta.toLocaleString('es-ES', { timeZone: 'Europe/Madrid', dateStyle: 'long', timeStyle: 'short' })}`;
+  return `Tu cuenta está suspendida ${cuando}. Motivo: ${s.motivo}`;
+};
 
 usuarioSchema.methods.toJSON = function toJSON() {
   const objeto = this.toObject();

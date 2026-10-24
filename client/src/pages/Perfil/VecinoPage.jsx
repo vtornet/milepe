@@ -13,6 +13,7 @@ import { Linea } from '../../components/Esqueleto.jsx';
 import { SECCION_POR_TIPO } from '../../router/secciones.js';
 import { fechaCorta } from '../../utils/fechas.js';
 import { useTitulo } from '../../hooks/useTitulo.js';
+import SuspensionAdmin from './SuspensionAdmin.jsx';
 
 // La ficha pública de un vecino: lo que ve el resto del pueblo.
 //
@@ -143,6 +144,13 @@ function VecinoPage() {
               </>
             )}
           </p>
+
+          {usuario?.rol === 'admin' && ficha.usuario.rol !== 'admin' && String(ficha.usuario._id) !== String(usuario._id) && (
+            <SuspensionAdmin
+              usuario={ficha.usuario}
+              onCambio={(suspension) => setFicha({ ...ficha, usuario: { ...ficha.usuario, suspension } })}
+            />
+          )}
 
           <p className="tarjeta-meta">
             <strong>{ficha.contadores.seguidores}</strong> seguidores ·{' '}

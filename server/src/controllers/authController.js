@@ -3,6 +3,15 @@ import { firmarToken } from '../utils/jwt.js';
 import { verificarTokenGoogle, generarNombreUsuarioLibre } from '../utils/googleAuth.js';
 import { enviarCorreo, correoRecuperacion, correoSinContraseña, correoVerificacion } from '../utils/correo.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
+import CorreoBloqueado from '../models/CorreoBloqueado.js';
+
+// Quien borro su cuenta estando suspendido no vuelve con el mismo correo
+// mientras dure la suspension (ver CorreoBloqueado).
+const exigirCorreoNoBloqueado = async (email) => {
+  if (await CorreoBloqueado.estaBloqueado(email)) {
+    throw new ErrorHttp(403, 'Este correo no puede registrarse en MiLepe ahora mismo');
+  }
+};
 
 // Solo estos cuatro campos pueden llegar a Usuario.create: nunca
 // req.body directamente. Si se pasara req.body tal cual, cualquiera podria
@@ -10,6 +19,7 @@ import ErrorHttp from '../utils/ErrorHttp.js';
 export const registrar = async (req, res, next) => {
   try {
     const { nombre_usuario, nombre, apellidos, email, contraseña } = req.body;
+    await exigirCorreoNoBloqueado(email);
 
     const usuario = await Usuario.create({ nombre_usuario, nombre, apellidos, email, contraseña });
 
@@ -44,6 +54,11 @@ export const iniciarSesion = async (req, res, next) => {
     // el mismo mensaje generico.
     if (!usuario || !usuario.activo || !usuario.contraseña || !(await usuario.compararContraseña(contraseña))) {
       throw new ErrorHttp(401, 'Credenciales invalidas');
+    }
+    // Despues de comprobar la contraseña: decir "suspendida" a quien no la
+    // sabe le confirmaria que ese correo tiene cuenta.
+    if (usuario.estaSuspendido()) {
+      throw Object.assign(new ErrorHttp(403, usuario.textoSuspension()), { razon: 'cuenta_suspendida' });
     }
 
     const token = firmarToken(usuario._id);
@@ -164,6 +179,7 @@ export const entrarConGoogle = async (req, res, next) => {
         if (!usuario.avatar_url) usuario.avatar_url = datosGoogle.avatar_url;
         await usuario.save({ validateBeforeSave: false });
       } else {
+        await exigirCorreoNoBloqueado(datosGoogle.email);
         // Caso 2: cuenta nueva. Sin contraseña, y con un nombre de usuario
         // inventado a partir del correo, porque Google no da ninguno.
         usuario = await Usuario.create({
@@ -182,6 +198,9 @@ export const entrarConGoogle = async (req, res, next) => {
     // contraseña: una cuenta desactivada no entra por ninguna puerta.
     if (!usuario.activo) {
       throw new ErrorHttp(401, 'Credenciales invalidas');
+    }
+    if (usuario.estaSuspendido()) {
+      throw Object.assign(new ErrorHttp(403, usuario.textoSuspension()), { razon: 'cuenta_suspendida' });
     }
 
     res.json({ ok: true, token: firmarToken(usuario._id), usuario });

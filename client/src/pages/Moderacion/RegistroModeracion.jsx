@@ -12,7 +12,11 @@ const ETIQUETA_ACCION = {
   apelacion_rechazada: 'rechazó la apelación sobre',
   revision_por_edicion: 'quedó pendiente de revisar por una edición de',
   edicion_aprobada: 'dio el visto bueno a la edición de',
+  cuenta_suspendida: 'suspendió la cuenta de',
+  suspension_levantada: 'levantó la suspensión de',
 };
+
+const QUE_ES = { post: 'una publicación de ', comentario: 'un comentario de ', mensaje: 'un mensaje privado de ', usuario: '' };
 
 const ACCIONES = Object.keys(ETIQUETA_ACCION);
 
@@ -65,7 +69,7 @@ function RegistroModeracion() {
           <div>
             <strong>{entrada.moderador_id?.nombre_usuario || 'El sistema'}</strong>{' '}
             {ETIQUETA_ACCION[entrada.accion] || entrada.accion}{' '}
-            {entrada.contenido_tipo === 'post' ? 'una publicación' : 'un comentario'} de{' '}
+            {QUE_ES[entrada.contenido_tipo] ?? ''}
             <strong>{entrada.autor_contenido_id?.nombre_usuario || 'un vecino'}</strong>
           </div>
 

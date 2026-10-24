@@ -6,6 +6,8 @@ import Notificacion from '../models/Notificacion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 import { eliminarCuenta, exportarDatos } from '../utils/datosPersonales.js';
+import RegistroModeracion from '../models/RegistroModeracion.js';
+import { enviarCorreo, correoSuspension, correoSuspensionLevantada } from '../utils/correo.js';
 
 export const bloquearUsuario = async (req, res, next) => {
   try {
@@ -312,10 +314,93 @@ export const cambiarRol = async (req, res, next) => {
   }
 };
 
+// --- Suspender cuentas (solo admin) ---
+
+const DIAS_MAX_SUSPENSION = 365;
+
+// Cuerpo: { motivo, dias } para una temporal, o { motivo, permanente: true }.
+// Volver a suspender a alguien ya suspendido sustituye la anterior (sirve
+// para alargarla o acortarla).
+export const suspenderUsuario = async (req, res, next) => {
+  try {
+    const { motivo, dias, permanente } = req.body || {};
+    if (!motivo || !String(motivo).trim()) throw new ErrorHttp(400, 'Hay que dar un motivo: se le enseña a la persona');
+    if (permanente !== true) {
+      const n = Number(dias);
+      if (!Number.isInteger(n) || n < 1 || n > DIAS_MAX_SUSPENSION) {
+        throw new ErrorHttp(400, `dias debe ser un número entero entre 1 y ${DIAS_MAX_SUSPENSION}, o permanente: true`);
+      }
+    }
+    if (String(req.params.id) === String(req.usuario._id)) throw new ErrorHttp(400, 'No puedes suspenderte a ti mismo');
+
+    const usuario = await Usuario.findOne({ _id: req.params.id, activo: true }).select('+nombre');
+    if (!usuario) throw new ErrorHttp(404, 'Usuario no encontrado');
+    if (usuario.rol === 'admin') throw new ErrorHttp(409, 'Un administrador no se suspende desde aquí');
+
+    const ahora = new Date();
+    usuario.suspension = {
+      permanente: permanente === true,
+      hasta: permanente === true ? null : new Date(ahora.getTime() + Number(dias) * 24 * 60 * 60 * 1000),
+      motivo: String(motivo).trim(),
+      desde: ahora,
+    };
+    await usuario.save();
+
+    await RegistroModeracion.registrar({
+      moderador_id: req.usuario._id,
+      accion: 'cuenta_suspendida',
+      contenido_tipo: 'usuario',
+      contenido_id: usuario._id,
+      autor_contenido_id: usuario._id,
+      nota: `${permanente === true ? 'Indefinida' : `${dias} día(s)`}: ${usuario.suspension.motivo}`,
+    });
+
+    // Sin sesion no puede leer una notificacion: se le avisa por correo. Si
+    // el correo falla, la suspension sigue en pie (y la vera al entrar).
+    await enviarCorreo({ para: usuario.email, ...correoSuspension(usuario.nombre || usuario.nombre_usuario, usuario.textoSuspension()) }).catch(
+      (error) => console.error('[suspension] No se pudo enviar el correo:', error.message),
+    );
+
+    res.json({ ok: true, suspension: usuario.suspension });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const levantarSuspension = async (req, res, next) => {
+  try {
+    const usuario = await Usuario.findOne({ _id: req.params.id, activo: true }).select('+nombre');
+    if (!usuario) throw new ErrorHttp(404, 'Usuario no encontrado');
+    if (!usuario.estaSuspendido()) throw new ErrorHttp(409, 'Esta cuenta no está suspendida');
+
+    usuario.suspension = { hasta: null, permanente: false, motivo: null, desde: null };
+    await usuario.save();
+
+    await RegistroModeracion.registrar({
+      moderador_id: req.usuario._id,
+      accion: 'suspension_levantada',
+      contenido_tipo: 'usuario',
+      contenido_id: usuario._id,
+      autor_contenido_id: usuario._id,
+      nota: req.body?.motivo ? String(req.body.motivo).trim() : null,
+    });
+    await enviarCorreo({ para: usuario.email, ...correoSuspensionLevantada(usuario.nombre || usuario.nombre_usuario) }).catch(
+      (error) => console.error('[suspension] No se pudo enviar el correo:', error.message),
+    );
+
+    res.json({ ok: true, suspension: usuario.suspension });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const perfilPublico = async (req, res, next) => {
   try {
+    // La suspension solo la ve un admin (es quien puede levantarla); para el
+    // resto la ficha es la de siempre.
+    const verSuspension = req.usuario?.rol === 'admin';
     const usuario = await Usuario.findOne({ _id: req.params.id, activo: true }).select(
-      `${CAMPOS_PUBLICOS_USUARIO} rol fecha_creacion`,
+      `${CAMPOS_PUBLICOS_USUARIO} rol fecha_creacion${verSuspension ? ' suspension' : ''}`,
     );
 
     if (!usuario) {

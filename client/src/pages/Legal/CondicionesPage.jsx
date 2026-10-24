@@ -137,9 +137,12 @@ function CondicionesPage() {
 
       <h2>11. Suspensión de cuentas</h2>
       <p>
-        Podemos desactivar una cuenta que incumpla estas condiciones de forma grave o reiterada. Salvo en casos
-        muy claros (suplantación, contenido ilegal, acoso), avisaremos antes. Una cuenta desactivada conserva
-        sus datos, no se borran: puedes pedir su recuperación o su supresión.
+        Podemos <strong>suspender</strong> una cuenta que incumpla estas condiciones de forma grave o reiterada,
+        durante un tiempo (que acaba solo) o de forma indefinida. La suspensión la decide un administrador, siempre
+        con un motivo, y te lo comunicamos por correo; también lo verás si intentas entrar. Mientras dure no
+        podrás entrar ni participar, pero sí descargar tus datos o eliminar tu cuenta. Lo que ya publicaste se
+        queda como estaba, salvo que se retire aparte por moderación. Si crees que es un error, escríbenos
+        respondiendo a ese correo.
       </p>
       <p>Tú puedes dejar de usar MiLepe cuando quieras y eliminar tu cuenta desde tu perfil.</p>
 

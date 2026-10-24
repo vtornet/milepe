@@ -9,6 +9,8 @@ import {
   perfilPublico,
   marcarOficial,
   cambiarRol,
+  suspenderUsuario,
+  levantarSuspension,
   exportarMisDatos,
   eliminarMiCuenta,
 } from '../controllers/usuariosController.js';
@@ -34,6 +36,8 @@ router.get('/:id', opcional, perfilPublico);
 
 router.patch('/:id/oficial', protegido, autorizar('admin'), marcarOficial);
 router.patch('/:id/rol', protegido, autorizar('admin'), cambiarRol);
+router.put('/:id/suspension', protegido, autorizar('admin'), suspenderUsuario);
+router.delete('/:id/suspension', protegido, autorizar('admin'), levantarSuspension);
 router.post('/:id/bloquear', protegido, bloquearUsuario);
 router.delete('/:id/bloquear', protegido, desbloquearUsuario);
 

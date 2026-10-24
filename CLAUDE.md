@@ -373,6 +373,39 @@ had to report the whole post containing it).
 - Tests: `protocoloModeracion.test.js` (race, expiry, admin release, appeal
   rule, notes privacy and append-only).
 
+**Suspending accounts** (admin only, from `/vecino/:id`,
+`SuspensionAdmin.jsx`): `PUT /api/usuarios/:id/suspension` with
+`{ motivo, dias }` (1–365) or `{ motivo, permanente: true }`; `DELETE` lifts
+it. Never an admin, never yourself. Re-suspending replaces the previous one.
+
+- `Usuario.suspension` `{hasta, permanente, motivo, desde}` — separate from
+  `activo` (that's a deleted/deactivated account). Temporary = "valid while
+  `hasta` is in the future", so it ends by itself; `estaSuspendido()` /
+  `textoSuspension()` on the model.
+- **Enforced in `protegido`**: 403 `razon: 'cuenta_suspendida'` with the
+  sentence (date + reason) for everything except `GET /usuarios/perfil`,
+  `GET /usuarios/perfil/exportar` and `DELETE /usuarios/perfil` (RGPD:
+  download and deletion stay available). `opcional` treats a suspended
+  token as anonymous, so public pages still read. The client
+  (`services/api.js`) clears the session on that 403 and `LoginPage` shows
+  the reason.
+- **Login and Google** answer the same 403 — but only *after* the password
+  check, so a wrong password still gets the generic message and the
+  endpoint can't be used to learn that an address is suspended.
+- What they published stays; hiding it is a separate moderation action.
+- Logged in `RegistroModeracion` as `cuenta_suspendida` /
+  `suspension_levantada` with `contenido_tipo: 'usuario'` (the registro's
+  enum accepts `'usuario'`; `TIPOS_CONTENIDO_MODERABLE` does not — accounts
+  aren't reportable content). An email goes out on both (they can't read a
+  notification); a mail failure doesn't undo the suspension.
+- **Deleting the account while suspended** stores `CorreoBloqueado` (the
+  SHA-256 of the *normalised* address — lower case, no `+tag`, no dots in
+  Gmail — not the address) for the rest of the suspension; registration and
+  Google sign-up check it (403). Mentioned in Privacidad §4 and
+  Condiciones §11.
+- Only an admin sees `suspension` in the public profile.
+- Tests: `suspension.test.js`.
+
 The embedded-array-to-collection switch needed no data migration: the live
 database was checked first and held 0 embedded reports (3 posts, none
 moderated), so nothing was lost by dropping the field.
@@ -1178,7 +1211,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 240 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 247 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
