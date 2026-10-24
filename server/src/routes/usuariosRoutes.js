@@ -8,6 +8,8 @@ import {
   actualizarMiPerfil,
   perfilPublico,
   marcarOficial,
+  exportarMisDatos,
+  eliminarMiCuenta,
 } from '../controllers/usuariosController.js';
 import { protegido, opcional, autorizar } from '../middlewares/auth.js';
 
@@ -17,6 +19,9 @@ const router = Router();
 // un id de usuario.
 router.get('/perfil', protegido, miPerfil);
 router.put('/perfil', protegido, actualizarMiPerfil);
+// RGPD: descargar mis datos y eliminar mi cuenta.
+router.get('/perfil/exportar', protegido, exportarMisDatos);
+router.delete('/perfil', protegido, eliminarMiCuenta);
 
 router.get('/buscar', protegido, buscarUsuarios);
 router.get('/bloqueados', protegido, listarBloqueados);

@@ -145,7 +145,8 @@ function PrivacidadPage() {
       <p>
         Puedes pedirnos <strong>acceder</strong> a tus datos, <strong>rectificarlos</strong>,{' '}
         <strong>suprimirlos</strong>, <strong>limitar</strong> u <strong>oponerte</strong> a su tratamiento y
-        solicitar su <strong>portabilidad</strong>. Escríbenos a{' '}
+        solicitar su <strong>portabilidad</strong>. Desde tu perfil puedes <strong>descargar todos tus datos</strong> y{' '}
+        <strong>eliminar tu cuenta</strong> en cualquier momento. Para todo lo demás, escríbenos a{' '}
         <a href="mailto:contact@appstracta.app">contact@appstracta.app</a> y te responderemos en el plazo máximo
         de un mes.
       </p>

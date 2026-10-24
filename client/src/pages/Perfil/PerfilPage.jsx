@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import FormularioPerfil from './FormularioPerfil.jsx';
 import AvisoVerificacion from './AvisoVerificacion.jsx';
 import AvisosPush from '../../components/AvisosPush.jsx';
+import MisDatos from './MisDatos.jsx';
 import Avatar from '../../components/Avatar.jsx';
 import Icono from '../../components/Icono.jsx';
 import { Linea } from '../../components/Esqueleto.jsx';
@@ -107,6 +108,8 @@ function PerfilPage() {
           <p className="tarjeta-meta" style={{ marginTop: 'var(--e-4)' }}>
             Tu correo es <strong>{perfil.email}</strong>. Tampoco es público.
           </p>
+
+          <MisDatos tieneContraseña={perfil.tiene_contraseña} />
         </>
       )}
     </>

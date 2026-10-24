@@ -1101,7 +1101,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 157 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 164 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1161,6 +1161,35 @@ several processes downloading the `mongod` binary at once can corrupt it.
   `secciones.js` (icon `aviso`).
 - Nobody is marked official in production yet: create the town hall's
   account, then mark it from its profile as admin.
+
+### RGPD: descargar y eliminar la cuenta
+
+`utils/datosPersonales.js` holds both, because they touch almost every
+collection — **when a new collection stores data about a user, add it here**.
+
+- `GET /api/usuarios/perfil/exportar`: one JSON download with profile (real
+  name and email included: they are the person's own), every post with its
+  section detail, comments, reactions, follows both ways, blocks, all their
+  conversations (both sides — it is their conversation), notifications,
+  reports made, appeals and push subscriptions (host only). Never the
+  password hash or tokens.
+- `DELETE /api/usuarios/perfil` needs the password, or the word ELIMINAR for
+  a Google-only account (`miPerfil` now returns `tiene_contraseña` so the
+  client knows which to ask); a stolen token alone can't delete an account.
+  The last active admin can't delete themselves (409).
+- **The `Usuario` document is anonymised, not deleted**: posts, the other
+  person's conversations and the moderation log point at it by id. Real name,
+  surnames, email, username, avatar, Google id and tokens are replaced, the
+  password becomes a random one and the account is deactivated (so old
+  tokens die). Posts and comments are retired as if the author deleted them
+  (comments stay as holes), reactions are removed through
+  `Reaccion.alternar` so the counters go down, follows (both ways), blocks,
+  notifications and push subscriptions are deleted, and their post images
+  and avatar are deleted from Cloudinary best-effort (a failure is logged and
+  doesn't stop the deletion). Messages they sent stay in the other person's
+  thread; reports, appeals and the audit log are kept (legitimate interest),
+  pointing at the anonymous account.
+- Client: "Tus datos" in `/perfil` (`MisDatos.jsx`), and the privacy page says so.
 
 ### Farmacias de guardia
 
@@ -1768,8 +1797,7 @@ Rough priority; none started.
    a SPA, so crawlers and link previews see an empty shell. Needs
    prerendering/SSR for public pages (Turismo, Eventos, Negocios).
 8. **Languages** (turismo.lepe.es offers EN/DE/PT; Portugal is next door).
-9. **RGPD**: export and delete my account (privacy policy and conditions
-   pages already exist).
+9. **RGPD** — done (see "RGPD: descargar y eliminar la cuenta").
 10. A moderation **protocol with more than one person**: today one
     moderator; appeals are admin-only and nobody may resolve their own.
 

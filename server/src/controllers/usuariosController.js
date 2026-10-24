@@ -4,6 +4,7 @@ import Seguimiento from '../models/Seguimiento.js';
 import Post from '../models/Post.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
+import { eliminarCuenta, exportarDatos } from '../utils/datosPersonales.js';
 
 export const bloquearUsuario = async (req, res, next) => {
   try {
@@ -122,8 +123,18 @@ export const buscarUsuarios = async (req, res, next) => {
 // viaja con CAMPOS_PUBLICOS_USUARIO, que no los incluye.
 export const miPerfil = async (req, res, next) => {
   try {
-    const usuario = await Usuario.findById(req.usuario._id).select('+nombre +apellidos');
-    res.json({ ok: true, usuario: { ...usuario.toJSON(), nombre: usuario.nombre, apellidos: usuario.apellidos } });
+    const usuario = await Usuario.findById(req.usuario._id).select('+nombre +apellidos +contraseña');
+    res.json({
+      ok: true,
+      usuario: {
+        ...usuario.toJSON(),
+        nombre: usuario.nombre,
+        apellidos: usuario.apellidos,
+        // Solo si la tiene, nunca cual: el perfil lo usa para pedir la
+        // contraseña o un "ELIMINAR" al dar de baja una cuenta de Google.
+        tiene_contraseña: Boolean(usuario.contraseña),
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -212,6 +223,48 @@ export const marcarOficial = async (req, res, next) => {
     if (!usuario) throw new ErrorHttp(404, 'Usuario no encontrado');
 
     res.json({ ok: true, usuario });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// RGPD, derecho de acceso y portabilidad: todo lo que MiLepe guarda de esta
+// persona, en un JSON que se descarga.
+export const exportarMisDatos = async (req, res, next) => {
+  try {
+    const datos = await exportarDatos(req.usuario._id);
+    const fecha = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Disposition', `attachment; filename="milepe-mis-datos-${fecha}.json"`);
+    res.json(datos);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// RGPD, derecho de supresion. Pide confirmar con la contraseña (o, en una
+// cuenta de Google, escribiendo ELIMINAR): un token robado no debe bastar
+// para borrar la cuenta de nadie, y un clic suelto tampoco.
+export const eliminarMiCuenta = async (req, res, next) => {
+  try {
+    const usuario = await Usuario.findById(req.usuario._id).select('+contraseña');
+
+    if (usuario.contraseña) {
+      const { contraseña } = req.body || {};
+      if (!contraseña || !(await usuario.compararContraseña(contraseña))) {
+        throw new ErrorHttp(403, 'La contraseña no es correcta');
+      }
+    } else if (req.body?.confirmacion !== 'ELIMINAR') {
+      throw new ErrorHttp(400, 'Escribe ELIMINAR para confirmar');
+    }
+
+    // Sin admin no hay quien gestione nada: el ultimo no puede irse sin
+    // nombrar antes a otro.
+    if (usuario.rol === 'admin' && (await Usuario.countDocuments({ rol: 'admin', activo: true })) <= 1) {
+      throw new ErrorHttp(409, 'Eres el único administrador: nombra a otro antes de eliminar tu cuenta');
+    }
+
+    const resumen = await eliminarCuenta(usuario._id);
+    res.json({ ok: true, eliminado: resumen });
   } catch (error) {
     next(error);
   }
