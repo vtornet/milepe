@@ -775,6 +775,16 @@ check since they only need it once each. Adding a new trigger point
 anywhere else should follow this same explicit-call pattern, not add a new
 model hook.
 
+**Client: `/notificaciones`** (`NotificacionesPage`, protected) — there was
+no screen at all until 2026-10-24; notifications were only reachable by push.
+A bell with the unread count sits in the top bar and the "Tú" group of the
+side nav. The count is fetched in `App.jsx` (`limite=1`, it only needs
+`sin_leer`) on every route change and when the page fires the
+`milepe:notificaciones` event after marking something read. Tapping one marks it
+read and goes to its target: `post` → `/p/:id`, `usuario` → `/vecino/:id`,
+`conversacion` → `/mensajes/:id`, and anything of type `moderacion` →
+`/mi-contenido`, where the reason and the appeal live.
+
 ### Private messaging
 
 `Conversacion` + `Mensaje` (`server/src/models/`, routes under

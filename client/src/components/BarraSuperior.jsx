@@ -12,7 +12,7 @@ import { useTema } from '../hooks/useTema.js';
 // El buscador se oculta por CSS en pantallas estrechas (ver .buscador): en
 // un móvil la barra tiene que dejar sitio al nombre de la aplicación y al
 // avatar, y la búsqueda vive en la página de Mensajes y en cada sección.
-function BarraSuperior({ pendientesModeracion = 0 }) {
+function BarraSuperior({ pendientesModeracion = 0, notificacionesSinLeer = 0 }) {
   const { usuario, cargando, logout } = useAuth();
   const { oscuroAhora, alternar } = useTema();
   const navigate = useNavigate();
@@ -71,6 +71,18 @@ function BarraSuperior({ pendientesModeracion = 0 }) {
               <Link to="/mensajes" className="btn-icono" title="Mensajes">
                 <Icono nombre="mensajes" />
                 <span className="solo-lectores">Mensajes</span>
+              </Link>
+
+              <Link
+                to="/notificaciones"
+                className="btn-icono btn-icono-aviso"
+                title="Notificaciones"
+                data-pendientes={notificacionesSinLeer > 0 ? notificacionesSinLeer : undefined}
+              >
+                <Icono nombre="campana" />
+                <span className="solo-lectores">
+                  Notificaciones{notificacionesSinLeer > 0 ? ` (${notificacionesSinLeer} sin leer)` : ''}
+                </span>
               </Link>
 
               {esEquipo && (

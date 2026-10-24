@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 // Las secciones van en un grupo y lo personal (mensajes, moderación) en
 // otro, con su título: mezclarlos haría que "Mensajes" pareciera una
 // sección de contenido del pueblo más.
-function NavegacionLateral({ pendientesModeracion = 0, tengoSanciones = false }) {
+function NavegacionLateral({ pendientesModeracion = 0, tengoSanciones = false, notificacionesSinLeer = 0 }) {
   const { usuario } = useAuth();
   const esEquipo = usuario?.rol === 'moderador' || usuario?.rol === 'admin';
 
@@ -46,6 +46,13 @@ function NavegacionLateral({ pendientesModeracion = 0, tengoSanciones = false })
               <NavLink to="/mensajes" className={clase}>
                 <Icono nombre="mensajes" />
                 Mensajes
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/notificaciones" className={clase}>
+                <Icono nombre="campana" />
+                Notificaciones
+                {notificacionesSinLeer > 0 && <span className="enlace-nav-contador">{notificacionesSinLeer}</span>}
               </NavLink>
             </li>
 

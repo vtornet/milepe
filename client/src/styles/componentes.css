@@ -2499,3 +2499,37 @@ select:disabled {
 .encuesta-resultados strong {
   position: relative;
 }
+
+/* ---------------- Notificaciones ---------------- */
+
+.lista-notificaciones {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista-notificaciones button {
+  display: flex;
+  gap: var(--e-3);
+  align-items: flex-start;
+  width: 100%;
+  padding: var(--e-3);
+  border: none;
+  border-bottom: 1px solid var(--borde);
+  background: none;
+  color: var(--texto-suave);
+  text-align: left;
+  cursor: pointer;
+}
+
+.lista-notificaciones button.sin-leer {
+  background: var(--marca-tenue);
+  color: var(--texto);
+  font-weight: 600;
+}
+
+.lista-notificaciones-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

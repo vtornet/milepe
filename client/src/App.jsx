@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import AppRouter from './router/AppRouter.jsx';
 import GuardiaPerfil from './router/GuardiaPerfil.jsx';
 import BarraSuperior from './components/BarraSuperior.jsx';
@@ -20,6 +21,8 @@ function Armazon() {
   const [pendientesModeracion, setPendientesModeracion] = useState(0);
   const [tengoSanciones, setTengoSanciones] = useState(false);
   const [noLeidos, setNoLeidos] = useState(0);
+  const [notificacionesSinLeer, setNotificacionesSinLeer] = useState(0);
+  const { pathname } = useLocation();
 
   const esEquipo = usuario?.rol === 'moderador' || usuario?.rol === 'admin';
 
@@ -70,12 +73,40 @@ function Armazon() {
     };
   }, [usuario, esEquipo]);
 
+  // Notificaciones sin leer: se vuelven a contar al cambiar de página (es una
+  // consulta barata, limite=1) y cuando la página de notificaciones avisa de
+  // que ha marcado algo como leído.
+  useEffect(() => {
+    if (!usuario) {
+      setNotificacionesSinLeer(0);
+      return undefined;
+    }
+    let cancelado = false;
+    const contar = () =>
+      api
+        .get('/notificaciones', { params: { limite: 1 } })
+        .then(({ data }) => {
+          if (!cancelado) setNotificacionesSinLeer(data.sin_leer);
+        })
+        .catch(() => {});
+    contar();
+    window.addEventListener('milepe:notificaciones', contar);
+    return () => {
+      cancelado = true;
+      window.removeEventListener('milepe:notificaciones', contar);
+    };
+  }, [usuario, pathname]);
+
   return (
     <>
-      <BarraSuperior pendientesModeracion={pendientesModeracion} />
+      <BarraSuperior pendientesModeracion={pendientesModeracion} notificacionesSinLeer={notificacionesSinLeer} />
 
       <div className="armazon">
-        <NavegacionLateral pendientesModeracion={pendientesModeracion} tengoSanciones={tengoSanciones} />
+        <NavegacionLateral
+          pendientesModeracion={pendientesModeracion}
+          tengoSanciones={tengoSanciones}
+          notificacionesSinLeer={notificacionesSinLeer}
+        />
 
         <main className="contenido">
           {/* Lleva al formulario de alta a quien tenga el perfil a medias.
