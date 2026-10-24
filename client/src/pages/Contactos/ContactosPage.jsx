@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import ContactoFormulario from './ContactoFormulario.jsx';
 import { useTitulo } from '../../hooks/useTitulo.js';
+import { EsqueletoLista } from '../../components/Esqueleto.jsx';
 
 // Mismo enum que server/src/models/ContactoInteres.js
 // (CATEGORIAS_CONTACTO). El orden de esta lista es el orden en que se
@@ -147,8 +148,15 @@ function ContactosPage() {
     setFormulario(null);
   };
 
-  if (cargando) return <p>Cargando contactos...</p>;
-  if (error) return <p className="mensaje-error">{error}</p>;
+  if (cargando) return <EsqueletoLista cuantas={6} />;
+  if (error) {
+    return (
+      <div className="aviso aviso-error">
+        <Icono nombre="alerta" tam={18} />
+        <span>{error}</span>
+      </div>
+    );
+  }
 
   // Solo se enlazan los grupos que existen: un acceso a un grupo vacío no
   // llevaría a ninguna parte.

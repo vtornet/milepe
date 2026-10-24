@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import BotonReportar from '../../components/BotonReportar.jsx';
 import Icono from '../../components/Icono.jsx';
 import useSondeo from '../../hooks/useSondeo.js';
+import { EsqueletoLista } from '../../components/Esqueleto.jsx';
 
 const MENSAJES_POR_PAGINA = 50; // igual que MENSAJES_POR_PAGINA en el controlador
 const MS_ENTRE_SONDEOS = 10000;
@@ -168,7 +169,7 @@ function ConversacionPage() {
         )}
       </h1>
 
-      {cargando && <p>Cargando mensajes...</p>}
+      {cargando && <EsqueletoLista cuantas={5} />}
 
       {!cargando && !error && (
         <>
