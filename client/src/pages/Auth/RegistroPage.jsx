@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import BotonGoogle from '../../components/BotonGoogle.jsx';
+import { useTitulo } from '../../hooks/useTitulo.js';
 
 const DATOS_INICIALES = { nombre_usuario: '', nombre: '', apellidos: '', email: '', contraseña: '' };
 
@@ -18,6 +19,7 @@ const normalizarNombreUsuario = (texto) =>
     .replace(/[^a-zA-Z0-9._-]/g, '');
 
 function RegistroPage() {
+  useTitulo('Crear cuenta');
   const { registro, entrarConGoogle } = useAuth();
   const navigate = useNavigate();
   const [datos, setDatos] = useState(DATOS_INICIALES);

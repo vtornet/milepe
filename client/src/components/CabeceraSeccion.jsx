@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import Icono from './Icono.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { SECCIONES } from '../router/secciones.js';
+import { useTitulo } from '../hooks/useTitulo.js';
 
 // Cabecera común de las seis secciones: icono, nombre, una línea de qué es
 // esto, y el botón de publicar a la derecha.
@@ -14,6 +15,7 @@ import { SECCIONES } from '../router/secciones.js';
 function CabeceraSeccion({ ruta, descripcion, textoNuevo, formularioAbierto, onAlternarFormulario }) {
   const { usuario } = useAuth();
   const seccion = SECCIONES.find((s) => s.ruta === ruta);
+  useTitulo(seccion?.etiqueta);
 
   return (
     <>

@@ -5,6 +5,7 @@ import Icono from '../../components/Icono.jsx';
 import EstadoVacio from '../../components/EstadoVacio.jsx';
 import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import { haceCuanto } from '../../utils/fechas.js';
+import { useTitulo } from '../../hooks/useTitulo.js';
 
 // Avisa al armazón (App.jsx) de que el número de no leídas ha cambiado, para
 // que la campana se actualice sin esperar a cambiar de página.
@@ -40,6 +41,7 @@ const destino = (n) => {
 const POR_PAGINA = 20;
 
 function NotificacionesPage() {
+  useTitulo('Notificaciones');
   const navigate = useNavigate();
   const [notificaciones, setNotificaciones] = useState(null);
   const [pagina, setPagina] = useState(1);

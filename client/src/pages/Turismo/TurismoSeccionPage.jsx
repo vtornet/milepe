@@ -8,6 +8,7 @@ import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import RecursoTarjeta from './RecursoTarjeta.jsx';
 import TurismoFormulario from './TurismoFormulario.jsx';
 import { SECCION_TURISMO_POR_VALOR } from './seccionesTurismo.js';
+import { useTitulo } from '../../hooks/useTitulo.js';
 
 // Una seccion de Turismo: lista informativa de recursos. Solo un admin ve
 // los botones de crear/editar/ocultar/eliminar (y los recursos ocultos); la
@@ -15,6 +16,7 @@ import { SECCION_TURISMO_POR_VALOR } from './seccionesTurismo.js';
 function TurismoSeccionPage() {
   const { seccion: valor } = useParams();
   const seccion = SECCION_TURISMO_POR_VALOR[valor];
+  useTitulo(seccion ? `${seccion.etiqueta} · Turismo` : 'Turismo');
   const { usuario } = useAuth();
   const esAdmin = usuario?.rol === 'admin';
 

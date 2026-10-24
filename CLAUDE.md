@@ -1915,8 +1915,12 @@ Rough priority; none started.
 6. **Groups** (barrios, AA.VV., hermandades, peñas, clubes), hashtags, verification that someone is a vecino.
    (Global search is done — see "Buscador global".)
 7. **Share well on WhatsApp** — done for posts (see "Compartir"). Still open, **SEO**: the app is
-   a SPA, so crawlers and link previews see an empty shell. Needs
-   prerendering/SSR for public pages (Turismo, Eventos, Negocios).
+   a SPA, so crawlers and link previews see an empty shell. Basics done:
+   `hooks/useTitulo.js` gives each page its own `<title>` (CabeceraSeccion
+   and PaginaLegal call it, plus the pages with their own header), and
+   `public/robots.txt` + `public/sitemap.xml` (static: add a route there
+   when you add a public section). Still needs prerendering/SSR for
+   public pages (Turismo, Eventos, Negocios).
 8. **Languages** (turismo.lepe.es offers EN/DE/PT; Portugal is next door).
 9. **RGPD** — done (see "RGPD: descargar y eliminar la cuenta").
 10. A moderation **protocol with more than one person**: today one

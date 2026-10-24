@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTitulo } from '../../hooks/useTitulo.js';
 
 // Armazón de las páginas legales. Vive aparte porque hay dos (privacidad y
 // condiciones) con la misma forma, y porque estas páginas se leen de otra
@@ -6,6 +7,7 @@ import { Link } from 'react-router-dom';
 // estrecha para que la línea no se haga interminable, y los enlaces entre
 // ambas siempre a mano.
 function PaginaLegal({ titulo, actualizado, children }) {
+  useTitulo(titulo);
   return (
     <section className="legal">
       <div className="cabecera-pagina">

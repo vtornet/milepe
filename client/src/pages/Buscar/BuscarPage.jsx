@@ -7,6 +7,7 @@ import TarjetaPublicacion from '../../components/TarjetaPublicacion.jsx';
 import EstadoVacio from '../../components/EstadoVacio.jsx';
 import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import { SECCION_POR_TIPO } from '../../router/secciones.js';
+import { useTitulo } from '../../hooks/useTitulo.js';
 
 const enlaceTelefono = (telefono) => `tel:${telefono.split(/[/;,]/)[0].replace(/[^\d+]/g, '')}`;
 
@@ -16,6 +17,7 @@ function BuscarPage() {
   const [parametros] = useSearchParams();
   const navigate = useNavigate();
   const q = parametros.get('q') || '';
+  useTitulo(q ? `Buscar «${q}»` : 'Buscar');
 
   const [texto, setTexto] = useState(q);
   const [resultado, setResultado] = useState(null);

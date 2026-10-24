@@ -1,0 +1,16 @@
+# MiLepe: lo público se indexa; lo que solo existe con sesión, no.
+User-agent: *
+Allow: /
+Disallow: /mensajes
+Disallow: /perfil
+Disallow: /completar-perfil
+Disallow: /notificaciones
+Disallow: /moderacion
+Disallow: /mi-contenido
+Disallow: /login
+Disallow: /registro
+Disallow: /recuperar
+Disallow: /restablecer
+Disallow: /verificar
+
+Sitemap: https://milepe.com/sitemap.xml

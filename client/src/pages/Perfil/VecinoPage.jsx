@@ -12,6 +12,7 @@ import EstadoVacio from '../../components/EstadoVacio.jsx';
 import { Linea } from '../../components/Esqueleto.jsx';
 import { SECCION_POR_TIPO } from '../../router/secciones.js';
 import { fechaCorta } from '../../utils/fechas.js';
+import { useTitulo } from '../../hooks/useTitulo.js';
 
 // La ficha pública de un vecino: lo que ve el resto del pueblo.
 //
@@ -24,6 +25,7 @@ function VecinoPage() {
   const { relacionCon } = useSeguimientos();
 
   const [ficha, setFicha] = useState(null);
+  useTitulo(ficha?.usuario?.nombre_usuario);
   const [publicaciones, setPublicaciones] = useState(null);
   const [error, setError] = useState(null);
   const [abriendo, setAbriendo] = useState(false);

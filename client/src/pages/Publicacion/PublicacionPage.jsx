@@ -6,6 +6,7 @@ import EstadoVacio from '../../components/EstadoVacio.jsx';
 import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import { EncuestaDelMuro } from '../Encuestas/EncuestaTarjeta.jsx';
 import { SECCION_POR_TIPO } from '../../router/secciones.js';
+import { useTitulo } from '../../hooks/useTitulo.js';
 
 // Una publicación sola: es a donde lleva un enlace compartido (/p/:id). La
 // vista previa de WhatsApp la pone la edge function netlify/edge-functions/og.js.
@@ -13,6 +14,7 @@ function PublicacionPage() {
   const { id } = useParams();
   const [post, setPost] = useState(null);
   const [noExiste, setNoExiste] = useState(false);
+  useTitulo(post?.titulo);
 
   useEffect(() => {
     let cancelado = false;

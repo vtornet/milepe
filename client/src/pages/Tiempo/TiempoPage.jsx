@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
 import Icono from '../../components/Icono.jsx';
 import PlayaHoy from './PlayaHoy.jsx';
+import { useTitulo } from '../../hooks/useTitulo.js';
 
 // Los iconos de OpenWeather son publicos (no llevan clave), asi que se
 // pueden pedir directamente desde el navegador.
@@ -20,6 +21,7 @@ const nombreDia = (fechaISO) => {
 };
 
 function TiempoPage() {
+  useTitulo('El Tiempo');
   const [tiempo, setTiempo] = useState(null);
   const [obsoleto, setObsoleto] = useState(false);
   const [cargando, setCargando] = useState(true);

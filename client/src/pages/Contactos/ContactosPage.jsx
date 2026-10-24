@@ -4,6 +4,7 @@ import Icono from '../../components/Icono.jsx';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import ContactoFormulario from './ContactoFormulario.jsx';
+import { useTitulo } from '../../hooks/useTitulo.js';
 
 // Mismo enum que server/src/models/ContactoInteres.js
 // (CATEGORIAS_CONTACTO). El orden de esta lista es el orden en que se
@@ -107,6 +108,7 @@ function AccionesAdmin({ contacto, onEditar, onCambiado, onEliminado }) {
 }
 
 function ContactosPage() {
+  useTitulo('Teléfonos de interés');
   const { usuario } = useAuth();
   const esAdmin = usuario?.rol === 'admin';
 

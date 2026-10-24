@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api.js';
 import Icono from '../../components/Icono.jsx';
+import { useTitulo } from '../../hooks/useTitulo.js';
 
 const formatearFecha = (iso) => new Date(iso).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
 
@@ -12,6 +13,7 @@ const formatearFecha = (iso) => new Date(iso).toLocaleString('es-ES', { dateStyl
 // a la ficha del vecino, que es donde estan el boton de seguir y el de
 // escribir, con el motivo escrito si todavia no se puede.
 function MensajesPage() {
+  useTitulo('Mensajes');
   const navigate = useNavigate();
 
   const [conversaciones, setConversaciones] = useState([]);
