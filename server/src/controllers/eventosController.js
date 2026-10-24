@@ -1,5 +1,7 @@
 import Post from '../models/Post.js';
 import EventoDetalle, { CATEGORIAS_EVENTO } from '../models/EventoDetalle.js';
+import AsistenciaEvento from '../models/AsistenciaEvento.js';
+import { eventoAIcs } from '../utils/calendarioIcs.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { aPuntoGeoJSON, deGeoJSONaLatLng } from '../utils/geo.js';
 import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
@@ -23,6 +25,7 @@ const formatearEvento = (post, detalle) => ({
   ubicacion: deGeoJSONaLatLng(detalle.ubicacion),
   patrocinado: typeof detalle.estaPatrocinado === 'function' ? detalle.estaPatrocinado() : false,
   patrocinador_nombre: detalle.patrocinador_nombre,
+  asistentes: detalle.asistentes || 0,
 });
 
 // Crea el Post (tipo 'evento') y su EventoDetalle. Misma compensacion sin
@@ -118,6 +121,7 @@ export const listarEventos = async (req, res, next) => {
                 fecha_inicio: '$detalle.fecha_inicio',
                 fecha_fin: '$detalle.fecha_fin',
                 lugar: '$detalle.lugar',
+                asistentes: { $ifNull: ['$detalle.asistentes', 0] },
                 ubicacion: '$detalle.ubicacion',
                 patrocinador_nombre: '$detalle.patrocinador_nombre',
                 patrocinado_hasta: '$detalle.patrocinado_hasta',
@@ -167,6 +171,81 @@ export const obtenerEvento = async (req, res, next) => {
     }
 
     res.json({ ok: true, evento: formatearEvento(post, detalle) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- Voy a ir y calendario ---
+
+const cargarEvento = async (id) => {
+  const post = await Post.findOne({ _id: id, tipo: 'evento', estado_moderacion: 'publicado' });
+  const detalle = post && (await EventoDetalle.findOne({ post_id: post._id }));
+  if (!detalle) throw new ErrorHttp(404, 'Evento no encontrado');
+  return { post, detalle };
+};
+
+// Alterna "voy a ir". El indice unico de AsistenciaEvento es quien decide si
+// ya estaba apuntado: si dos peticiones llegan a la vez, una falla con
+// duplicado y no se cuenta dos veces.
+export const alternarAsistencia = async (req, res, next) => {
+  try {
+    const { post } = await cargarEvento(req.params.id);
+    const filtro = { post_id: post._id, usuario_id: req.usuario._id };
+
+    const quitada = await AsistenciaEvento.findOneAndDelete(filtro);
+    let voy = false;
+    if (quitada) {
+      await EventoDetalle.updateOne({ post_id: post._id, asistentes: { $gt: 0 } }, { $inc: { asistentes: -1 } });
+    } else {
+      try {
+        await AsistenciaEvento.create(filtro);
+        await EventoDetalle.updateOne({ post_id: post._id }, { $inc: { asistentes: 1 } });
+      } catch (error) {
+        if (error.code !== 11000) throw error;
+      }
+      voy = true;
+    }
+
+    const { asistentes } = await EventoDetalle.findOne({ post_id: post._id }).select('asistentes');
+    res.json({ ok: true, voy, asistentes });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Los eventos a los que voy, para marcar el boton en la agenda sin añadir un
+// campo por usuario a cada listado (mismo criterio que mis-reacciones).
+export const misAsistencias = async (req, res, next) => {
+  try {
+    const filas = await AsistenciaEvento.find({ usuario_id: req.usuario._id })
+      .sort({ fecha_creacion: -1 })
+      .limit(500)
+      .select('post_id');
+    res.json({ ok: true, eventos: filas.map((f) => String(f.post_id)) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const calendarioEvento = async (req, res, next) => {
+  try {
+    const { post, detalle } = await cargarEvento(req.params.id);
+    const base = (process.env.CLIENT_URL || 'https://milepe.com').split(',')[0].trim();
+
+    const ics = eventoAIcs({
+      id: post._id,
+      titulo: post.titulo,
+      descripcion: post.contenido,
+      lugar: detalle.lugar,
+      inicio: detalle.fecha_inicio,
+      fin: detalle.fecha_fin,
+      url: `${base}/eventos`,
+    });
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="evento-${post._id}.ics"`);
+    res.send(ics);
   } catch (error) {
     next(error);
   }

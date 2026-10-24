@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import CabeceraSeccion from '../../components/CabeceraSeccion.jsx';
 import EstadoVacio from '../../components/EstadoVacio.jsx';
 import Icono from '../../components/Icono.jsx';
@@ -18,6 +19,22 @@ const CATEGORIAS = [
 ];
 
 function EventosPage() {
+  const { usuario } = useAuth();
+  // Los eventos a los que ya voy, para marcar el botón (una petición, no un
+  // campo por usuario en cada listado; igual que mis-reacciones).
+  const [voyA, setVoyA] = useState(new Set());
+
+  useEffect(() => {
+    if (!usuario) {
+      setVoyA(new Set());
+      return;
+    }
+    api
+      .get('/eventos/mis-asistencias')
+      .then(({ data }) => setVoyA(new Set(data.eventos)))
+      .catch(() => {});
+  }, [usuario]);
+
   const [eventos, setEventos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -107,7 +124,7 @@ function EventosPage() {
       )}
 
       {eventos.map((evento) => (
-        <EventoTarjeta key={evento._id} evento={evento} />
+        <EventoTarjeta key={evento._id} evento={evento} voyInicial={voyA.has(evento._id)} />
       ))}
     </section>
   );

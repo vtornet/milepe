@@ -39,6 +39,12 @@ const eventoDetalleSchema = new Schema(
       trim: true,
       maxlength: 150,
     },
+    // Cuantos han pulsado "voy a ir". Desnormalizado (ver AsistenciaEvento).
+    asistentes: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     // Punto en el mapa, opcional: un evento se puede publicar sin pin
     // todavia (p. ej. "recinto ferial, ubicacion a confirmar") y añadirlo
     // despues sin tocar nada mas.

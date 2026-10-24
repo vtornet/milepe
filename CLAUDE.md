@@ -904,6 +904,15 @@ re-derive otherwise:
   it (`?incluirResueltos=true`). Separate from the Tablón on purpose; the
   Tablón now says "objeto perdido/encontrado". Icon `animal` (a paw) has not
   been looked at on a contact sheet yet.
+- **Eventos: "voy a ir" and calendar.** `POST /api/eventos/:id/asistir` toggles an
+  `AsistenciaEvento` row (unique per person and event — two simultaneous taps
+  can't count twice) and keeps `EventoDetalle.asistentes` with `$inc`;
+  `GET /mis-asistencias` gives the ids for the button (one request, like
+  mis-reacciones). `GET /:id/calendario.ics` (public) is a hand-written
+  iCalendar (`utils/calendarioIcs.js`): RFC 5545 text escaping, UTC dates with
+  Z, lines folded at 75 *bytes* (a ñ is two) and CRLF; no end date means two
+  hours. Attendances are in the RGPD export and removed (counter included) on
+  account deletion.
 - **Negocios managed by their owners** (no payment yet — that waits for
   Stripe): a neighbour claims a listing (`POST /:id/reclamar`, with a message
   proving it; `ReclamacionNegocio`, one pending per person and business), an
@@ -1114,7 +1123,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 171 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 180 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1804,7 +1813,7 @@ Rough priority; none started.
 5. **Businesses manage themselves** — done except paid highlighting, which
    waits for Stripe (see "Section controllers" → Negocios).
 6. **Groups** (barrios, AA.VV., hermandades, peñas, clubes), **polls /
-   consultas ciudadanas**, events with "voy a ir" + ICS export, hashtags and
+   consultas ciudadanas**, hashtags and
    global search, verification that someone is a vecino.
 7. **Share well on WhatsApp** (Open Graph previews) and **SEO**: the app is
    a SPA, so crawlers and link previews see an empty shell. Needs

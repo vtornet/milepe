@@ -20,6 +20,7 @@ import AvisoDetalle from '../models/AvisoDetalle.js';
 import AnuncioDetalle from '../models/AnuncioDetalle.js';
 import AnimalDetalle from '../models/AnimalDetalle.js';
 import ReclamacionNegocio from '../models/ReclamacionNegocio.js';
+import AsistenciaEvento from '../models/AsistenciaEvento.js';
 import cloudinary from '../config/cloudinary.js';
 import { hayCredencialesCloudinary } from './copiaSeguridad.js';
 
@@ -47,7 +48,7 @@ const sinInternos = ({ __v, ...resto }) => resto;
 export const exportarDatos = async (usuarioId) => {
   const usuario = await Usuario.findById(usuarioId).select('+nombre +apellidos').lean();
 
-  const [posts, comentarios, reacciones, siguiendo, seguidores, bloqueos, notificaciones, reportes, apelaciones, suscripciones, reclamaciones] =
+  const [posts, comentarios, reacciones, siguiendo, seguidores, bloqueos, notificaciones, reportes, apelaciones, suscripciones, reclamaciones, asistencias] =
     await Promise.all([
       Post.find({ autor_id: usuarioId }).lean(),
       Comentario.find({ autor_id: usuarioId }).lean(),
@@ -60,6 +61,7 @@ export const exportarDatos = async (usuarioId) => {
       Apelacion.find({ autor_id: usuarioId }).lean(),
       Suscripcion.find({ usuario_id: usuarioId }).lean(),
       ReclamacionNegocio.find({ usuario_id: usuarioId }).lean(),
+      AsistenciaEvento.find({ usuario_id: usuarioId }).lean(),
     ]);
 
   // Cada publicacion con los datos de su seccion.
@@ -107,6 +109,7 @@ export const exportarDatos = async (usuarioId) => {
     reportes_hechos: reportes.map(sinInternos),
     apelaciones: apelaciones.map(sinInternos),
     reclamaciones_de_negocios: reclamaciones.map(sinInternos),
+    eventos_a_los_que_voy: asistencias.map((a) => ({ evento: a.post_id, desde: a.fecha_creacion })),
     // Solo el servicio, no la direccion entera: es un identificador del navegador.
     avisos_push: suscripciones.map((s) => ({ servicio: new URL(s.endpoint).host, desde: s.fecha_creacion })),
   };
@@ -178,6 +181,13 @@ export const eliminarCuenta = async (usuarioId) => {
   for (const r of reacciones) {
     await Reaccion.alternar({ autor_id: usuarioId, tipo: r.tipo, post_id: r.post_id, comentario_id: r.comentario_id });
   }
+
+  // Sus 'voy a ir', bajando el contador de cada evento.
+  const asistencias = await AsistenciaEvento.find({ usuario_id: usuarioId });
+  for (const a of asistencias) {
+    await EventoDetalle.updateOne({ post_id: a.post_id, asistentes: { $gt: 0 } }, { $inc: { asistentes: -1 } });
+  }
+  await AsistenciaEvento.deleteMany({ usuario_id: usuarioId });
 
   await Promise.all([
     Seguimiento.deleteMany({ $or: [{ seguidor_id: usuarioId }, { seguido_id: usuarioId }] }),
