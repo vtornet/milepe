@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
 import Icono from '../../components/Icono.jsx';
+import PlayaHoy from './PlayaHoy.jsx';
 
 // Los iconos de OpenWeather son publicos (no llevan clave), asi que se
 // pueden pedir directamente desde el navegador.
@@ -89,6 +90,8 @@ function TiempoPage() {
       <p className="tarjeta-meta">
         Actualizado: {new Date(tiempo.actualizado).toLocaleString('es-ES')} · Datos de OpenWeather
       </p>
+
+      <PlayaHoy />
     </section>
   );
 }

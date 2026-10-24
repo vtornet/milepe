@@ -17,6 +17,7 @@ function RailDerecho() {
   const [tiempo, setTiempo] = useState(null);
   const [urgencias, setUrgencias] = useState([]);
   const [guardia, setGuardia] = useState(null);
+  const [marea, setMarea] = useState(null);
 
   // En la propia página de El Tiempo (o de Contactos) su panel del rail
   // sería el mismo dato dos veces en la misma pantalla, que es justo lo que
@@ -41,6 +42,13 @@ function RailDerecho() {
       .get('/contactos-interes')
       .then(({ data }) => {
         if (!cancelado) setUrgencias(data.contactos.filter((c) => c.categoria === 'otro').slice(0, 3));
+      })
+      .catch(() => {});
+
+    api
+      .get('/playa')
+      .then(({ data }) => {
+        if (!cancelado) setMarea(data.playa.proxima_marea);
       })
       .catch(() => {});
 
@@ -91,6 +99,12 @@ function RailDerecho() {
                   <p className="tarjeta-meta" style={{ marginTop: 'var(--e-3)' }}>
                     Mañana {tiempo.proximos_dias[1]?.temp_max ?? tiempo.proximos_dias[0]?.temp_max}° /{' '}
                     {tiempo.proximos_dias[1]?.temp_min ?? tiempo.proximos_dias[0]?.temp_min}°
+                  </p>
+                )}
+
+                {marea && (
+                  <p className="tarjeta-meta">
+                    Próxima {marea.tipo} en La Antilla: {marea.hora}
                   </p>
                 )}
 
@@ -167,7 +181,7 @@ function RailDerecho() {
       <p className="tarjeta-meta centrado">
         MiLepe · hecho en Lepe
         <br />
-        Datos del tiempo de OpenWeather
+        Datos del tiempo de OpenWeather · mareas de Open-Meteo (CC BY 4.0)
       </p>
     </aside>
   );

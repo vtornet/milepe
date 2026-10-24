@@ -1080,7 +1080,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 135 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 142 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1222,6 +1222,30 @@ the loading step changes.
   dial link uses only the first.
 - The right rail shows "Farmacia de guardia" (hidden on `/farmacias`);
   Contactos links to the page. `farmacia` is a new line icon.
+
+### La playa hoy (mareas)
+
+`GET /api/playa` (`playaController.js`) is a second cached proxy like El
+Tiempo, to **Open-Meteo** (marine + forecast APIs: free, no key, CC BY 4.0 —
+attribution is required and the client shows it on `/tiempo` and in the
+rail). For La Antilla it returns the tides of today and tomorrow, the next
+one, water temperature, wave height (now and today's max) and today's UV
+index. Cache `PLAYA_CACHE_MS` (default 1 h) with the same failure modes as El
+Tiempo: stale data marked `obsoleto` if the provider fails, 502 only with a
+cold cache.
+
+- Open-Meteo gives no tide table, only a 15-minute `sea_level_height_msl`
+  curve: `utils/mareas.js` finds its local maxima/minima with a parabolic fit
+  (tested against a synthetic tide to under 3 minutes). The series is
+  requested in **UTC** (`timezone=GMT`) and converted to Madrid only for
+  display: in local time the DST night repeats an hour and the arithmetic
+  would break that day. `past_days=1` catches an extreme right at midnight.
+- It is a **model**, not Puertos del Estado's official table: good enough to
+  know whether the tide is rising, not for navigation — the client says so.
+  Heights are relative to mean sea level (not chart datum), so the client
+  shows times only.
+- `/tiempo` has the "La playa hoy" block (`PlayaHoy.jsx`); the rail's weather
+  panel shows the next tide.
 
 ### El Tiempo
 
@@ -1709,7 +1733,8 @@ Rough priority; none started.
    history with public answers, the official account can process them, and a
    public summary on `/quejas`.
 3. **Daily utilities** in the Muro/rail: bus times, beach status (flag,
-   jellyfish, crowding), tides. (Pharmacy on duty is done — see "Farmacias de
+   jellyfish, crowding). (Tides, water temperature, waves and UV are done —
+   see "La playa hoy".) (Pharmacy on duty is done — see "Farmacias de
    guardia"; ask the Colegio for a data feed.) El Tiempo (cached
    proxy) is the model for an external-data widget.
 4. **Tablón de anuncios** (second hand, free stuff, lost objects/animals,
