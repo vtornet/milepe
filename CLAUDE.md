@@ -1629,7 +1629,7 @@ on an upload that would be rejected) and `utils/subidas.js`
 parent uploads them on submit, so nothing reaches Cloudinary for a form
 that is then abandoned; if the upload works and the create fails, those
 images stay orphaned in Cloudinary (same as Fotos). `QuejaFormulario` and
-`EmpleoFormulario` still have no photo picker (backend accepts it).
+`EmpleoFormulario` use the same selector (optional photos).
 
 ### Design system and app shell
 

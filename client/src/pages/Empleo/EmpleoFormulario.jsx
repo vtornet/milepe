@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import api from '../../services/api.js';
+import SelectorFotos from '../../components/SelectorFotos.jsx';
+import { subirImagenes } from '../../utils/subidas.js';
 
 // Mismos enums que server/src/models/EmpleoDetalle.js.
 const SECTORES = [
@@ -16,6 +18,7 @@ function EmpleoFormulario({ onCreado }) {
   const [datos, setDatos] = useState(DATOS_INICIALES);
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
+  const [archivos, setArchivos] = useState([]);
 
   const manejarCambio = (evento) => {
     setDatos({ ...datos, [evento.target.name]: evento.target.value });
@@ -31,6 +34,7 @@ function EmpleoFormulario({ onCreado }) {
         titulo: datos.titulo,
         contenido: datos.contenido,
         sector: datos.sector,
+        imagenes: await subirImagenes(archivos),
         ...(datos.modalidad === 'busco'
           ? { zona: datos.zona }
           : { puesto: datos.puesto, jornal: Number(datos.jornal) }),
@@ -38,6 +42,7 @@ function EmpleoFormulario({ onCreado }) {
       const { data } = await api.post('/empleo', cuerpo);
       onCreado(data.empleo);
       setDatos(DATOS_INICIALES);
+      setArchivos([]);
     } catch (err) {
       setError(err.response?.data?.mensaje || 'No se pudo publicar');
     } finally {
@@ -100,10 +105,12 @@ function EmpleoFormulario({ onCreado }) {
         <small>La oferta caduca sola a los 30 días; podrás republicarla desde su tarjeta cuando llegue el momento.</small>
       )}
 
+      <SelectorFotos archivos={archivos} onChange={setArchivos} />
+
       {error && <p className="mensaje-error">{error}</p>}
 
       <button type="submit" disabled={enviando}>
-        {enviando ? 'Publicando...' : 'Publicar'}
+        {enviando ? (archivos.length > 0 ? 'Subiendo fotos...' : 'Publicando...') : 'Publicar'}
       </button>
     </form>
   );

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import api from '../../services/api.js';
 import SelectorUbicacion from './SelectorUbicacion.jsx';
+import SelectorFotos from '../../components/SelectorFotos.jsx';
+import { subirImagenes } from '../../utils/subidas.js';
 
 // Mismo enum que server/src/models/QuejaDetalle.js (CATEGORIAS_QUEJA). No
 // hay forma de compartirlo automaticamente entre server y client (son dos
@@ -21,6 +23,7 @@ const DATOS_INICIALES = { titulo: '', contenido: '', categoria: 'general', direc
 function QuejaFormulario({ onCreada }) {
   const [datos, setDatos] = useState(DATOS_INICIALES);
   const [ubicacion, setUbicacion] = useState(null);
+  const [archivos, setArchivos] = useState([]);
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -39,10 +42,12 @@ function QuejaFormulario({ onCreada }) {
 
     setEnviando(true);
     try {
-      const { data } = await api.post('/quejas', { ...datos, ubicacion });
+      const imagenes = await subirImagenes(archivos);
+      const { data } = await api.post('/quejas', { ...datos, ubicacion, imagenes });
       onCreada(data.queja);
       setDatos(DATOS_INICIALES);
       setUbicacion(null);
+      setArchivos([]);
     } catch (err) {
       setError(err.response?.data?.mensaje || 'No se pudo crear la queja');
     } finally {
@@ -83,10 +88,12 @@ function QuejaFormulario({ onCreada }) {
       <label>Ubicación (haz clic en el mapa)</label>
       <SelectorUbicacion value={ubicacion} onChange={setUbicacion} />
 
+      <SelectorFotos archivos={archivos} onChange={setArchivos} etiqueta="Fotos del problema (opcional)" />
+
       {error && <p className="mensaje-error">{error}</p>}
 
       <button type="submit" disabled={enviando}>
-        {enviando ? 'Publicando...' : 'Publicar queja'}
+        {enviando ? (archivos.length > 0 ? 'Subiendo fotos...' : 'Publicando...') : 'Publicar queja'}
       </button>
     </form>
   );
