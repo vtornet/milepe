@@ -75,6 +75,9 @@ function AnuncioFormulario({ onCreado }) {
 
       {datos.categoria === 'vendo' && (
         <>
+          <p className="tarjeta-meta">
+            No se permite vender animales. Si buscas hogar para uno, publícalo en adopción en la pestaña Animales.
+          </p>
           <label htmlFor="anuncio-precio">Precio (€)</label>
           <input id="anuncio-precio" name="precio" type="number" min="0" step="1" required value={datos.precio} onChange={cambiar} />
         </>

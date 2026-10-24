@@ -112,6 +112,12 @@ function CondicionesPage() {
         de quien quiere votar y <strong>no son vinculantes</strong> ni tienen valor oficial, aunque las publique
         el Ayuntamiento.
       </p>
+      <p>
+        <strong>En MiLepe está prohibida la venta de animales</strong>, tanto en la sección de Animales como en el
+        tablón: se admiten animales perdidos, encontrados, en adopción o que buscan casa de acogida, y
+        recomendamos siempre la adopción. Las publicaciones que vendan animales, aunque lo disimulen como
+        «adopción con gastos», se retiran.
+      </p>
 
       <h2>9. Cuenta oficial y avisos</h2>
       <p>

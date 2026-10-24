@@ -917,7 +917,11 @@ re-derive otherwise:
   comments it turned up) hides it from the default listing without deleting
   it (`?incluirResueltos=true`). Separate from the Tablón on purpose; the
   Tablón now says "objeto perdido/encontrado". Icon `animal` (a paw) has not
-  been looked at on a contact sheet yet.
+  been looked at on a contact sheet yet. **Selling animals is forbidden**, in Animales
+  and in the Tablón (Condiciones §8, a notice in the Animales form and a note
+  under "vendo" in the Tablón); adoption is recommended. Enforced by the rule
+  plus reports, deliberately not by a keyword filter ("no se vende, solo
+  adopción" would trip it).
 - **Eventos: "voy a ir" and calendar.** `POST /api/eventos/:id/asistir` toggles an
   `AsistenciaEvento` row (unique per person and event — two simultaneous taps
   can't count twice) and keeps `EventoDetalle.asistentes` with `$inc`;

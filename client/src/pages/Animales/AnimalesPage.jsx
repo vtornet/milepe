@@ -82,6 +82,15 @@ function AnimalFormulario({ onCreado }) {
     <form className="tarjeta" onSubmit={enviar}>
       <h2>Publicar un animal</h2>
 
+      <div className="aviso aviso-info">
+        <Icono nombre="alerta" tam={18} />
+        <span>
+          <strong>Aquí no se venden animales.</strong> Si buscas hogar para uno, publícalo en adopción; si quieres
+          uno, adopta. Las publicaciones de venta se retiran.
+        </span>
+      </div>
+
+
       <label htmlFor="animal-categoria">Qué pasa</label>
       <select id="animal-categoria" name="categoria" value={datos.categoria} onChange={cambiar}>
         {Object.entries(CATEGORIAS).map(([valor, { etiqueta }]) => (
@@ -257,7 +266,7 @@ function AnimalesPage() {
     <section>
       <CabeceraSeccion
         ruta="/animales"
-        descripcion="Mascotas perdidas y encontradas, adopciones y casas de acogida."
+        descripcion="Mascotas perdidas y encontradas, adopciones y casas de acogida. Aquí no se venden animales: adopta."
         textoNuevo="Publicar"
         formularioAbierto={formulario}
         onAlternarFormulario={() => setFormulario(!formulario)}
