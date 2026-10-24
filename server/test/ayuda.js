@@ -7,10 +7,14 @@
 //
 // El entorno se fija al importar este modulo, ANTES de cargar app.js:
 // helmet y morgan leen NODE_ENV al montarse.
+import { randomBytes } from 'node:crypto';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
 process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'secreto-de-pruebas-de-al-menos-32-caracteres';
+// Aleatorio en cada ejecucion en vez de una cadena escrita en el codigo: no
+// hay nada que se parezca a un secreto en el repositorio (los escaneres de
+// secretos lo marcan aunque sea de pruebas) y ningun test depende de su valor.
+process.env.JWT_SECRET = randomBytes(32).toString('hex');
 process.env.CLIENT_URL = 'http://localhost:5173';
 // Sin esto, cada registro intentaria mandar un correo de verdad.
 delete process.env.SMTP_HOST;
