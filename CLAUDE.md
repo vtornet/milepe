@@ -1210,6 +1210,13 @@ several processes downloading the `mongod` binary at once can corrupt it.
   (`.avisos-muro`), on top of their normal place in the feed: a water cut today
   can't be buried under neighbours' posts. Section `/avisos` is in
   `secciones.js` (icon `aviso`).
+- **Urgent avisos** (`urgente: true`, a checkbox in the form, fixed at
+  creation) push to **every** subscribed browser (`avisarATodosPorPush` in
+  `utils/push.js`, batches of 100 over a cursor, fire-and-forget after the
+  201, never throws; tag `aviso-<id>`, opens `/p/<id>`). The form warns that
+  if every aviso rings people switch notifications off.
+  `test/avisosPush.test.js` replaces `webpush.sendNotification` (web-push
+  only speaks HTTPS, so a local fake push service isn't possible).
 - Nobody is marked official in production yet: create the town hall's
   account, then mark it from its profile as admin.
 
@@ -1900,7 +1907,7 @@ webhook (raw body!), and `STRIPE_*` variables on Railway.
 Rough priority; none started.
 
 1. **Official Ayuntamiento account** — done (see "Cuenta oficial y avisos");
-   pending: the real account, and push notifications for urgent avisos.
+   pending: the real account. (Push for urgent avisos is done.)
 2. **Quejas with a response** — done (see "Section controllers" → Quejas):
    history with public answers, the official account can process them, and a
    public summary on `/quejas`.

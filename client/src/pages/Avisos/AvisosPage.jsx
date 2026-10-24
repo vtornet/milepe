@@ -20,7 +20,7 @@ const CATEGORIAS_AVISO = {
   otro: 'Otro',
 };
 
-const INICIAL = { titulo: '', contenido: '', categoria: 'agua', vigente_hasta: '' };
+const INICIAL = { titulo: '', contenido: '', categoria: 'agua', vigente_hasta: '', urgente: false };
 
 function AvisoFormulario({ onCreado }) {
   const [datos, setDatos] = useState(INICIAL);
@@ -70,6 +70,22 @@ function AvisoFormulario({ onCreado }) {
       <label htmlFor="aviso-vigencia">Vigente hasta (opcional: deja de destacarse después)</label>
       <input id="aviso-vigencia" name="vigente_hasta" type="datetime-local" value={datos.vigente_hasta} onChange={cambiar} />
 
+      <label className="fila" style={{ gap: 'var(--e-2)' }}>
+        <input
+          type="checkbox"
+          checked={datos.urgente}
+          onChange={(e) => setDatos({ ...datos, urgente: e.target.checked })}
+          style={{ width: 'auto' }}
+        />
+        Urgente: avisar ya a todos los que tienen activadas las notificaciones
+      </label>
+      {datos.urgente && (
+        <p className="tarjeta-meta">
+          Úsalo solo para lo que no puede esperar (un corte de agua ahora, una emergencia): si cada aviso suena, la gente
+          desactiva las notificaciones. No se puede deshacer una vez enviado.
+        </p>
+      )}
+
       {error && <p className="mensaje-error">{error}</p>}
       <button type="submit" disabled={enviando}>
         {enviando ? 'Publicando...' : 'Publicar aviso'}
@@ -84,6 +100,7 @@ function TarjetaAviso({ aviso }) {
       post={aviso}
       chips={
         <>
+          {aviso.urgente && <span className="insignia insignia-peligro">Urgente</span>}
           <span className="insignia insignia-info">{CATEGORIAS_AVISO[aviso.categoria] || aviso.categoria}</span>
           {!aviso.vigente && <span className="insignia">Caducado</span>}
         </>

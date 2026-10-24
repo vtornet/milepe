@@ -28,6 +28,12 @@ const avisoDetalleSchema = new Schema(
       type: Date,
       default: null,
     },
+    // Urgente = se manda un push a todos los navegadores suscritos al
+    // publicarlo. Se fija al crear y no se edita: el push ya salio.
+    urgente: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: { createdAt: 'fecha_creacion', updatedAt: 'fecha_actualizacion' },

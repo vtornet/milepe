@@ -2,6 +2,7 @@ import Post from '../models/Post.js';
 import AvisoDetalle, { CATEGORIAS_AVISO } from '../models/AvisoDetalle.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
+import { avisarATodosPorPush } from '../utils/push.js';
 
 const formatearAviso = (post, detalle) => ({
   _id: post._id,
@@ -18,6 +19,7 @@ const formatearAviso = (post, detalle) => ({
   categoria: detalle.categoria,
   vigente_hasta: detalle.vigente_hasta,
   vigente: detalle.estaVigente(),
+  urgente: detalle.urgente,
 });
 
 // Publicar un aviso es lo que distingue a una cuenta oficial: un vecino no
@@ -33,17 +35,30 @@ export const crearAviso = async (req, res, next) => {
   let post;
 
   try {
-    const { titulo, contenido, imagenes, categoria, vigente_hasta } = req.body;
+    const { titulo, contenido, imagenes, categoria, vigente_hasta, urgente } = req.body;
 
+    if (urgente !== undefined && typeof urgente !== 'boolean') throw new ErrorHttp(400, 'urgente debe ser true o false');
     if (vigente_hasta && Number.isNaN(new Date(vigente_hasta).getTime())) {
       throw new ErrorHttp(400, 'vigente_hasta no es una fecha válida');
     }
 
     post = await Post.create({ autor_id: req.usuario._id, tipo: 'aviso', titulo, contenido, imagenes });
-    const detalle = await AvisoDetalle.create({ post_id: post._id, categoria, vigente_hasta: vigente_hasta || null });
+    const detalle = await AvisoDetalle.create({
+      post_id: post._id,
+      categoria,
+      vigente_hasta: vigente_hasta || null,
+      urgente: urgente === true,
+    });
 
     await post.populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
     res.status(201).json({ ok: true, aviso: formatearAviso(post, detalle) });
+
+    // Sin await: la respuesta no espera a cientos de envios, y
+    // avisarATodosPorPush nunca lanza.
+    if (detalle.urgente) {
+      const cuerpo = post.contenido.length > 140 ? `${post.contenido.slice(0, 139)}…` : post.contenido;
+      avisarATodosPorPush({ titulo: `Aviso urgente: ${post.titulo}`, cuerpo, ruta: `/p/${post._id}`, etiqueta: `aviso-${post._id}` });
+    }
   } catch (error) {
     if (post) await Post.deleteOne({ _id: post._id });
     next(error);

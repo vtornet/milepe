@@ -39,6 +39,47 @@ const configurar = () => {
   return true;
 };
 
+const cargaDe = ({ titulo, cuerpo, ruta, etiqueta }) =>
+  JSON.stringify({
+    titulo,
+    cuerpo,
+    ruta,
+    // Dos avisos con la misma etiqueta se sustituyen en lugar de
+    // apilarse: veinte mensajes de la misma conversacion son un aviso,
+    // no veinte. Mismo motivo que notificarMensajeNuevo.
+    etiqueta: etiqueta || ruta,
+  });
+
+const enviarA = async (suscripciones, carga) => {
+  const enviados = await Promise.all(
+    suscripciones.map(async (suscripcion) => {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: suscripcion.endpoint,
+            keys: { p256dh: suscripcion.claves.p256dh, auth: suscripcion.claves.auth },
+          },
+          carga,
+        );
+        return 1;
+      } catch (error) {
+        // 404/410 del servicio de push significa que esa suscripcion ya
+        // no existe (desinstalaron la aplicacion, revocaron el permiso,
+        // se limpiaron los datos del navegador). Se borra: si no, queda
+        // intentandose en cada aviso para siempre.
+        if (error.statusCode === 404 || error.statusCode === 410) {
+          await Suscripcion.deleteOne({ _id: suscripcion._id });
+        } else {
+          console.error('[push] No se pudo enviar el aviso:', error.statusCode || error.message);
+        }
+        return 0;
+      }
+    }),
+  );
+
+  return enviados.reduce((suma, uno) => suma + uno, 0);
+};
+
 // Manda un aviso a todos los navegadores de un vecino.
 //
 // `ruta` es la ruta de la aplicacion que se abre al pulsar el aviso (por
@@ -52,47 +93,40 @@ export const avisarPorPush = async ({ usuarioId, titulo, cuerpo, ruta = '/', eti
     const suscripciones = await Suscripcion.find({ usuario_id: usuarioId });
     if (suscripciones.length === 0) return 0;
 
-    const carga = JSON.stringify({
-      titulo,
-      cuerpo,
-      ruta,
-      // Dos avisos con la misma etiqueta se sustituyen en lugar de
-      // apilarse: veinte mensajes de la misma conversacion son un aviso,
-      // no veinte. Mismo motivo que notificarMensajeNuevo.
-      etiqueta: etiqueta || ruta,
-    });
-
-    const enviados = await Promise.all(
-      suscripciones.map(async (suscripcion) => {
-        try {
-          await webpush.sendNotification(
-            {
-              endpoint: suscripcion.endpoint,
-              keys: { p256dh: suscripcion.claves.p256dh, auth: suscripcion.claves.auth },
-            },
-            carga,
-          );
-          return 1;
-        } catch (error) {
-          // 404/410 del servicio de push significa que esa suscripcion ya
-          // no existe (desinstalaron la aplicacion, revocaron el permiso,
-          // se limpiaron los datos del navegador). Se borra: si no, queda
-          // intentandose en cada aviso para siempre.
-          if (error.statusCode === 404 || error.statusCode === 410) {
-            await Suscripcion.deleteOne({ _id: suscripcion._id });
-          } else {
-            console.error('[push] No se pudo enviar el aviso:', error.statusCode || error.message);
-          }
-          return 0;
-        }
-      }),
-    );
-
-    return enviados.reduce((suma, uno) => suma + uno, 0);
+    return await enviarA(suscripciones, cargaDe({ titulo, cuerpo, ruta, etiqueta }));
   } catch (error) {
     // Incluido un fallo de la propia consulta: ver el comentario de
     // arriba, esto no puede tumbar nada.
     console.error('[push] Fallo al avisar:', error.message);
+    return 0;
+  }
+};
+
+// Manda un aviso a TODOS los navegadores suscritos, de todos los vecinos:
+// solo para los avisos oficiales marcados como urgentes (un corte de agua
+// ahora mismo, una emergencia). Se recorre por tandas para no cargar todas
+// las suscripciones a la vez ni abrir miles de envios simultaneos. Mismo
+// contrato: nunca lanza.
+const TANDA_PUSH = 100;
+
+export const avisarATodosPorPush = async ({ titulo, cuerpo, ruta = '/', etiqueta }) => {
+  try {
+    if (!configurar()) return 0;
+
+    const carga = cargaDe({ titulo, cuerpo, ruta, etiqueta });
+    let enviados = 0;
+    let tanda = [];
+    for await (const suscripcion of Suscripcion.find().cursor()) {
+      tanda.push(suscripcion);
+      if (tanda.length === TANDA_PUSH) {
+        enviados += await enviarA(tanda, carga);
+        tanda = [];
+      }
+    }
+    if (tanda.length) enviados += await enviarA(tanda, carga);
+    return enviados;
+  } catch (error) {
+    console.error('[push] Fallo al avisar a todos:', error.message);
     return 0;
   }
 };
