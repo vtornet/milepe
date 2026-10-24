@@ -29,11 +29,14 @@
     <!-- El contenido que la edge function seo.js mete en #root para los
          buscadores se ve un instante antes de que arranque la app: que se lea
          como una página sencilla y no como texto suelto. Sin colores: los
-         pone el tema de la app. -->
+         pone el tema de la app.
+         Acotado a .seo-previo: con un selector como "#root > nav" también
+         alcanzaba a la barra de pestañas de la app, que es un <nav> hijo de
+         #root (le metía relleno y un ancho máximo). -->
     <style>
-      #root > main, #root > nav { max-width: 680px; margin: 0 auto; padding: 16px; font-family: system-ui, sans-serif; line-height: 1.5; }
-      #root > main ul, #root > nav ul { list-style: none; padding: 0; }
-      #root > nav ul { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+      .seo-previo { max-width: 680px; margin: 0 auto; padding: 16px; font-family: system-ui, sans-serif; line-height: 1.5; }
+      .seo-previo ul { list-style: none; padding: 0; }
+      .seo-previo nav ul { display: flex; flex-wrap: wrap; gap: 8px 16px; }
     </style>
   </head>
   <body>

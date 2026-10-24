@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { ReaccionesProvider } from './context/ReaccionesContext.jsx';
 import { SeguimientosProvider } from './context/SeguimientosContext.jsx';
 import api from './services/api.js';
+import BotonSubir from './components/BotonSubir.jsx';
 
 // Los tres sitios donde se enseñan avisos (la barra superior, la lateral y
 // la barra de pestañas) necesitan los mismos contadores, así que se piden
@@ -121,6 +122,7 @@ function Armazon() {
       </div>
 
       <BarraInferior noLeidos={noLeidos} />
+      <BotonSubir />
     </>
   );
 }

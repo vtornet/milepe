@@ -142,3 +142,11 @@ test('sitemap.xml: las secciones, los grupos y lo publicado, nada oculto', async
   assert.ok(!xml.includes(oculta), 'lo oculto no se anuncia');
   assert.ok(xml.includes(`<loc>https://milepe.com/grupos/${grupo}</loc>`));
 });
+
+test('los estilos del contenido previo no alcanzan a la app (la barra de pestañas es un <nav> hijo de #root)', () => {
+  const estilos = indexHtml.match(/<style>([\s\S]*?)<\/style>/)[1];
+  assert.ok(!/#root\s*>/.test(estilos), 'nada de "#root > ..."');
+  assert.ok(estilos.split('}').filter((r) => r.trim()).every((r) => r.trim().startsWith('.seo-previo')));
+  const html = insertarPagina(indexHtml, paginaDeRuta('/quejas', null, ORIGEN));
+  assert.match(html, /<div id="root"><div class="seo-previo"><main>/);
+});

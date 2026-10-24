@@ -76,6 +76,7 @@ const TRAZOS = {
   bolsa: ['M5 8h14l-1 12H6L5 8Z', 'M9 8V6.5a3 3 0 0 1 6 0V8'],
   ruta: ['M12 3v18', 'M12 5h6l2 2-2 2h-6', 'M12 12H6l-2 2 2 2h6'],
   siguiente: ['M10 7l5 5-5 5'],
+  arriba: ['M12 19V5', 'M6 11l6-6 6 6'],
 
   // Contactos de interes
   sirena: ['M7 18v-5a5 5 0 0 1 10 0v5', 'M5 18h14', 'M12 3v2', 'M4.5 6.5l1.4 1.4', 'M19.5 6.5l-1.4 1.4', 'M9 21h6'],

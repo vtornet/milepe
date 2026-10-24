@@ -214,5 +214,7 @@ export const insertarPagina = (html, pagina) => {
     ...pagina.jsonLd.map((d) => `<script type="application/ld+json">${jsonEnScript(d)}</script>`),
   ].join('\n    ');
   resultado = resultado.replace('</head>', `    ${cabecera}\n  </head>`);
-  return resultado.replace('<div id="root"></div>', `<div id="root">${pagina.contenido}</div>`);
+  // En su propio contenedor: los estilos de index.html van acotados a él y no
+  // tocan a la app cuando arranca.
+  return resultado.replace('<div id="root"></div>', `<div id="root"><div class="seo-previo">${pagina.contenido}</div></div>`);
 };

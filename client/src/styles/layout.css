@@ -357,3 +357,54 @@ body:has(.barra-inferior) .contenido {
   gap: var(--e-2);
   flex-shrink: 0;
 }
+
+/* --- Botón flotante "volver arriba" (components/BotonSubir.jsx) --- */
+.boton-subir {
+  position: fixed;
+  right: var(--e-4);
+  /* En el móvil, por encima de la barra de pestañas (y de la barra de gestos
+     del iPhone); en escritorio, en la esquina. */
+  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom, 0px) + var(--e-4));
+  z-index: var(--z-lateral);
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-full);
+  background: var(--marca);
+  color: var(--texto-sobre-marca);
+  box-shadow: var(--sombra-3);
+  cursor: pointer;
+  animation: boton-subir-entra 160ms ease-out;
+}
+
+.boton-subir:hover {
+  box-shadow: var(--sombra-4);
+}
+
+.boton-subir:focus-visible {
+  outline: 2px solid var(--marca);
+  outline-offset: 3px;
+}
+
+@media (min-width: 900px) {
+  .boton-subir {
+    right: var(--e-6);
+    bottom: var(--e-6);
+  }
+}
+
+@keyframes boton-subir-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boton-subir {
+    animation: none;
+  }
+}
