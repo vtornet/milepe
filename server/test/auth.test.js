@@ -81,6 +81,19 @@ test('escribir exige correo verificado y perfil completo, con su razón', async 
   assert.equal(r2.body.razon, 'perfil_incompleto');
 });
 
+test('una cuenta sin verificar tampoco puede reportar por la ruta genérica', async () => {
+  const autor = await t.crearUsuario();
+  const queja = await t.api.post('/quejas', { titulo: 'Q', contenido: 'x', categoria: 'obras', ubicacion: { lat: 37.25, lng: -7.2 } }, { token: autor.token });
+  const sinVerificar = await t.crearUsuario({ email_verificado: false });
+  const r = await t.api.post(
+    '/moderacion/reportes',
+    { contenido_tipo: 'post', contenido_id: queja.body.queja._id, motivo: 'spam' },
+    { token: sinVerificar.token },
+  );
+  assert.equal(r.status, 403);
+  assert.equal(r.body.razon, 'email_sin_verificar');
+});
+
 test('recuperar contraseña contesta lo mismo exista o no la cuenta', async () => {
   const existe = await t.api.post('/auth/recuperar', { email: 'nuevo@ejemplo.com' });
   const noExiste = await t.api.post('/auth/recuperar', { email: 'fantasma@ejemplo.com' });

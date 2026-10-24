@@ -15,6 +15,7 @@ import {
   listarCatalogos,
 } from '../controllers/moderacionController.js';
 import { protegido, autorizar } from '../middlewares/auth.js';
+import { exigePerfilCompleto } from '../middlewares/perfil.js';
 
 const router = Router();
 
@@ -29,7 +30,10 @@ const soloAdmin = autorizar('admin');
 router.get('/catalogos', listarCatalogos);
 
 // Cualquier vecino con sesion
-router.post('/reportes', protegido, crearReporte);
+// Reportar es escribir: exige correo verificado y perfil completo, como
+// /posts/:id/reportar (que llega aqui mismo). Sin esto, una cuenta recien
+// creada sin verificar podia reportar desde esta ruta.
+router.post('/reportes', protegido, exigePerfilCompleto, crearReporte);
 router.get('/mi-contenido-moderado', protegido, listarMiContenidoModerado);
 router.post('/apelaciones', protegido, crearApelacion);
 
