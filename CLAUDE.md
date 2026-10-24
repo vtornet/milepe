@@ -1668,6 +1668,17 @@ Three things worth knowing before touching them:
   reason: it's Android's splash background and has to match what the icons
   sit on.
 
+### Carga diferida (code splitting)
+
+Every page except the Muro is loaded with `React.lazy` in `AppRouter.jsx`
+(one `<Suspense>` with `EsqueletoFeed` around the routes): the first load went
+from one 640 KB bundle to about 290 KB, and Leaflet (155 KB) only comes with
+the pages that draw a map. `perezosa()` wraps `lazy`: if a page chunk fails to
+download — almost always because a new version was deployed and the open tab
+asks for a hashed file that no longer exists — it reloads the site **once**
+(a `sessionStorage` flag prevents a loop when the cause is being offline).
+Checked in a real browser against `vite preview`.
+
 ### Client structure
 
 - `client/src/context/AuthContext.jsx` (wraps the whole app in `App.jsx`)
