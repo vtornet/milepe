@@ -26,6 +26,22 @@ const cambioEstadoSchema = new Schema(
       type: Date,
       default: Date.now,
     },
+    // Respuesta publica que acompaña al cambio ("Enviado a la brigada de
+    // obras"). Puede ir sin cambio de estado: responder sin mover la queja.
+    nota: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: null,
+    },
+    // Si quien actuo era la cuenta oficial, copiado al escribir: el historial
+    // dice "respondio el Ayuntamiento" aunque la cuenta deje de ser oficial
+    // despues, y no hace falta cruzar con usuarios para pintarlo. Quien fue
+    // exactamente (moderador_id) no se publica.
+    oficial: {
+      type: Boolean,
+      default: false,
+    },
   },
   { _id: false },
 );
@@ -88,14 +104,23 @@ quejaDetalleSchema.index({ categoria: 1, estado: 1 });
 // Cambia el estado, deja constancia en el historial y gestiona
 // fecha_resolucion. No persiste el cambio: el controlador debe llamar a
 // quejaDetalle.save() despues.
-quejaDetalleSchema.methods.cambiarEstado = function cambiarEstado(nuevoEstado, moderadorId) {
+quejaDetalleSchema.methods.cambiarEstado = function cambiarEstado(
+  nuevoEstado,
+  moderadorId,
+  { nota = null, oficial = false } = {},
+) {
   if (!ESTADOS_QUEJA.includes(nuevoEstado)) {
     throw new Error(`Estado de queja no valido: ${nuevoEstado}`);
   }
 
+  // La fecha de resolucion es la de la PRIMERA vez que se resuelve: añadir
+  // una nota a una queja ya resuelta no debe moverla (falsearia el tiempo
+  // medio de resolucion), y reabrirla la borra.
+  if (nuevoEstado !== 'resuelto') this.fecha_resolucion = null;
+  else if (this.estado !== 'resuelto') this.fecha_resolucion = new Date();
+
   this.estado = nuevoEstado;
-  this.historial_estados.push({ estado: nuevoEstado, moderador_id: moderadorId });
-  this.fecha_resolucion = nuevoEstado === 'resuelto' ? new Date() : null;
+  this.historial_estados.push({ estado: nuevoEstado, moderador_id: moderadorId, nota: nota || null, oficial });
 
   return this;
 };

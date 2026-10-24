@@ -2393,3 +2393,30 @@ select:disabled {
 .avisos-muro-fila + .avisos-muro-fila {
   border-top: 1px solid var(--marca-borde);
 }
+
+/* ---------------- Respuesta a las quejas ---------------- */
+
+.respuesta-queja {
+  margin: var(--e-3) 0;
+  padding: var(--e-3);
+  border-left: 3px solid var(--marca);
+  border-radius: var(--r-sm);
+  background: var(--marca-tenue);
+}
+
+.respuesta-queja p {
+  margin: var(--e-1) 0;
+}
+
+.seguimiento-queja {
+  margin: var(--e-2) 0;
+  padding-left: var(--e-5);
+}
+
+.seguimiento-queja li {
+  margin-bottom: var(--e-2);
+}
+
+.resumen-quejas {
+  margin-bottom: var(--e-3);
+}

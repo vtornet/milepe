@@ -9,6 +9,11 @@ import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
 // Post y QuejaDetalle se muestran siempre juntos de cara al cliente: esta
 // funcion los combina en una sola forma consistente, la use el create, el
 // listado (via agregacion) o el detalle (via populate).
+// El historial que ve cualquiera: estado, nota, fecha y si fue la cuenta
+// oficial. Nunca quien exactamente (moderador_id), igual que en moderacion.
+const historialPublico = (historial = []) =>
+  historial.map(({ estado, nota, fecha, oficial }) => ({ estado, nota: nota || null, fecha, oficial: Boolean(oficial) }));
+
 const formatearQueja = (post, detalle) => ({
   _id: post._id,
   titulo: post.titulo,
@@ -25,7 +30,7 @@ const formatearQueja = (post, detalle) => ({
   ubicacion: deGeoJSONaLatLng(detalle.ubicacion),
   direccion_aproximada: detalle.direccion_aproximada,
   estado: detalle.estado,
-  historial_estados: detalle.historial_estados,
+  historial_estados: historialPublico(detalle.historial_estados),
   fecha_resolucion: detalle.fecha_resolucion,
 });
 
@@ -114,6 +119,13 @@ export const listarQuejas = async (req, res, next) => {
                 direccion_aproximada: '$detalle.direccion_aproximada',
                 estado: '$detalle.estado',
                 fecha_resolucion: '$detalle.fecha_resolucion',
+                historial_estados: {
+                  $map: {
+                    input: '$detalle.historial_estados',
+                    as: 'h',
+                    in: { estado: '$$h.estado', nota: '$$h.nota', fecha: '$$h.fecha', oficial: '$$h.oficial' },
+                  },
+                },
                 autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', avatar_url: '$autor.avatar_url', oficial: '$autor.oficial' },
               },
             },
@@ -159,33 +171,57 @@ export const obtenerQueja = async (req, res, next) => {
   }
 };
 
-// Solo moderador/admin (lo exige la ruta). No usa Post.moderarPost: esto
-// cambia el estado de tramitacion de la queja (pendiente/en_curso/resuelto),
-// no su visibilidad en el feed, que son cosas independientes.
+// Quien tramita las quejas: el equipo (moderador/admin) y la cuenta
+// oficial del Ayuntamiento, que es a quien van dirigidas.
+export const exigeGestorQuejas = (req, res, next) => {
+  const { rol, oficial } = req.usuario || {};
+  if (oficial || rol === 'moderador' || rol === 'admin') return next();
+  return next(new ErrorHttp(403, 'Solo el Ayuntamiento o el equipo de MiLepe pueden tramitar quejas'));
+};
+
+const ETIQUETA_ESTADO = { pendiente: 'pendiente', en_curso: 'en curso', resuelto: 'resuelta' };
+
+// Cambia el estado de tramitacion (pendiente/en_curso/resuelto) y/o deja una
+// respuesta publica. No toca la visibilidad en el feed (eso es moderacion),
+// son ejes independientes. Se puede responder sin cambiar el estado.
 export const cambiarEstadoQueja = async (req, res, next) => {
   try {
     const { estado } = req.body;
+    const nota = typeof req.body.nota === 'string' ? req.body.nota.trim() : '';
 
     const detalle = await QuejaDetalle.findOne({ post_id: req.params.id });
     if (!detalle) {
       throw new ErrorHttp(404, 'Queja no encontrada');
     }
+    if (estado === detalle.estado && !nota) {
+      throw new ErrorHttp(400, 'La queja ya está en ese estado: añade una respuesta o elige otro');
+    }
 
-    detalle.cambiarEstado(estado, req.usuario._id);
+    const cambia = estado !== detalle.estado;
+    detalle.cambiarEstado(estado, req.usuario._id, { nota, oficial: Boolean(req.usuario.oficial) });
     await detalle.save();
 
     const post = await Post.findById(req.params.id).select('autor_id titulo');
     if (post && !post.autor_id.equals(req.usuario._id)) {
+      const quien = req.usuario.oficial ? 'El Ayuntamiento' : 'El equipo de MiLepe';
+      const que = cambia
+        ? `ha pasado tu queja "${post.titulo}" a ${ETIQUETA_ESTADO[detalle.estado]}`
+        : `ha respondido a tu queja "${post.titulo}"`;
       await Notificacion.create({
         usuario_id: post.autor_id,
         tipo: 'cambio_estado_queja',
-        mensaje: `Tu queja "${post.titulo}" ha pasado a estado "${detalle.estado}"`,
+        mensaje: `${quien} ${que}${nota ? `: ${nota.slice(0, 140)}` : ''}`,
         referencia_id: post._id,
         referencia_tipo: 'post',
       });
     }
 
-    res.json({ ok: true, estado: detalle.estado, historial_estados: detalle.historial_estados });
+    res.json({
+      ok: true,
+      estado: detalle.estado,
+      fecha_resolucion: detalle.fecha_resolucion,
+      historial_estados: historialPublico(detalle.historial_estados),
+    });
   } catch (error) {
     if (error instanceof mongoose.Error) return next(error);
     if (error.message?.startsWith('Estado de queja no valido')) {
@@ -194,3 +230,45 @@ export const cambiarEstadoQueja = async (req, res, next) => {
     next(error);
   }
 };
+
+const DIA_MS = 24 * 60 * 60 * 1000;
+
+// Resumen publico de como se atienden las quejas: cuantas hay por estado,
+// que parte se ha resuelto y cuanto se tarda en responder y en resolver. Es
+// transparencia: cualquiera puede ver si las quejas sirven para algo.
+export const resumenQuejas = async (req, res, next) => {
+  try {
+    const filas = await Post.aggregate([
+      { $match: { tipo: 'queja', estado_moderacion: 'publicado' } },
+      { $lookup: { from: 'quejadetalles', localField: '_id', foreignField: 'post_id', as: 'detalle' } },
+      { $unwind: '$detalle' },
+      {
+        $project: {
+          creada: '$fecha_creacion',
+          estado: '$detalle.estado',
+          resuelta: '$detalle.fecha_resolucion',
+          primera: { $min: '$detalle.historial_estados.fecha' },
+        },
+      },
+    ]);
+
+    const porEstado = { pendiente: 0, en_curso: 0, resuelto: 0 };
+    for (const f of filas) porEstado[f.estado] = (porEstado[f.estado] || 0) + 1;
+
+    // Media en dias, con un decimal; null si todavia no hay ninguna.
+    const media = (valores) =>
+      valores.length ? Math.round((valores.reduce((a, b) => a + b, 0) / valores.length / DIA_MS) * 10) / 10 : null;
+
+    res.json({
+      ok: true,
+      total: filas.length,
+      por_estado: porEstado,
+      porcentaje_resueltas: filas.length ? Math.round((porEstado.resuelto / filas.length) * 100) : null,
+      dias_hasta_respuesta: media(filas.filter((f) => f.primera).map((f) => f.primera - f.creada)),
+      dias_hasta_resolucion: media(filas.filter((f) => f.resuelta).map((f) => f.resuelta - f.creada)),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

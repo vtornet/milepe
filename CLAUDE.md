@@ -855,8 +855,18 @@ re-derive otherwise:
 - **Quejas**: `ubicacion` required. `estado` (`pendiente`/`en_curso`/
   `resuelto`) is tracked with a full `historial_estados` (who changed it and
   when), separate from `Post.estado_moderacion` — moderating visibility and
-  tracking complaint progress are unrelated axes. Only `moderador`/`admin`
-  can change `estado` (`PATCH /:id/estado`).
+  tracking complaint progress are unrelated axes. `PATCH /:id/estado`
+  (`exigeGestorQuejas`) is open to `moderador`/`admin` **and the official
+  account** — the complaints are addressed to the town hall. It takes an
+  optional public `nota` (the answer), and a nota alone, without changing the
+  state, is a valid reply. Each history entry stores `oficial` (copied at
+  write time) so the card says "Respuesta del Ayuntamiento" vs "del equipo de
+  MiLepe"; the public history never includes `moderador_id`. `fecha_resolucion`
+  is the *first* time it was resolved — a later note doesn't move it,
+  reopening clears it — because the public summary
+  (`GET /api/quejas/resumen`: counts by state, % resolved, mean days to first
+  answer and to resolution) depends on it. The author's notification says who
+  acted and includes the note.
 - **Fotos**: `imagenes` is required and non-empty at creation — the only
   section where that's true, since a photo post without a photo makes no
   sense. Client has to call `POST /api/subidas/imagenes` first and pass the
@@ -1070,7 +1080,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 128 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 135 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1695,9 +1705,9 @@ Rough priority; none started.
 
 1. **Official Ayuntamiento account** — done (see "Cuenta oficial y avisos");
    pending: the real account, and push notifications for urgent avisos.
-2. **Quejas with a response**: responsible, visible status history, the
-   town hall's answer, and a public resolved-rate / mean-time summary
-   (the admin stats already compute mean resolution time).
+2. **Quejas with a response** — done (see "Section controllers" → Quejas):
+   history with public answers, the official account can process them, and a
+   public summary on `/quejas`.
 3. **Daily utilities** in the Muro/rail: bus times, beach status (flag,
    jellyfish, crowding), tides. (Pharmacy on duty is done — see "Farmacias de
    guardia"; ask the Colegio for a data feed.) El Tiempo (cached

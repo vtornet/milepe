@@ -30,6 +30,16 @@ function QuejasPage() {
   const [categoria, setCategoria] = useState('');
   const [estado, setEstado] = useState('');
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [resumen, setResumen] = useState(null);
+
+  // Transparencia: cuántas quejas se resuelven y cuánto se tarda. Un fallo
+  // aquí no se enseña; es un dato de contexto, no la lista.
+  useEffect(() => {
+    api
+      .get('/quejas/resumen')
+      .then(({ data }) => setResumen(data))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -70,6 +80,15 @@ function QuejasPage() {
         formularioAbierto={mostrarFormulario}
         onAlternarFormulario={() => setMostrarFormulario(!mostrarFormulario)}
       />
+
+      {resumen?.total > 0 && (
+        <p className="tarjeta-meta resumen-quejas">
+          {resumen.total} quejas · {resumen.por_estado.resuelto} resueltas ({resumen.porcentaje_resueltas}%) ·{' '}
+          {resumen.por_estado.en_curso} en curso · {resumen.por_estado.pendiente} pendientes
+          {resumen.dias_hasta_respuesta !== null && ` · primera respuesta en ${resumen.dias_hasta_respuesta} días de media`}
+          {resumen.dias_hasta_resolucion !== null && ` · resueltas en ${resumen.dias_hasta_resolucion} días de media`}
+        </p>
+      )}
 
       {mostrarFormulario && <QuejaFormulario onCreada={manejarQuejaCreada} />}
 
