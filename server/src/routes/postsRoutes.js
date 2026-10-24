@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   listarMuro,
+  etiquetasPopulares,
   obtenerPost,
   listarMisReacciones,
   editarPost,
@@ -24,6 +25,7 @@ router.get('/', listarMuro);
 // Antes de '/:id' a proposito: si fuera despues, Express entenderia
 // "mis-reacciones" como el id de un post y contestaria un CastError.
 router.get('/mis-reacciones', protegido, listarMisReacciones);
+router.get('/etiquetas/populares', etiquetasPopulares);
 router.get('/:id', obtenerPost);
 // Editar: solo el autor, comprobado en el controlador. Pide perfil
 // completo igual que publicar, porque editar es publicar otra vez.

@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { TIPOS_REACCION } from './constantes.js';
+import { extraerEtiquetas } from '../utils/etiquetas.js';
 
 const { Schema, model } = mongoose;
 
@@ -152,6 +153,12 @@ const postSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    // #etiquetas del título y el texto, normalizadas. No se aceptan del
+    // cliente: las calcula el hook de abajo cada vez que cambia el texto.
+    etiquetas: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: { createdAt: 'fecha_creacion', updatedAt: 'fecha_actualizacion' },
@@ -164,8 +171,18 @@ postSchema.index({ estado_moderacion: 1, fecha_creacion: -1 });
 postSchema.index({ tipo: 1, estado_moderacion: 1, fecha_creacion: -1 });
 // Publicaciones de un usuario (su perfil).
 postSchema.index({ autor_id: 1, fecha_creacion: -1 });
+// "Todo lo de #feria", lo más reciente primero.
+postSchema.index({ etiquetas: 1, estado_moderacion: 1, fecha_creacion: -1 });
 // Busqueda libre por texto en el muro.
 postSchema.index({ titulo: 'text', contenido: 'text' });
+
+// Las etiquetas salen del texto: se recalculan al crear y en cada edición,
+// así ningún controlador de sección tiene que acordarse.
+postSchema.pre('validate', function calcularEtiquetas() {
+  if (this.isNew || this.isModified('titulo') || this.isModified('contenido')) {
+    this.etiquetas = extraerEtiquetas(this.titulo, this.contenido);
+  }
+});
 
 // Reaccionar (me_gusta/me_encanta/apoyo/triste) ya no es un metodo de Post:
 // lo gestiona Reaccion.alternar(), que es quien mantiene reacciones_resumen

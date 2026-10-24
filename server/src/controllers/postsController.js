@@ -1,4 +1,5 @@
 import Post from '../models/Post.js';
+import { normalizarEtiqueta } from '../utils/etiquetas.js';
 import Comentario from '../models/Comentario.js';
 import Reaccion, { TIPOS_REACCION } from '../models/Reaccion.js';
 import Bloqueo from '../models/Bloqueo.js';
@@ -34,6 +35,10 @@ export const listarMuro = async (req, res, next) => {
     // un endpoint aparte porque es el mismo feed con un filtro mas, y ya
     // hay un indice { autor_id, fecha_creacion } que lo sirve.
     if (req.query.autor) filtro.autor_id = req.query.autor;
+    // /etiqueta/<x> del cliente: mismo feed, filtrado por una #etiqueta.
+    if (typeof req.query.etiqueta === 'string' && req.query.etiqueta) {
+      filtro.etiquetas = normalizarEtiqueta(req.query.etiqueta.replace(/^#/, ''));
+    }
 
     const [posts, total] = await Promise.all([
       Post.find(filtro)
@@ -49,6 +54,29 @@ export const listarMuro = async (req, res, next) => {
       posts,
       paginacion: { pagina, limite, total, totalPaginas: Math.ceil(total / limite) },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Las etiquetas más usadas en lo publicado de los últimos días, para el
+// panel "De qué se habla". Cuenta publicaciones, no menciones (cada post
+// guarda sus etiquetas sin repetir). Las de una sola publicación no salen:
+// con una sola no es un tema, es una palabra.
+const DIAS_ETIQUETAS_POPULARES = 14;
+
+export const etiquetasPopulares = async (req, res, next) => {
+  try {
+    const desde = new Date(Date.now() - DIAS_ETIQUETAS_POPULARES * 24 * 60 * 60 * 1000);
+    const filas = await Post.aggregate([
+      { $match: { estado_moderacion: 'publicado', fecha_creacion: { $gte: desde }, 'etiquetas.0': { $exists: true } } },
+      { $unwind: '$etiquetas' },
+      { $group: { _id: '$etiquetas', publicaciones: { $sum: 1 } } },
+      { $match: { publicaciones: { $gte: 2 } } },
+      { $sort: { publicaciones: -1, _id: 1 } },
+      { $limit: 10 },
+    ]);
+    res.json({ ok: true, dias: DIAS_ETIQUETAS_POPULARES, etiquetas: filas.map((f) => ({ etiqueta: f._id, publicaciones: f.publicaciones })) });
   } catch (error) {
     next(error);
   }

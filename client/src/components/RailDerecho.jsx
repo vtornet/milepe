@@ -18,6 +18,7 @@ function RailDerecho() {
   const [urgencias, setUrgencias] = useState([]);
   const [guardia, setGuardia] = useState(null);
   const [marea, setMarea] = useState(null);
+  const [temas, setTemas] = useState([]);
 
   // En la propia página de El Tiempo (o de Contactos) su panel del rail
   // sería el mismo dato dos veces en la misma pantalla, que es justo lo que
@@ -41,7 +42,7 @@ function RailDerecho() {
     api
       .get('/contactos-interes')
       .then(({ data }) => {
-        if (!cancelado) setUrgencias(data.contactos.filter((c) => c.categoria === 'otro').slice(0, 3));
+        if (!cancelado) setUrgencias(data.contactos.filter((c) => c.categoria === 'emergencias').slice(0, 3));
       })
       .catch(() => {});
 
@@ -49,6 +50,13 @@ function RailDerecho() {
       .get('/playa')
       .then(({ data }) => {
         if (!cancelado) setMarea(data.playa.proxima_marea);
+      })
+      .catch(() => {});
+
+    api
+      .get('/posts/etiquetas/populares')
+      .then(({ data }) => {
+        if (!cancelado) setTemas(data.etiquetas);
       })
       .catch(() => {});
 
@@ -170,6 +178,22 @@ function RailDerecho() {
             <Link to="/contactos" className="btn btn-plano btn-sm">
               Todos los teléfonos
             </Link>
+          </div>
+        </section>
+      )}
+
+      {temas.length > 0 && (
+        <section className="panel">
+          <h2 className="panel-titulo">
+            <Icono nombre="comentario" tam={15} />
+            De qué se habla
+          </h2>
+          <div className="panel-cuerpo etiquetas-populares">
+            {temas.map((t) => (
+              <Link key={t.etiqueta} to={`/etiqueta/${encodeURIComponent(t.etiqueta)}`} className="etiqueta-enlace">
+                #{t.etiqueta}
+              </Link>
+            ))}
           </div>
         </section>
       )}

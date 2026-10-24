@@ -43,7 +43,10 @@ function BuscarPage() {
 
   const enviar = (e) => {
     e.preventDefault();
-    navigate(`/buscar?q=${encodeURIComponent(texto.trim())}`);
+    const limpio = texto.trim();
+    // "#feria" sola es una etiqueta: se va a su página en vez de buscar texto.
+    if (/^#[\p{L}\p{N}_]{2,40}$/u.test(limpio)) navigate(`/etiqueta/${encodeURIComponent(limpio.slice(1))}`);
+    else navigate(`/buscar?q=${encodeURIComponent(limpio)}`);
   };
 
   const total = resultado

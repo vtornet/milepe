@@ -11,6 +11,7 @@ import BotonCompartir from './BotonCompartir.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import api from '../services/api.js';
 import { haceCuanto, fechaCompleta } from '../utils/fechas.js';
+import TextoConEtiquetas from './TextoConEtiquetas.jsx';
 
 // Armazón común de una publicación: avatar, autor, cuándo, insignias,
 // título, texto, imágenes, datos propios de la sección y barra de acciones.
@@ -217,7 +218,11 @@ function TarjetaPublicacion({
             {chips && <div className="pub-chips">{chips}</div>}
 
             {post.titulo && <h2 className="pub-titulo">{post.titulo}</h2>}
-            {post.contenido && <p className="pub-texto">{post.contenido}</p>}
+            {post.contenido && (
+              <p className="pub-texto">
+                <TextoConEtiquetas texto={post.contenido} />
+              </p>
+            )}
 
             {datos && <div className="pub-datos">{datos}</div>}
 

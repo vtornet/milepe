@@ -1152,7 +1152,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 199 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 213 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1263,6 +1263,26 @@ n accept their accented/upper-case forms (added by hand: the database's
 case-insensitive mode doesn't always fold accented letters) and escapes the
 input. Fine at a town's volume; if it ever isn't, the step is a Spanish text
 index or Atlas Search.
+
+### Etiquetas (#hashtags)
+
+`Post.etiquetas` holds the #tags of title + text, **computed by a
+`pre('validate')` hook on Post** (on creation and whenever titulo/contenido
+change), never accepted from the client — so every section gets them without
+touching its controller. Normalised: lower case, accents and diaeresis removed
+but **ñ kept** (#año ≠ #ano); 2–40 letters/digits/_, at least one letter; not
+after `/`, `&` or `#` (URL fragments, `&#39;`); max 10 per post. The rule lives
+twice — `server/src/utils/etiquetas.js` (extract) and
+`client/src/utils/etiquetas.js` (render as links, `TextoConEtiquetas`) — and
+`test/etiquetas.test.js` checks both agree; change both together.
+
+- `GET /api/posts?etiqueta=x` is the Muro filtered (index `{etiquetas,
+  estado_moderacion, fecha_creacion}`); client page `/etiqueta/:etiqueta`.
+  Typing `#feria` alone in the search box goes there.
+- `GET /api/posts/etiquetas/populares`: top 10 of the last 14 days counted
+  by posts, only tags in 2+ posts; the rail shows them as "De qué se habla".
+- Posts created before this have no `etiquetas` until edited (production had
+  9 posts; none relied on it).
 
 ### Compartir (Open Graph) y página de una publicación
 
@@ -1919,7 +1939,8 @@ Rough priority; none started.
 4. **Tablón de anuncios** — done (see "Section controllers").
 5. **Businesses manage themselves** — done except paid highlighting, which
    waits for Stripe (see "Section controllers" → Negocios).
-6. **Groups** (barrios, AA.VV., hermandades, peñas, clubes), hashtags, verification that someone is a vecino.
+6. **Groups** (barrios, AA.VV., hermandades, peñas, clubes), verification that someone is a vecino.
+   (Hashtags are done — see "Etiquetas".)
    (Global search is done — see "Buscador global".)
 7. **Share well on WhatsApp** — done for posts (see "Compartir"). Still open, **SEO**: the app is
    a SPA, so crawlers and link previews see an empty shell. Basics done:

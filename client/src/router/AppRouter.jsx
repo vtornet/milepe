@@ -63,6 +63,7 @@ const AnimalesPage = perezosa(() => import('../pages/Animales/AnimalesPage.jsx')
 const BuscarPage = perezosa(() => import('../pages/Buscar/BuscarPage.jsx'));
 const EncuestasPage = perezosa(() => import('../pages/Encuestas/EncuestasPage.jsx'));
 const PublicacionPage = perezosa(() => import('../pages/Publicacion/PublicacionPage.jsx'));
+const EtiquetaPage = perezosa(() => import('../pages/Etiqueta/EtiquetaPage.jsx'));
 const NotificacionesPage = perezosa(() => import('../pages/Notificaciones/NotificacionesPage.jsx'));
 const MensajesPage = perezosa(() => import('../pages/Mensajes/MensajesPage.jsx'));
 const ConversacionPage = perezosa(() => import('../pages/Mensajes/ConversacionPage.jsx'));
@@ -101,6 +102,7 @@ function AppRouter() {
       <Route path="/encuestas" element={<EncuestasPage />} />
       {/* Una publicación sola: el destino de los enlaces compartidos. */}
       <Route path="/p/:id" element={<PublicacionPage />} />
+      <Route path="/etiqueta/:etiqueta" element={<EtiquetaPage />} />
       <Route
         path="/notificaciones"
         element={

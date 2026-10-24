@@ -2545,3 +2545,20 @@ select:disabled {
   flex-direction: column;
   gap: 2px;
 }
+
+/* #etiquetas dentro del texto y en el panel "De qué se habla". */
+.etiqueta-enlace {
+  color: var(--marca);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.etiqueta-enlace:hover {
+  text-decoration: underline;
+}
+
+.etiquetas-populares {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2) var(--e-3);
+}
