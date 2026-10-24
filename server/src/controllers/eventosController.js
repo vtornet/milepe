@@ -121,7 +121,7 @@ export const listarEventos = async (req, res, next) => {
                 ubicacion: '$detalle.ubicacion',
                 patrocinador_nombre: '$detalle.patrocinador_nombre',
                 patrocinado_hasta: '$detalle.patrocinado_hasta',
-                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', avatar_url: '$autor.avatar_url' },
+                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', avatar_url: '$autor.avatar_url', oficial: '$autor.oficial' },
               },
             },
           ],

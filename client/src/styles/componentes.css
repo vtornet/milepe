@@ -2348,3 +2348,48 @@ select:disabled {
   background: var(--superficie);
   box-shadow: var(--sombra-2);
 }
+
+/* ---------------- Cuenta oficial y avisos ---------------- */
+
+.insignia-oficial {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+  color: var(--marca);
+  font-size: var(--t-xs);
+  font-weight: 650;
+  vertical-align: middle;
+}
+
+.insignia-oficial svg {
+  display: inline-block;
+}
+
+.avisos-muro {
+  margin-bottom: var(--e-4);
+  padding: var(--e-3) var(--e-4);
+  border: 1px solid var(--marca-borde);
+  border-left: 4px solid var(--marca);
+  border-radius: var(--r-md);
+  background: var(--marca-tenue);
+}
+
+.avisos-muro .panel-titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 var(--e-2);
+}
+
+.avisos-muro-fila {
+  display: flex;
+  flex-direction: column;
+  padding: var(--e-2) 0;
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.avisos-muro-fila + .avisos-muro-fila {
+  border-top: 1px solid var(--marca-borde);
+}

@@ -4,6 +4,7 @@ import api from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useReacciones } from '../context/ReaccionesContext.jsx';
 import Avatar from './Avatar.jsx';
+import InsigniaOficial from './InsigniaOficial.jsx';
 import Icono from './Icono.jsx';
 import BotonReportar from './BotonReportar.jsx';
 import SelectorReaccion from './SelectorReaccion.jsx';
@@ -383,6 +384,7 @@ function Comentario({
           ) : (
             comentario.autor_id?.nombre_usuario || 'Vecino'
           )}
+          {comentario.autor_id?.oficial && <InsigniaOficial />}
         </span>
         {comentario.valoracion > 0 && (
           <span className="estrellas" title={`${comentario.valoracion} de 5`}>

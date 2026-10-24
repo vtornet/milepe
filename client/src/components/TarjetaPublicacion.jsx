@@ -6,6 +6,7 @@ import BotonReportar from './BotonReportar.jsx';
 import BotonSeguir from './BotonSeguir.jsx';
 import PanelInteraccion from './PanelInteraccion.jsx';
 import EditarPublicacion from './EditarPublicacion.jsx';
+import InsigniaOficial from './InsigniaOficial.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import api from '../services/api.js';
 import { haceCuanto, fechaCompleta } from '../utils/fechas.js';
@@ -94,6 +95,7 @@ function TarjetaPublicacion({
             ) : (
               quien?.nombre_usuario || 'Vecino de Lepe'
             )}
+            {quien?.oficial && <InsigniaOficial />}
           </div>
           <div className="pub-sub">
             <time dateTime={post.fecha_creacion} title={fechaCompleta(post.fecha_creacion)}>

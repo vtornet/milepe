@@ -20,9 +20,19 @@ function MuroPage() {
   const { usuario } = useAuth();
   const [posts, setPosts] = useState(null);
   const [error, setError] = useState(null);
+  const [avisos, setAvisos] = useState([]);
 
   useEffect(() => {
     let cancelado = false;
+
+    // Los avisos oficiales vigentes van arriba, aparte del feed: un corte de
+    // agua de hoy no puede quedar enterrado bajo lo que publican los vecinos.
+    api
+      .get('/avisos', { params: { limite: 3 } })
+      .then(({ data }) => {
+        if (!cancelado) setAvisos(data.avisos);
+      })
+      .catch(() => {});
 
     api
       .get('/posts')
@@ -69,6 +79,20 @@ function MuroPage() {
           </div>
         </div>
       </div>
+
+      {avisos.length > 0 && (
+        <section className="avisos-muro">
+          <h2 className="panel-titulo">
+            <Icono nombre="aviso" tam={15} /> Avisos del Ayuntamiento
+          </h2>
+          {avisos.map((aviso) => (
+            <Link key={aviso._id} to="/avisos" className="avisos-muro-fila">
+              <strong>{aviso.titulo}</strong>
+              <span className="texto-suave">{aviso.contenido.slice(0, 120)}</span>
+            </Link>
+          ))}
+        </section>
+      )}
 
       {error && (
         <div className="aviso aviso-error">

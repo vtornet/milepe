@@ -6,6 +6,7 @@ import { useSeguimientos } from '../../context/SeguimientosContext.jsx';
 import Avatar from '../../components/Avatar.jsx';
 import Icono from '../../components/Icono.jsx';
 import BotonSeguir from '../../components/BotonSeguir.jsx';
+import InsigniaOficial from '../../components/InsigniaOficial.jsx';
 import TarjetaPublicacion from '../../components/TarjetaPublicacion.jsx';
 import EstadoVacio from '../../components/EstadoVacio.jsx';
 import { Linea } from '../../components/Esqueleto.jsx';
@@ -98,10 +99,27 @@ function VecinoPage() {
 
         <div>
           <div className="pub-nombre" style={{ fontSize: 'var(--t-lg)' }}>
-            {ficha.usuario.nombre_usuario}
+            {ficha.usuario.nombre_usuario} {ficha.usuario.oficial && <InsigniaOficial conTexto />}
           </div>
           <p className="tarjeta-meta">
             Vecino desde {fechaCorta(ficha.usuario.fecha_creacion)}
+            {usuario?.rol === 'admin' && (
+              <>
+                {' · '}
+                <button
+                  type="button"
+                  className="btn btn-plano btn-sm"
+                  onClick={async () => {
+                    const { data } = await api.patch(`/usuarios/${ficha.usuario._id}/oficial`, {
+                      oficial: !ficha.usuario.oficial,
+                    });
+                    setFicha({ ...ficha, usuario: { ...ficha.usuario, oficial: data.usuario.oficial } });
+                  }}
+                >
+                  {ficha.usuario.oficial ? 'Quitar cuenta oficial' : 'Marcar como cuenta oficial'}
+                </button>
+              </>
+            )}
             {ficha.usuario.rol !== 'usuario' && (
               <>
                 {' · '}

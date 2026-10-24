@@ -57,4 +57,4 @@ export const MOTIVOS_REPORTE = [
 // lista estaba escrita a mano en una veintena de sitios: con una copia por
 // controlador, basta olvidarse de una para filtrar el nombre real de todos
 // los vecinos.
-export const CAMPOS_PUBLICOS_USUARIO = 'nombre_usuario avatar_url';
+export const CAMPOS_PUBLICOS_USUARIO = 'nombre_usuario avatar_url oficial';

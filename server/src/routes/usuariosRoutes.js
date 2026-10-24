@@ -7,8 +7,9 @@ import {
   miPerfil,
   actualizarMiPerfil,
   perfilPublico,
+  marcarOficial,
 } from '../controllers/usuariosController.js';
-import { protegido, opcional } from '../middlewares/auth.js';
+import { protegido, opcional, autorizar } from '../middlewares/auth.js';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.get('/bloqueados', protegido, listarBloqueados);
 // tres no se tomen por el id de un usuario.
 router.get('/:id', opcional, perfilPublico);
 
+router.patch('/:id/oficial', protegido, autorizar('admin'), marcarOficial);
 router.post('/:id/bloquear', protegido, bloquearUsuario);
 router.delete('/:id/bloquear', protegido, desbloquearUsuario);
 

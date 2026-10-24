@@ -90,6 +90,14 @@ const usuarioSchema = new Schema(
       enum: ROLES_USUARIO,
       default: 'usuario',
     },
+    // Cuenta oficial (el Ayuntamiento): lleva insignia de verificada en todo
+    // lo que publica y es la unica, junto a un admin, que puede publicar
+    // avisos. No es un rol: no da permisos de moderacion. Solo la pone un
+    // admin (PATCH /api/usuarios/:id/oficial), nunca el propio usuario.
+    oficial: {
+      type: Boolean,
+      default: false,
+    },
     email_verificado: {
       type: Boolean,
       default: false,

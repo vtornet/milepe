@@ -1070,7 +1070,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 121 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 128 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1105,6 +1105,31 @@ several processes downloading the `mongod` binary at once can corrupt it.
   (`MONGOMS_DOWNLOAD_DIR`) so only the first run downloads it.
 - A new model or controller should come with a test in the matching file;
   keep the pattern of one process per file.
+
+### Cuenta oficial y avisos
+
+- `Usuario.oficial` (boolean) marks the town hall's account. **It is not a
+  role**: it gives no moderation powers. Only an admin sets it
+  (`PATCH /api/usuarios/:id/oficial`, also a button on `/vecino/:id`);
+  `actualizarMiPerfil` doesn't accept it, so nobody can declare themselves
+  official. It is part of `CAMPOS_PUBLICOS_USUARIO`, so the badge
+  (`InsigniaOficial`, icon `verificado`) travels with the author everywhere —
+  including the five section aggregations, which project the author by hand
+  and had to add `oficial` explicitly.
+- **Avisos** are a new `tipo` (`'aviso'`) + `AvisoDetalle` (`categoria`:
+  agua, trafico, obras, bando, limpieza, emergencia, otro; optional
+  `vigente_hasta`, the usual "valid while in the future" pattern). Only an
+  official account or an admin can create one (`exigeCuentaOficial`);
+  everything else (reactions, comments, moderation) is the generic post
+  machinery. `GET /api/avisos` returns only current ones by default
+  (`?incluirCaducados=true`), read without aggregation and filtered in memory
+  (`TOPE_LECTURA` 200) because they are few.
+- The Muro shows up to 3 current avisos in a box above the feed
+  (`.avisos-muro`), on top of their normal place in the feed: a water cut today
+  can't be buried under neighbours' posts. Section `/avisos` is in
+  `secciones.js` (icon `aviso`).
+- Nobody is marked official in production yet: create the town hall's
+  account, then mark it from its profile as admin.
 
 ### Farmacias de guardia
 
@@ -1668,8 +1693,8 @@ webhook (raw body!), and `STRIPE_*` variables on Railway.
 
 Rough priority; none started.
 
-1. **Official Ayuntamiento account** with a verified badge/role, so notices
-   (water/traffic cuts, bandos, works) stand apart from neighbours' posts.
+1. **Official Ayuntamiento account** — done (see "Cuenta oficial y avisos");
+   pending: the real account, and push notifications for urgent avisos.
 2. **Quejas with a response**: responsible, visible status history, the
    town hall's answer, and a public resolved-rate / mean-time summary
    (the admin stats already compute mean resolution time).

@@ -11,6 +11,7 @@
 // - principal marca las que van en la barra de pestanas del movil, que solo
 //   caben cuatro; el resto viven en la hoja de "Mas".
 export const SECCIONES = [
+  { ruta: '/avisos', etiqueta: 'Avisos', icono: 'aviso', tipos: ['aviso'] },
   { ruta: '/quejas', etiqueta: 'Quejas', icono: 'quejas', tipos: ['queja'], principal: true },
   { ruta: '/eventos', etiqueta: 'Eventos', icono: 'eventos', tipos: ['evento'], principal: true },
   { ruta: '/fotos', etiqueta: 'Fotos', icono: 'fotos', tipos: ['foto'] },

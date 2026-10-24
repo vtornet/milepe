@@ -196,6 +196,27 @@ export const actualizarMiPerfil = async (req, res, next) => {
 // nombre real, los apellidos y el correo no salen de aqui jamas: ese es
 // justo el motivo de que miPerfil() sea el unico sitio que los re-anade a
 // mano.
+// Marca o desmarca una cuenta como oficial. Solo admin (lo exige la ruta).
+// Va aparte de actualizarMiPerfil a proposito: nadie puede declararse
+// oficial a si mismo.
+export const marcarOficial = async (req, res, next) => {
+  try {
+    if (typeof req.body?.oficial !== 'boolean') {
+      throw new ErrorHttp(400, 'oficial debe ser true o false');
+    }
+    const usuario = await Usuario.findByIdAndUpdate(
+      req.params.id,
+      { oficial: req.body.oficial },
+      { new: true, runValidators: true },
+    ).select(`${CAMPOS_PUBLICOS_USUARIO} rol`);
+    if (!usuario) throw new ErrorHttp(404, 'Usuario no encontrado');
+
+    res.json({ ok: true, usuario });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const perfilPublico = async (req, res, next) => {
   try {
     const usuario = await Usuario.findOne({ _id: req.params.id, activo: true }).select(
