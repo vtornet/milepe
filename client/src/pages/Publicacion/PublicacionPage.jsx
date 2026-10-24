@@ -9,7 +9,7 @@ import { SECCION_POR_TIPO } from '../../router/secciones.js';
 import { useTitulo } from '../../hooks/useTitulo.js';
 
 // Una publicación sola: es a donde lleva un enlace compartido (/p/:id). La
-// vista previa de WhatsApp la pone la edge function netlify/edge-functions/og.js.
+// vista previa de WhatsApp la pone la edge function netlify/edge-functions/seo.js.
 function PublicacionPage() {
   const { id } = useParams();
   const [post, setPost] = useState(null);

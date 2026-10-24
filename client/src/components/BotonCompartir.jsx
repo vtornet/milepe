@@ -3,7 +3,7 @@ import Icono from './Icono.jsx';
 
 // Compartir una publicación: en el móvil abre el menú del sistema (WhatsApp,
 // Telegram...), y donde no lo hay copia el enlace. El enlace es /p/:id, cuya
-// vista previa trae título, texto e imagen (netlify/edge-functions/og.js).
+// vista previa trae título, texto e imagen (netlify/edge-functions/seo.js).
 function BotonCompartir({ post }) {
   const [copiado, setCopiado] = useState(false);
 

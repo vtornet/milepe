@@ -26,6 +26,15 @@
     <meta property="og:image" content="https://milepe.com/icons/compartir.png" />
     <meta property="og:locale" content="es_ES" />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- El contenido que la edge function seo.js mete en #root para los
+         buscadores se ve un instante antes de que arranque la app: que se lea
+         como una página sencilla y no como texto suelto. Sin colores: los
+         pone el tema de la app. -->
+    <style>
+      #root > main, #root > nav { max-width: 680px; margin: 0 auto; padding: 16px; font-family: system-ui, sans-serif; line-height: 1.5; }
+      #root > main ul, #root > nav ul { list-style: none; padding: 0; }
+      #root > nav ul { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+    </style>
   </head>
   <body>
     <div id="root"></div>

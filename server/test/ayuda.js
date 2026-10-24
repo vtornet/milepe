@@ -100,7 +100,7 @@ export async function arrancar({ limites = false } = {}) {
     await mongo.stop();
   };
 
-  return { api, crearUsuario, detener, mongoose };
+  return { api, base, crearUsuario, detener, mongoose };
 }
 
 export const quejaValida = (extra = {}) => ({

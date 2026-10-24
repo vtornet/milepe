@@ -20,6 +20,16 @@
 #
 # El 200 (y no un 301) es importante: tiene que ser una reescritura
 # interna, no una redirección, o la barra de direcciones perdería la ruta.
+# El sitemap lo genera la API (lleva las publicaciones, que solo conoce la
+# base de datos). Va antes de la regla de la SPA: Netlify aplica la primera
+# que encaja. Un proxy (200), no una redirección: los buscadores quieren el
+# sitemap en el mismo dominio que dice robots.txt.
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "https://api.milepe.com/api/sitemap.xml"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
