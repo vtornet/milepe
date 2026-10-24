@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { TIPOS_CONTENIDO_MODERABLE } from './constantes.js';
+import { camposAsignacion } from '../utils/asignacion.js';
 
 const { Schema, model } = mongoose;
 
@@ -41,6 +42,8 @@ const apelacionSchema = new Schema(
     // proposito: una apelacion la revisa un admin, y nunca quien tomo la
     // decision apelada (lo exige el controlador), asi que llamarlo
     // 'revisor_id' evita dar por hecho que es el mismo papel.
+    // Quién del equipo lo está revisando, y hasta cuándo (ver utils/asignacion.js).
+    ...camposAsignacion(Schema),
     revisor_id: {
       type: Schema.Types.ObjectId,
       ref: 'Usuario',

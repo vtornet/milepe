@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import api from '../../services/api.js';
 import VistaContenido from './VistaContenido.jsx';
+import Asignacion from './Asignacion.jsx';
+import NotasInternas from './NotasInternas.jsx';
 
 const ETIQUETA_MOTIVO = {
   spam: 'Spam o publicidad',
@@ -16,7 +18,9 @@ const ETIQUETA_MOTIVO = {
 // desplegable porque son lo único que se hace aquí y conviene que cueste
 // poco; la acción sobre el contenido solo aparece al aceptar, ya que un
 // reporte rechazado no puede llevarla (el servidor lo rechaza con un 400).
-function FilaReporte({ reporte, onResuelto }) {
+function FilaReporte({ reporte: inicial, onResuelto }) {
+  // La asignación se cambia aquí mismo sin recargar la cola.
+  const [reporte, setReporte] = useState(inicial);
   const [decision, setDecision] = useState(null); // null | 'aceptado' | 'rechazado'
   const [accion, setAccion] = useState('ocultar');
   const [nota, setNota] = useState('');
@@ -58,6 +62,11 @@ function FilaReporte({ reporte, onResuelto }) {
       {reporte.detalle && <p className="reporte-detalle">«{reporte.detalle}»</p>}
 
       <VistaContenido contenidoTipo={reporte.contenido_tipo} contenido={reporte.contenido} />
+
+      {!resuelto && (
+        <Asignacion tipo="reportes" item={reporte} onCambio={(cambio) => setReporte({ ...reporte, ...cambio })} />
+      )}
+      <NotasInternas contenidoTipo={reporte.contenido_tipo} contenidoId={reporte.contenido_id} />
 
       {resuelto ? (
         <div className="tarjeta-meta">

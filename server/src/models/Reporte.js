@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import RegistroModeracion from './RegistroModeracion.js';
 import { TIPOS_CONTENIDO_MODERABLE, MOTIVOS_REPORTE } from './constantes.js';
+import { camposAsignacion } from '../utils/asignacion.js';
 
 const { Schema, model } = mongoose;
 
@@ -70,6 +71,8 @@ const reporteSchema = new Schema(
       type: Date,
       default: null,
     },
+    // Quién del equipo lo está revisando, y hasta cuándo (ver utils/asignacion.js).
+    ...camposAsignacion(Schema),
     nota_moderador: {
       type: String,
       trim: true,

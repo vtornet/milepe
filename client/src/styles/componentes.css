@@ -2562,3 +2562,10 @@ select:disabled {
   flex-wrap: wrap;
   gap: var(--e-2) var(--e-3);
 }
+
+/* Notas internas del equipo en la cola de moderación. */
+.notas-internas {
+  margin-top: var(--e-3);
+  display: grid;
+  gap: var(--e-2);
+}

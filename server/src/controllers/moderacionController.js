@@ -8,6 +8,8 @@ import { TIPOS_CONTENIDO_MODERABLE, MOTIVOS_REPORTE, CAMPOS_PUBLICOS_USUARIO } f
 import Mensaje from '../models/Mensaje.js';
 import { cargarModerable, puedeReportar } from '../utils/contenidoModerable.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
+import NotaModeracion from '../models/NotaModeracion.js';
+import { tomar, soltar, exigirLibreOMio, filtroAsignacion } from '../utils/asignacion.js';
 
 // Que accion del registro corresponde a cada estado al que se mueve el
 // contenido. 'publicado' es "restaurar" porque a este estado solo se llega
@@ -330,6 +332,7 @@ export const listarReportes = async (req, res, next) => {
     }
     if (req.query.motivo) filtro.motivo = req.query.motivo;
     if (req.query.contenido_tipo) filtro.contenido_tipo = req.query.contenido_tipo;
+    Object.assign(filtro, filtroAsignacion(req.query.asignacion, req.usuario));
 
     const [reportes, total] = await Promise.all([
       Reporte.find(filtro)
@@ -338,7 +341,7 @@ export const listarReportes = async (req, res, next) => {
         .sort({ fecha_creacion: estado === 'pendiente' ? 1 : -1 })
         .skip((pagina - 1) * limite)
         .limit(limite)
-        .populate('reportante_id autor_contenido_id moderador_id', CAMPOS_PUBLICOS_USUARIO),
+        .populate('reportante_id autor_contenido_id moderador_id asignado_a', CAMPOS_PUBLICOS_USUARIO),
       Reporte.countDocuments(filtro),
     ]);
 
@@ -379,6 +382,7 @@ export const resolverReporte = async (req, res, next) => {
     if (reporte.estado !== 'pendiente') {
       throw new ErrorHttp(409, 'Este reporte ya estaba resuelto');
     }
+    exigirLibreOMio(reporte, req.usuario);
 
     const contenido = await cargarModerable(reporte.contenido_tipo, reporte.contenido_id);
 
@@ -577,13 +581,14 @@ export const listarApelaciones = async (req, res, next) => {
     const filtro = {};
     const estado = req.query.estado || 'pendiente';
     if (estado !== 'todos') filtro.estado = estado;
+    Object.assign(filtro, filtroAsignacion(req.query.asignacion, req.usuario));
 
     const [apelaciones, total] = await Promise.all([
       Apelacion.find(filtro)
         .sort({ fecha_creacion: estado === 'pendiente' ? 1 : -1 })
         .skip((pagina - 1) * limite)
         .limit(limite)
-        .populate('autor_id revisor_id', CAMPOS_PUBLICOS_USUARIO),
+        .populate('autor_id revisor_id asignado_a', CAMPOS_PUBLICOS_USUARIO),
       Apelacion.countDocuments(filtro),
     ]);
 
@@ -614,6 +619,7 @@ export const resolverApelacion = async (req, res, next) => {
     if (apelacion.estado !== 'pendiente') {
       throw new ErrorHttp(409, 'Esta apelacion ya estaba resuelta');
     }
+    exigirLibreOMio(apelacion, req.usuario);
 
     // Nadie revisa su propia decision. Se mira en el registro de
     // auditoria, que es quien sabe quien actuo; con Post.moderador_id no
@@ -677,6 +683,78 @@ export const resolverApelacion = async (req, res, next) => {
     }
 
     res.json({ ok: true, apelacion, estado_contenido: contenido.estado_moderacion });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- Reparto del trabajo (varios moderadores) ---
+
+// { tomar: true } se lo queda quien pide (24 h, ver utils/asignacion.js);
+// { tomar: false } lo suelta.
+const cambiarAsignacion = async (Modelo, req) => {
+  if (typeof req.body.tomar !== 'boolean') throw new ErrorHttp(400, 'tomar debe ser true o false');
+  const doc = req.body.tomar ? await tomar(Modelo, req.params.id, req.usuario) : await soltar(Modelo, req.params.id, req.usuario);
+  await doc.populate('asignado_a', CAMPOS_PUBLICOS_USUARIO);
+  return { asignado_a: doc.asignado_a, asignado_hasta: doc.asignado_hasta };
+};
+
+export const asignarReporte = async (req, res, next) => {
+  try {
+    res.json({ ok: true, ...(await cambiarAsignacion(Reporte, req)) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Una apelación no se la puede quedar quien tomó la decisión apelada: es la
+// misma regla que al resolverla, comprobada antes para que no la bloquee
+// durante un día alguien que de todas formas no podría resolverla.
+export const asignarApelacion = async (req, res, next) => {
+  try {
+    if (req.body.tomar === true) {
+      const apelacion = await Apelacion.findById(req.params.id);
+      if (!apelacion) throw new ErrorHttp(404, 'Apelacion no encontrada');
+      const autorDeLaDecision = await moderadorQueActuo(apelacion.contenido_tipo, apelacion.contenido_id);
+      if (autorDeLaDecision && autorDeLaDecision.equals(req.usuario._id)) {
+        throw new ErrorHttp(403, 'No puedes quedarte una apelacion contra tu propia decision de moderacion');
+      }
+    }
+    res.json({ ok: true, ...(await cambiarAsignacion(Apelacion, req)) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- Notas internas del equipo sobre un contenido ---
+
+const contenidoDeLaPeticion = (fuente) => {
+  const { contenido_tipo, contenido_id } = fuente;
+  if (!TIPOS_CONTENIDO_MODERABLE.includes(contenido_tipo)) {
+    throw new ErrorHttp(400, `contenido_tipo debe ser uno de: ${TIPOS_CONTENIDO_MODERABLE.join(', ')}`);
+  }
+  if (!/^[a-f0-9]{24}$/i.test(String(contenido_id || ''))) throw new ErrorHttp(400, 'contenido_id no es válido');
+  return { contenido_tipo, contenido_id };
+};
+
+export const listarNotas = async (req, res, next) => {
+  try {
+    const filtro = contenidoDeLaPeticion(req.query);
+    const notas = await NotaModeracion.find(filtro).sort({ fecha_creacion: 1 }).populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
+    res.json({ ok: true, notas });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const crearNota = async (req, res, next) => {
+  try {
+    const contenido = contenidoDeLaPeticion(req.body);
+    // Que exista: una nota sobre un id inventado no es contexto de nada.
+    await cargarModerable(contenido.contenido_tipo, contenido.contenido_id);
+    const nota = await NotaModeracion.create({ ...contenido, autor_id: req.usuario._id, texto: req.body.texto });
+    await nota.populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
+    res.status(201).json({ ok: true, nota });
   } catch (error) {
     next(error);
   }

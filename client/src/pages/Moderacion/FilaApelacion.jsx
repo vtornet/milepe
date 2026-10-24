@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import api from '../../services/api.js';
 import VistaContenido from './VistaContenido.jsx';
+import Asignacion from './Asignacion.jsx';
+import NotasInternas from './NotasInternas.jsx';
 
 // Una apelación de la cola. Solo un admin la puede resolver, y nunca la de
 // su propia decisión: eso lo comprueba el servidor contra el registro de
@@ -8,7 +10,8 @@ import VistaContenido from './VistaContenido.jsx';
 // responder 403. Se muestra ese mensaje tal cual en vez de esconder el
 // formulario, porque el cliente no sabe quién tomó la decisión (al autor
 // no se le dice, y esta cola tampoco lo trae).
-function FilaApelacion({ apelacion, puedeResolver, onResuelta }) {
+function FilaApelacion({ apelacion: inicial, puedeResolver, onResuelta }) {
+  const [apelacion, setApelacion] = useState(inicial);
   const [decision, setDecision] = useState(null); // null | 'aceptada' | 'rechazada'
   const [respuesta, setRespuesta] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -48,6 +51,11 @@ function FilaApelacion({ apelacion, puedeResolver, onResuelta }) {
       <p className="reporte-detalle">«{apelacion.texto}»</p>
 
       <VistaContenido contenidoTipo={apelacion.contenido_tipo} contenido={apelacion.contenido} />
+
+      {!resuelta && puedeResolver && (
+        <Asignacion tipo="apelaciones" item={apelacion} onCambio={(cambio) => setApelacion({ ...apelacion, ...cambio })} />
+      )}
+      <NotasInternas contenidoTipo={apelacion.contenido_tipo} contenidoId={apelacion.contenido_id} />
 
       {resuelta && (
         <div className="tarjeta-meta">

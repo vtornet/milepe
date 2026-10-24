@@ -13,6 +13,10 @@ import {
   listarEdicionesPendientes,
   aprobarEdicion,
   listarCatalogos,
+  asignarReporte,
+  asignarApelacion,
+  listarNotas,
+  crearNota,
 } from '../controllers/moderacionController.js';
 import { protegido, autorizar } from '../middlewares/auth.js';
 import { exigePerfilCompleto } from '../middlewares/perfil.js';
@@ -41,6 +45,9 @@ router.post('/apelaciones', protegido, crearApelacion);
 router.get('/resumen', protegido, equipo, resumenPendientes);
 router.get('/reportes', protegido, equipo, listarReportes);
 router.patch('/reportes/:id', protegido, equipo, resolverReporte);
+router.patch('/reportes/:id/asignacion', protegido, equipo, asignarReporte);
+router.get('/notas', protegido, equipo, listarNotas);
+router.post('/notas', protegido, equipo, crearNota);
 router.patch('/contenido', protegido, equipo, moderarContenido);
 router.get('/registro', protegido, equipo, listarRegistro);
 
@@ -53,5 +60,6 @@ router.patch('/ediciones/:id', protegido, equipo, aprobarEdicion);
 // Apelaciones: ver la cola la puede ver el equipo, resolverla solo admin.
 router.get('/apelaciones', protegido, equipo, listarApelaciones);
 router.patch('/apelaciones/:id', protegido, soloAdmin, resolverApelacion);
+router.patch('/apelaciones/:id/asignacion', protegido, soloAdmin, asignarApelacion);
 
 export default router;

@@ -35,6 +35,8 @@ function ModeracionPage() {
   const [ediciones, setEdiciones] = useState(null);
 
   const [verResueltos, setVerResueltos] = useState(false);
+  // '' = todo, 'mias' = lo que tengo yo, 'libres' = lo que nadie revisa.
+  const [asignacion, setAsignacion] = useState('');
 
   const cargarResumen = useCallback(() => {
     api
@@ -45,17 +47,17 @@ function ModeracionPage() {
 
   const cargarReportes = useCallback(async () => {
     const { data } = await api.get('/moderacion/reportes', {
-      params: { estado: verResueltos ? 'todos' : 'pendiente', limite: 50 },
+      params: { estado: verResueltos ? 'todos' : 'pendiente', limite: 50, asignacion: asignacion || undefined },
     });
     setReportes(data.reportes);
-  }, [verResueltos]);
+  }, [verResueltos, asignacion]);
 
   const cargarApelaciones = useCallback(async () => {
     const { data } = await api.get('/moderacion/apelaciones', {
-      params: { estado: verResueltos ? 'todos' : 'pendiente', limite: 50 },
+      params: { estado: verResueltos ? 'todos' : 'pendiente', limite: 50, asignacion: asignacion || undefined },
     });
     setApelaciones(data.apelaciones);
-  }, [verResueltos]);
+  }, [verResueltos, asignacion]);
 
   // Esta cola no tiene "ya resueltas" que mirar: una edicion aprobada
   // desaparece de aqui y lo que queda de ella esta en el registro.
@@ -133,6 +135,17 @@ function ModeracionPage() {
             Ver también los ya resueltos
           </label>
         )}
+
+        {['reportes', 'apelaciones'].includes(pestana) && (
+          <label className="filtro-casilla">
+            <span className="solo-lectores">Asignación</span>
+            <select value={asignacion} onChange={(evento) => setAsignacion(evento.target.value)} style={{ width: 'auto' }}>
+              <option value="">Todos</option>
+              <option value="libres">Sin asignar</option>
+              <option value="mias">Los míos</option>
+            </select>
+          </label>
+        )}
       </div>
 
       {error && <p className="mensaje-error">{error}</p>}
@@ -142,7 +155,9 @@ function ModeracionPage() {
           {reportes === null && <p>Cargando reportes...</p>}
           {reportes?.length === 0 && <p>No hay reportes {verResueltos ? '' : 'pendientes'}. Buena señal.</p>}
           {reportes?.map((reporte) => (
-            <FilaReporte key={reporte._id} reporte={reporte} onResuelto={trasResolver} />
+            // La fila guarda su asignación en estado propio: con el estado en la
+            // clave, una fila que se resuelve se monta de nuevo con los datos frescos.
+            <FilaReporte key={`${reporte._id}-${reporte.estado}`} reporte={reporte} onResuelto={trasResolver} />
           ))}
         </>
       )}
@@ -153,7 +168,7 @@ function ModeracionPage() {
           {apelaciones?.length === 0 && <p>No hay apelaciones {verResueltos ? '' : 'pendientes'}.</p>}
           {apelaciones?.map((apelacion) => (
             <FilaApelacion
-              key={apelacion._id}
+              key={`${apelacion._id}-${apelacion.estado}`}
               apelacion={apelacion}
               puedeResolver={esAdmin}
               onResuelta={trasResolver}

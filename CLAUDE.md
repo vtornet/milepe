@@ -347,6 +347,32 @@ had to report the whole post containing it).
   controller. Kept because `/api/posts/:id/...` is where you'd look for
   them, but there's no logic in them — don't add any there.
 
+**Several moderators** (`utils/asignacion.js`, `NotaModeracion`):
+
+- **Assignment.** A pending report (team) or appeal (admins) can be taken:
+  `PATCH /reportes/:id/asignacion` / `/apelaciones/:id/asignacion` with
+  `{ tomar: true|false }`. Fields `asignado_a` + `asignado_hasta` on both
+  models — the "valid while the date is in the future" pattern, **24 h**, so
+  an assignment left behind frees itself. Taking is one atomic
+  `findOneAndUpdate` (two moderators clicking at once: one gets 409);
+  taking your own renews it. Releasing: the holder or an admin.
+- **Resolving** a report or appeal someone else holds answers **409**
+  (`exigirLibreOMio`); free or yours, it goes through as before. An admin
+  can't take an appeal against their own decision (403, same rule as
+  resolving it, checked early so they don't block it for a day).
+- Queues accept `?asignacion=mias|libres` (anything else 400).
+- **Internal notes** (`GET/POST /api/moderacion/notas`, team only) are about
+  the *content* (`contenido_tipo` + `contenido_id`), like appeals, so they
+  serve all its reports and its appeal. **Append-only** (same hooks as the
+  audit log), never sent to the author (not in mi-contenido-moderado), and a
+  note on a non-existent content is 404. Not in the RGPD export: they are the
+  team's working record, like the audit log.
+- Client: `Asignacion.jsx` and `NotasInternas.jsx` in each report/appeal row
+  of `ModeracionPage`, plus a "Todos / Sin asignar / Los míos" filter. Rows
+  are keyed by `id-estado` because they keep the assignment in local state.
+- Tests: `protocoloModeracion.test.js` (race, expiry, admin release, appeal
+  rule, notes privacy and append-only).
+
 The embedded-array-to-collection switch needed no data migration: the live
 database was checked first and held 0 embedded reports (3 posts, none
 moderated), so nothing was lost by dropping the field.
@@ -1152,7 +1178,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 231 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 238 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -2011,8 +2037,8 @@ Rough priority; none started.
    Pending: Google Search Console. Page titles come from `hooks/useTitulo.js`; `robots.txt` is static.
 8. **Languages** (turismo.lepe.es offers EN/DE/PT; Portugal is next door).
 9. **RGPD** — done (see "RGPD: descargar y eliminar la cuenta").
-10. A moderation **protocol with more than one person**: today one
-    moderator; appeals are admin-only and nobody may resolve their own.
+10. A moderation **protocol with more than one person** — done (see
+    "Several moderators" under Moderation).
 
 ### 6. Technical base
 
