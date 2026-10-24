@@ -2,9 +2,12 @@ import { useRef, useState } from 'react';
 import api from '../services/api.js';
 import Avatar from './Avatar.jsx';
 import Icono from './Icono.jsx';
+import { reducirImagen } from '../utils/reducirImagen.js';
 
-// Selector de foto de perfil: elige archivo, lo sube a /api/subidas/imagenes
-// (el mismo endpoint genérico que usa Fotos) y devuelve la URL al padre.
+// Selector de foto de perfil: elige archivo, lo reduce en el propio móvil y lo
+// sube a /api/subidas/avatar (que, a diferencia de /imagenes, no exige el
+// perfil completo: la foto es parte de lo que lo completa). Devuelve la URL al
+// padre, que la guarda al pulsar Guardar.
 //
 // La vista previa se pinta antes de que termine la subida, con un
 // createObjectURL local: en un móvil con poca cobertura, ver la foto al
@@ -21,24 +24,25 @@ function SelectorAvatar({ url, nombreUsuario, onCambio }) {
 
     setError(null);
 
-    // El servidor rechaza lo que no sea imagen y lo que pase de 8 MB, pero
-    // avisar aquí ahorra una subida entera por el móvil para nada.
     if (!archivo.type.startsWith('image/')) {
       setError('Ese archivo no es una imagen.');
       return;
     }
-    if (archivo.size > 8 * 1024 * 1024) {
+    // Una foto de perfil no necesita más de 1024 px: reducirla aquí evita el
+    // límite de 8 MB (las fotos de móvil lo pasan a menudo) y gasta menos datos.
+    const reducida = await reducirImagen(archivo, { ladoMaximo: 1024 });
+    if (reducida.size > 8 * 1024 * 1024) {
       setError('La imagen no puede pasar de 8 MB.');
       return;
     }
 
-    setVistaPrevia(URL.createObjectURL(archivo));
+    setVistaPrevia(URL.createObjectURL(reducida));
     setSubiendo(true);
 
     try {
       const formulario = new FormData();
-      formulario.append('imagenes', archivo);
-      const { data } = await api.post('/subidas/imagenes', formulario);
+      formulario.append('imagen', reducida);
+      const { data } = await api.post('/subidas/avatar', formulario);
       onCambio(data.imagenes[0]);
     } catch (err) {
       setError(err.response?.data?.mensaje || 'No se pudo subir la foto.');

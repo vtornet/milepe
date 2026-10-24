@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Icono from './Icono.jsx';
-import { MAX_FOTOS, TAMANO_MAXIMO_FOTO, TIPOS_FOTO } from '../utils/subidas.js';
+import { MAX_FOTOS, TIPOS_FOTO } from '../utils/subidas.js';
 
 // Miniatura de un archivo todavía sin subir. Cada una crea y libera su
 // propia URL local: si lo hiciera el selector con toda la lista, cada
@@ -43,10 +43,6 @@ function SelectorFotos({ archivos, onChange, max = MAX_FOTOS, etiqueta = 'Fotos 
     const validos = elegidos.filter((archivo) => {
       if (!TIPOS_FOTO.includes(archivo.type)) {
         avisos.push(`"${archivo.name}" no es una imagen admitida (JPG, PNG, WebP o GIF).`);
-        return false;
-      }
-      if (archivo.size > TAMANO_MAXIMO_FOTO) {
-        avisos.push(`"${archivo.name}" pasa de 8 MB.`);
         return false;
       }
       return true;

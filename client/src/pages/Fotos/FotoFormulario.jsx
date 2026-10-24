@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { subirImagenes } from '../../utils/subidas.js';
 import api from '../../services/api.js';
 
 // Igual que el servidor (FotoDetalle.js): decada mas antigua aceptada, y la
@@ -33,17 +34,12 @@ function FotoFormulario({ onCreada }) {
 
     setSubiendo(true);
     try {
-      const formData = new FormData();
-      archivos.forEach((archivo) => formData.append('imagenes', archivo));
-
-      const { data: subida } = await api.post('/subidas/imagenes', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const subidas = await subirImagenes(archivos);
 
       const { data } = await api.post('/fotos', {
         titulo: datos.titulo,
         contenido: datos.contenido,
-        imagenes: subida.imagenes,
+        imagenes: subidas,
         epoca: datos.epoca,
         decada: datos.epoca === 'antigua' ? Number(datos.decada) : undefined,
       });

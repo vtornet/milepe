@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { subirImagenes } from '../../utils/subidas.js';
 import api from '../../services/api.js';
 import SelectorUbicacion from '../Quejas/SelectorUbicacion.jsx';
 import { SECCIONES_TURISMO } from './seccionesTurismo.js';
@@ -41,12 +42,8 @@ function TurismoFormulario({ seccion, recurso, onGuardado, onCancelar }) {
       let todasLasImagenes = imagenes;
 
       if (archivos.length > 0) {
-        const formData = new FormData();
-        archivos.forEach((archivo) => formData.append('imagenes', archivo));
-        const { data: subida } = await api.post('/subidas/imagenes', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        todasLasImagenes = [...imagenes, ...subida.imagenes];
+        const subidas = await subirImagenes(archivos);
+        todasLasImagenes = [...imagenes, ...subidas];
       }
 
       // Los campos de texto vacios se mandan como null: borran lo que

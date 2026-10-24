@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { subirImagenes } from '../utils/subidas.js';
 import api from '../services/api.js';
 import Icono from './Icono.jsx';
 
@@ -43,13 +44,8 @@ function EditarPublicacion({ post, onGuardado, onCancelar }) {
       let listaFinal = imagenes;
 
       if (archivos.length > 0) {
-        const formData = new FormData();
-        archivos.forEach((archivo) => formData.append('imagenes', archivo));
-
-        const { data: subida } = await api.post('/subidas/imagenes', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        listaFinal = [...imagenes, ...subida.imagenes];
+        const subidas = await subirImagenes(archivos);
+        listaFinal = [...imagenes, ...subidas];
       }
 
       const cambios = {};

@@ -1533,6 +1533,18 @@ class. Needs real `CLOUDINARY_CLOUD_NAME`/`_API_KEY`/`_API_SECRET` in
 `.env` (trimmed on load, see Despliegue) — nothing here works against `mongodb-memory-server`-style fakes,
 there's no local Cloudinary stand-in.
 
+**Avatar upload has its own route**, `POST /api/subidas/avatar` (one file, folder
+`milepe/avatares`), gated by `exigeEmailVerificado` and *not* by
+`exigePerfilCompleto`: the photo is one of the things that complete the
+profile, so with the full gate a new e-mail account could never upload it and
+therefore never publish (it got 403 "Completa tu perfil" on every try — found
+in production). **Photos are shrunk in the browser before upload**
+(`utils/reducirImagen.js`: 1600 px for posts, 1024 px for avatars, JPEG 0.85;
+left untouched if already small, and passed through as-is if the browser
+can't decode it, e.g. HEIC on Android). Phone photos often exceed the 8 MB
+limit and cost mobile data; every upload goes through `utils/subidas.js`
+`subirImagenes`, so the selectors no longer reject by size.
+
 Every section's `Post` accepts `imagenes` (an array of already-uploaded
 URLs) at creation. The client forms that take photos are `FotoFormulario`
 (required), `NegocioFormulario` and `EventoFormulario` (optional), plus the

@@ -1,4 +1,5 @@
 import api from '../services/api.js';
+import { reducirImagen } from './reducirImagen.js';
 
 // Mismos límites que el servidor (middlewares/upload.js): 5 archivos por
 // subida, 8 MB cada uno, solo estos formatos. Se repiten aquí para avisar
@@ -12,8 +13,10 @@ export const TIPOS_FOTO = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 export const subirImagenes = async (archivos) => {
   if (archivos.length === 0) return [];
 
+  // Se reducen en el móvil antes de subir: menos datos y nunca el límite de 8 MB.
+  const reducidas = await Promise.all(archivos.map((archivo) => reducirImagen(archivo)));
   const formData = new FormData();
-  archivos.forEach((archivo) => formData.append('imagenes', archivo));
+  reducidas.forEach((archivo) => formData.append('imagenes', archivo));
 
   const { data } = await api.post('/subidas/imagenes', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

@@ -94,6 +94,23 @@ test('una cuenta sin verificar tampoco puede reportar por la ruta genérica', as
   assert.equal(r.body.razon, 'email_sin_verificar');
 });
 
+test('la foto de perfil se puede subir antes de tener el perfil completo (pero no sin verificar el correo)', async () => {
+  // Sin archivo: si pasa la puerta, el controlador contesta 400 "No se ha
+  // enviado ninguna imagen" sin llegar a Cloudinary.
+  const incompleto = await t.crearUsuario({ perfil_completo: false });
+  const r = await t.api.post('/subidas/avatar', {}, { token: incompleto.token });
+  assert.equal(r.status, 400, 'pasa la puerta: era el bloqueo circular');
+  assert.match(r.body.mensaje, /ninguna imagen/);
+
+  const sinVerificar = await t.crearUsuario({ email_verificado: false, perfil_completo: false });
+  const r2 = await t.api.post('/subidas/avatar', {}, { token: sinVerificar.token });
+  assert.equal(r2.status, 403);
+  assert.equal(r2.body.razon, 'email_sin_verificar');
+
+  // Las imágenes de publicaciones siguen exigiendo el perfil completo.
+  assert.equal((await t.api.post('/subidas/imagenes', {}, { token: incompleto.token })).status, 403);
+});
+
 test('recuperar contraseña contesta lo mismo exista o no la cuenta', async () => {
   const existe = await t.api.post('/auth/recuperar', { email: 'nuevo@ejemplo.com' });
   const noExiste = await t.api.post('/auth/recuperar', { email: 'fantasma@ejemplo.com' });

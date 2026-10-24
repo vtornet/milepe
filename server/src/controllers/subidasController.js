@@ -22,3 +22,18 @@ export const subirImagenes = async (req, res, next) => {
     next(error);
   }
 };
+
+// La foto de perfil: una sola imagen, en su propia carpeta. Ruta aparte de
+// /imagenes porque se usa ANTES de tener el perfil completo (es uno de los
+// datos que lo completan).
+export const subirAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw new ErrorHttp(400, 'No se ha enviado ninguna imagen');
+    }
+    const resultado = await subirImagen(req.file.buffer, { carpeta: 'milepe/avatares' });
+    res.status(201).json({ ok: true, imagenes: [resultado.secure_url] });
+  } catch (error) {
+    next(error);
+  }
+};

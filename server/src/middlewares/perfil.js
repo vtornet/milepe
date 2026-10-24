@@ -40,3 +40,21 @@ export const exigePerfilCompleto = (req, res, next) => {
 
   next();
 };
+
+// Solo la primera mitad: correo verificado. Para lo que hace falta PARA
+// completar el perfil (subir la foto): con exigePerfilCompleto ahi, una
+// cuenta nueva no podia subir la foto que le faltaba para completarlo.
+export const exigeEmailVerificado = (req, res, next) => {
+  if (!req.usuario) {
+    return next(new ErrorHttp(401, 'No autenticado'));
+  }
+  if (!req.usuario.email_verificado) {
+    return next(
+      Object.assign(
+        new ErrorHttp(403, 'Verifica tu correo electronico antes de subir tu foto. Te hemos enviado un enlace.'),
+        { razon: 'email_sin_verificar' },
+      ),
+    );
+  }
+  next();
+};
