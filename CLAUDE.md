@@ -1178,7 +1178,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 238 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 240 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1279,7 +1279,7 @@ collection — **when a new collection stores data about a user, add it here**.
 
 `GET /api/buscar?q=` (`buscarController.js`, public; with a session it also
 returns neighbours) searches published posts of every section, Turismo,
-contacts and pharmacies in one go; the top bar's search box and `/buscar`
+contacts, pharmacies and active groups (name + description) in one go; the top bar's search box and `/buscar`
 (in `secciones.js` so phones, where the box doesn't fit, can reach it) use
 it. Every word must appear, in any field. **It uses regular expressions, not
 the `Post` text index**: that index is English (bad stemming for Spanish),

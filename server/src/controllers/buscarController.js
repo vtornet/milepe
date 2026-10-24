@@ -2,6 +2,7 @@ import Post from '../models/Post.js';
 import RecursoTuristico from '../models/RecursoTuristico.js';
 import ContactoInteres from '../models/ContactoInteres.js';
 import Farmacia from '../models/Farmacia.js';
+import Grupo from '../models/Grupo.js';
 import Usuario from '../models/Usuario.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { CAMPOS_PUBLICOS_USUARIO } from '../models/constantes.js';
@@ -57,7 +58,7 @@ export const buscar = async (req, res, next) => {
       throw new ErrorHttp(400, 'Escribe al menos dos letras para buscar');
     }
 
-    const [publicaciones, turismo, contactos, farmacias, vecinos] = await Promise.all([
+    const [publicaciones, turismo, contactos, farmacias, vecinos, grupos] = await Promise.all([
       Post.find({ estado_moderacion: 'publicado', ...todasLasPalabras(palabras, ['titulo', 'contenido']) })
         .sort({ fecha_creacion: -1 })
         .limit(20)
@@ -78,9 +79,14 @@ export const buscar = async (req, res, next) => {
             .limit(5)
             .select(CAMPOS_PUBLICOS_USUARIO)
         : [],
+      // Los grupos son públicos: salen con o sin sesión.
+      Grupo.find({ activo: true, ...todasLasPalabras(palabras, ['nombre', 'descripcion']) })
+        .sort({ num_miembros: -1 })
+        .limit(5)
+        .select('nombre categoria num_miembros'),
     ]);
 
-    res.json({ ok: true, consulta, publicaciones, turismo, contactos, farmacias, vecinos });
+    res.json({ ok: true, consulta, publicaciones, turismo, contactos, farmacias, vecinos, grupos });
   } catch (error) {
     next(error);
   }

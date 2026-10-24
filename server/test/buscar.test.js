@@ -64,3 +64,12 @@ test('una búsqueda vacía o de una letra es 400; símbolos raros no rompen nada
   assert.equal((await buscar('a')).status, 400);
   assert.equal((await buscar('(((')).status, 200);
 });
+
+test('encuentra grupos por nombre o descripción, sin sesión, y no los retirados', async () => {
+  const g = await t.api.post('/grupos', { nombre: 'Peña Flamenca El Terrao', descripcion: 'Cante y baile', categoria: 'pena' }, { token: vecino.token });
+  const retirado = await t.api.post('/grupos', { nombre: 'Peña Retirada', descripcion: 'Cante antiguo', categoria: 'pena' }, { token: vecino.token });
+  await t.api.patch(`/grupos/${retirado.body.grupo._id}`, { activo: false }, { token: admin.token });
+
+  assert.deepEqual((await buscar('pena flamenca')).body.grupos.map((x) => x._id), [g.body.grupo._id]);
+  assert.deepEqual((await buscar('cante')).body.grupos.map((x) => x.nombre), ['Peña Flamenca El Terrao']);
+});

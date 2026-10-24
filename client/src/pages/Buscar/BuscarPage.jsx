@@ -8,6 +8,7 @@ import EstadoVacio from '../../components/EstadoVacio.jsx';
 import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import { SECCION_POR_TIPO } from '../../router/secciones.js';
 import { useTitulo } from '../../hooks/useTitulo.js';
+import { CATEGORIAS_GRUPO } from '../Grupos/categoriasGrupo.js';
 
 const enlaceTelefono = (telefono) => `tel:${telefono.split(/[/;,]/)[0].replace(/[^\d+]/g, '')}`;
 
@@ -50,7 +51,7 @@ function BuscarPage() {
   };
 
   const total = resultado
-    ? resultado.publicaciones.length + resultado.turismo.length + resultado.contactos.length + resultado.farmacias.length + resultado.vecinos.length
+    ? resultado.publicaciones.length + resultado.turismo.length + resultado.contactos.length + resultado.farmacias.length + resultado.vecinos.length + (resultado.grupos?.length || 0)
     : 0;
 
   return (
@@ -117,6 +118,20 @@ function BuscarPage() {
             <Link key={r._id} to={`/turismo/${r.seccion}`} className="tarjeta fila" style={{ textDecoration: 'none' }}>
               <strong>{r.titulo}</strong>
               {r.direccion && <span className="tarjeta-meta"> · {r.direccion}</span>}
+            </Link>
+          ))}
+        </>
+      )}
+
+      {resultado?.grupos?.length > 0 && (
+        <>
+          <h2 className="contactos-titulo">Grupos</h2>
+          {resultado.grupos.map((g) => (
+            <Link key={g._id} to={`/grupos/${g._id}`} className="tarjeta fila" style={{ textDecoration: 'none', justifyContent: 'space-between' }}>
+              <strong>{g.nombre}</strong>
+              <span className="tarjeta-meta">
+                {CATEGORIAS_GRUPO[g.categoria] || g.categoria} · {g.num_miembros} {g.num_miembros === 1 ? 'miembro' : 'miembros'}
+              </span>
             </Link>
           ))}
         </>
