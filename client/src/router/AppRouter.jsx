@@ -26,6 +26,7 @@ import TablonPage from '../pages/Tablon/TablonPage.jsx';
 import AnimalesPage from '../pages/Animales/AnimalesPage.jsx';
 import BuscarPage from '../pages/Buscar/BuscarPage.jsx';
 import EncuestasPage from '../pages/Encuestas/EncuestasPage.jsx';
+import PublicacionPage from '../pages/Publicacion/PublicacionPage.jsx';
 import MensajesPage from '../pages/Mensajes/MensajesPage.jsx';
 import ConversacionPage from '../pages/Mensajes/ConversacionPage.jsx';
 import ModeracionPage from '../pages/Moderacion/ModeracionPage.jsx';
@@ -62,6 +63,8 @@ function AppRouter() {
       <Route path="/avisos" element={<AvisosPage />} />
       <Route path="/buscar" element={<BuscarPage />} />
       <Route path="/encuestas" element={<EncuestasPage />} />
+      {/* Una publicación sola: el destino de los enlaces compartidos. */}
+      <Route path="/p/:id" element={<PublicacionPage />} />
 
       {/* Grupos: cada pestaña conserva su ruta de siempre; el grupo solo
           añade la fila de pestañas encima. */}

@@ -58,7 +58,11 @@ export const obtenerPost = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id).populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
 
-    if (noEsVisible(post)) {
+    // Solo lo publicado: esta ruta es la de los enlaces compartidos (/p/:id)
+    // y la de la vista previa de WhatsApp, y algo ocultado por moderacion no
+    // debe poder leerse por tener su enlace. noEsVisible solo excluia lo
+    // eliminado.
+    if (!post || post.estado_moderacion !== 'publicado') {
       throw new ErrorHttp(404, 'Publicacion no encontrada');
     }
 

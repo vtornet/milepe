@@ -7,6 +7,7 @@ import BotonSeguir from './BotonSeguir.jsx';
 import PanelInteraccion from './PanelInteraccion.jsx';
 import EditarPublicacion from './EditarPublicacion.jsx';
 import InsigniaOficial from './InsigniaOficial.jsx';
+import BotonCompartir from './BotonCompartir.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import api from '../services/api.js';
 import { haceCuanto, fechaCompleta } from '../utils/fechas.js';
@@ -151,6 +152,7 @@ function TarjetaPublicacion({
           </button>
         )}
 
+        <BotonCompartir post={post} />
         <BotonReportar contenidoTipo="post" contenidoId={post._id} compacto />
       </header>
 

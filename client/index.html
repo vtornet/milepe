@@ -13,8 +13,19 @@
          verde clara encima de una app oscura. -->
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0e1216" media="(prefers-color-scheme: dark)" />
-    <meta name="description" content="MiLepe: red social hiperlocal de Lepe (Huelva)" />
+    <meta name="description" content="MiLepe: la red social de Lepe (Huelva). Quejas, eventos, avisos, tablón, farmacias de guardia y mucho más." />
     <title>MiLepe</title>
+    <!-- Vista previa al compartir un enlace (WhatsApp, Telegram, Facebook...).
+         En /p/:id la edge function netlify/edge-functions/og.js las sustituye
+         por las de la publicación: mantener este formato, que es el que busca. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MiLepe" />
+    <meta property="og:title" content="MiLepe, la red social de Lepe" />
+    <meta property="og:description" content="Quejas, eventos, avisos del Ayuntamiento, tablón, farmacias de guardia y mucho más, contado por los vecinos." />
+    <meta property="og:url" content="https://milepe.com" />
+    <meta property="og:image" content="https://milepe.com/icons/compartir.png" />
+    <meta property="og:locale" content="es_ES" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>

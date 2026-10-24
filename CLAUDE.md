@@ -1134,7 +1134,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 195 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 199 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1238,6 +1238,29 @@ n accept their accented/upper-case forms (added by hand: the database's
 case-insensitive mode doesn't always fold accented letters) and escapes the
 input. Fine at a town's volume; if it ever isn't, the step is a Spanish text
 index or Atlas Search.
+
+### Compartir (Open Graph) y página de una publicación
+
+- `/p/:id` (`PublicacionPage`) shows one post — it is where a shared link lands —
+  and every card has a share button (`BotonCompartir`: the system share sheet
+  on phones, otherwise copy the link, otherwise open WhatsApp).
+- **Link previews**: crawlers (WhatsApp, Telegram, Facebook, X) don't run
+  JavaScript, so a SPA shows them an empty shell. `client/index.html` carries
+  default Open Graph tags (image `public/icons/compartir.png`, 1200×630, the logo
+  on white), and for `/p/*` a **Netlify Edge Function**
+  (`client/netlify/edge-functions/og.js`, path set in its `config` export) asks
+  the API for the post and swaps title, description (`resumir`: one line, cut at
+  a word) and image (Cloudinary resized to 1200 px) into the HTML. Any failure
+  serves the untouched HTML: the link still works, the preview is just
+  generic. The HTML logic is pure (`client/netlify/og-html.js`) and tested from
+  `server/test/compartir.test.js`; it finds the default tags by their exact
+  format, so **keep `<meta property="og:…" content="…" />` as written in
+  index.html**. The edge function itself has not run on Netlify yet.
+- `GET /api/posts/:id` now returns **only published posts**: it used to exclude
+  only deleted ones, so a post hidden by moderation could be read by id —
+  harmless while nothing linked to it, not with shareable links.
+- SEO beyond previews (prerendering section pages for search engines) is not
+  done.
 
 ### Farmacias de guardia
 
@@ -1850,7 +1873,7 @@ Rough priority; none started.
    waits for Stripe (see "Section controllers" → Negocios).
 6. **Groups** (barrios, AA.VV., hermandades, peñas, clubes), hashtags, verification that someone is a vecino.
    (Global search is done — see "Buscador global".)
-7. **Share well on WhatsApp** (Open Graph previews) and **SEO**: the app is
+7. **Share well on WhatsApp** — done for posts (see "Compartir"). Still open, **SEO**: the app is
    a SPA, so crawlers and link previews see an empty shell. Needs
    prerendering/SSR for public pages (Turismo, Eventos, Negocios).
 8. **Languages** (turismo.lepe.es offers EN/DE/PT; Portugal is next door).
