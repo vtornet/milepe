@@ -1,5 +1,5 @@
 # Integración continua: en cada push a main y en cada pull request corre los
-# tests del servidor y el lint + build del cliente.
+# lint y tests del servidor y el lint + build del cliente.
 #
 # OJO: esto avisa, no frena. Netlify y Railway despliegan en cuanto llega un
 # push a main, sin esperar a este flujo. Para que un test en rojo impida el
@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   servidor:
-    name: Servidor (tests)
+    name: Servidor (lint y tests)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -43,6 +43,8 @@ jobs:
           key: mongod-${{ runner.os }}-v1
 
       - run: npm ci
+
+      - run: npm run lint
 
       - run: npm test
 

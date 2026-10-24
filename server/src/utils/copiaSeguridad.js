@@ -86,7 +86,6 @@ export const listarCopias = async () => {
   let siguiente;
 
   do {
-    // eslint-disable-next-line no-await-in-loop
     const respuesta = await cloudinary.api.resources({
       ...OPCIONES_CLOUDINARY,
       prefix: `${CARPETA_COPIAS}/`,
@@ -199,7 +198,6 @@ export const restaurarCopia = async (db, copia, { vaciar = false } = {}) => {
     // Se insertan por lotes: un insertMany de todo cabria, pero asi no se
     // dispara el limite de 16 MB de mensaje si algun dia crece.
     for (let i = 0; i < docs.length; i += 500) {
-      // eslint-disable-next-line no-await-in-loop
       await coleccion.insertMany(docs.slice(i, i + 500), { ordered: true });
     }
 

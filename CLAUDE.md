@@ -96,8 +96,8 @@ Both are ESM (`"type": "module"` in both package.json files) — use
   and say so. Creating a file under `server/` (even a throwaway script)
   restarts nodemon: run scratch scripts with `node --input-type=module -e`
   or keep them in the scratchpad.
-- `npm test` — server tests (see "Tests and CI"). There is no server
-  linter yet.
+- `npm test` — server tests (see "Tests and CI"). `npm run lint` — ESLint 9
+  (`server/eslint.config.js`, recommended rules only; also run in CI).
 - Image uploads (see "Image uploads" below) need real
   `CLOUDINARY_CLOUD_NAME`/`CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` in
   `.env` — get them from the account's Dashboard, specifically the row
@@ -1180,7 +1180,7 @@ several processes downloading the `mongod` binary at once can corrupt it.
   the report threshold (3 → 4) and `skipSuccessfulRequests` each made the
   matching tests fail.
 - **CI**: `.github/workflows/ci.yml` on every push to `main` and every pull
-  request: server tests, and client `lint` + `build`. It **warns, it does
+  request: server lint + tests, and client `lint` + `build`. It **warns, it does
   not block**: Netlify and Railway deploy as soon as the push lands. To make
   a red build stop a deploy, turn on "Wait for CI" in the Railway service
   and gate Netlify deploys on checks. The `mongod` binary is cached
@@ -1986,7 +1986,7 @@ Rough priority; none started.
 
 - **Server tests and CI** — done, see "Tests and CI". Still missing: tests
   for the stats and turismo controllers and the section listings
-  (aggregations), a server linter, and gating deploys on CI.
+  (aggregations), and gating deploys on CI. (Server linter: done.)
 - **MongoDB backups** — done, see "Copias de seguridad". Still to do: a restore rehearsal against a scratch database now and then, and a second destination if Cloudinary alone feels thin.
 - **Rate limiting, security headers and error monitoring** — done, see
   "Hardening". Pending there: create the Sentry project and set

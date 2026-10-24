@@ -145,7 +145,6 @@ const borrarImagenes = async (urls) => {
 
   try {
     for (let i = 0; i < ids.length; i += 100) {
-      // eslint-disable-next-line no-await-in-loop
       await cloudinary.api.delete_resources(ids.slice(i, i + 100));
     }
     return ids.length;
