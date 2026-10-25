@@ -159,3 +159,23 @@ test('cada uno ve solo sus pagos; aparecen en la descarga de datos', async () =>
   const datos = (await t.api.get('/usuarios/perfil/exportar', { token: duena.token })).body;
   assert.ok(datos.pagos.some((p) => p.importe_eur === 9.9 && p.estado === 'pagado'));
 });
+
+test('panel del admin: solo admin, cobrado del mes y total, por estado y separando prueba y real', async () => {
+  assert.equal((await t.api.get('/pagos/admin', { token: duena.token })).status, 403);
+  const admin = await t.crearUsuario({ rol: 'admin' });
+  const r = await t.api.get('/pagos/admin?modo=prueba', { token: admin.token });
+  assert.equal(r.status, 200);
+  // En este archivo: dos destacados pagados (9,90) y un evento (4,90); uno caducado; alguno pendiente.
+  assert.equal(r.body.resumen.pagos_total, 3);
+  assert.equal(r.body.resumen.cobrado_total, 990 * 2 + 490);
+  assert.equal(r.body.resumen.cobrado_mes, r.body.resumen.cobrado_total, 'todo es de este mes');
+  assert.equal(r.body.resumen.por_estado.caducado, 1);
+  assert.ok(r.body.pagos[0].usuario_id.nombre_usuario);
+  assert.ok(r.body.pagos.every((p) => p.modo_prueba));
+
+  const reales = await t.api.get('/pagos/admin?modo=real', { token: admin.token });
+  assert.equal(reales.body.resumen.pagos_total, 0);
+  assert.equal(reales.body.pagos.length, 0);
+  assert.equal((await t.api.get('/pagos/admin?estado=raro', { token: admin.token })).status, 400);
+  assert.ok((await t.api.get('/pagos/admin?estado=pagado', { token: admin.token })).body.pagos.every((p) => p.estado === 'pagado'));
+});

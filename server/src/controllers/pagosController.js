@@ -193,3 +193,76 @@ export const listarMisPagos = async (req, res, next) => {
     next(error);
   }
 };
+
+// --- Panel del admin ---
+
+const ZONA = 'Europe/Madrid';
+const TOPE_LISTADO = 200;
+
+// Los cobros de toda la red, con un resumen: lo cobrado (solo lo pagado) este
+// mes y en total, y cuantos hay en cada estado. Los de prueba y los reales se
+// cuentan aparte: mezclar 9,90 EUR de tarjetas ficticias con ingresos de
+// verdad haria el numero inutil. ?estado= y ?modo=prueba|real filtran la
+// lista; el resumen es siempre del modo pedido.
+export const listarPagosAdmin = async (req, res, next) => {
+  try {
+    const modo = req.query.modo === 'real' ? 'real' : req.query.modo === 'prueba' ? 'prueba' : null;
+    const filtroModo = modo ? { modo_prueba: modo === 'prueba' } : {};
+    const filtro = { ...filtroModo };
+    if (req.query.estado) {
+      if (!['pendiente', 'pagado', 'caducado', 'fallido'].includes(req.query.estado)) {
+        throw new ErrorHttp(400, 'estado debe ser pendiente, pagado, caducado o fallido');
+      }
+      filtro.estado = req.query.estado;
+    }
+
+    // Primer instante del mes en curso en Madrid (no en UTC: el dia 1 a las
+    // 00:30 de Lepe todavia es el mes anterior en UTC).
+    const mes = new Intl.DateTimeFormat('en-CA', { timeZone: ZONA, year: 'numeric', month: '2-digit' }).format(new Date());
+
+    const [pagos, porEstado, ingresos] = await Promise.all([
+      Pago.find(filtro)
+        .sort({ fecha_creacion: -1 })
+        .limit(TOPE_LISTADO)
+        .populate('usuario_id', 'nombre_usuario')
+        .populate('post_id', 'titulo tipo')
+        .lean(),
+      Pago.aggregate([{ $match: filtroModo }, { $group: { _id: '$estado', n: { $sum: 1 } } }]),
+      Pago.aggregate([
+        { $match: { ...filtroModo, estado: 'pagado' } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$importe' },
+            n: { $sum: 1 },
+            mes: {
+              $sum: {
+                $cond: [{ $eq: [{ $dateToString: { format: '%Y-%m', date: '$pagado_en', timezone: ZONA } }, mes] }, '$importe', 0],
+              },
+            },
+            n_mes: {
+              $sum: { $cond: [{ $eq: [{ $dateToString: { format: '%Y-%m', date: '$pagado_en', timezone: ZONA } }, mes] }, 1, 0] },
+            },
+          },
+        },
+      ]),
+    ]);
+
+    const i = ingresos[0] || { total: 0, n: 0, mes: 0, n_mes: 0 };
+    res.json({
+      ok: true,
+      modo: modo || 'todos',
+      mes,
+      resumen: {
+        cobrado_mes: i.mes,
+        pagos_mes: i.n_mes,
+        cobrado_total: i.total,
+        pagos_total: i.n,
+        por_estado: Object.fromEntries(porEstado.map((e) => [e._id, e.n])),
+      },
+      pagos,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

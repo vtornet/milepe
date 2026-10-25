@@ -2713,3 +2713,35 @@ select:disabled {
 .boton-pagar {
   margin-top: var(--e-2);
 }
+
+/* Panel de pagos del admin (Moderación → Pagos). */
+.pagos-resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--e-3);
+  margin-bottom: var(--e-3);
+}
+
+.pagos-resumen .tarjeta {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.pagos-resumen strong {
+  font-size: var(--t-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+.pago-fila {
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--e-3);
+}
+
+.pago-importe {
+  display: grid;
+  justify-items: end;
+  gap: var(--e-1);
+  font-variant-numeric: tabular-nums;
+}

@@ -1227,7 +1227,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 262 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 263 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1565,6 +1565,12 @@ active adds to the remaining days (`extenderDestacado`, same rule for
   404) until the webhook lands.
 - Sponsored events go first in the upcoming agenda (not in the history);
   featured businesses already did.
+- **Admin panel**: Moderación → Pagos (`PagosPanel.jsx`, `GET /api/pagos/admin`,
+  admin only): collected this month (Madrid calendar month, by `pagado_en`)
+  and in total, counts by state, and the list (last 200) with who, what and
+  until when. `?modo=real|prueba` keeps **test and real payments apart** —
+  mixing Stripe test cards into income would make the number useless;
+  `?estado=` filters the list.
 - `Pago` is kept when an account is deleted (accounting record) and is in the
   RGPD export. Condiciones §7 and Privacidad §3 (Stripe as processor) cover it.
 - Tests (`pagos.test.js`) sign webhook events with the real `stripe` library
