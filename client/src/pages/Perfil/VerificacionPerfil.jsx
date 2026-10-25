@@ -5,7 +5,7 @@ import InsigniaVerificado from '../../components/InsigniaVerificado.jsx';
 const euros = (centimos) => (centimos / 100).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 const fecha = (iso) => new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 
-// La sección "Perfil verificado" de /perfil: suscribirse (1 €/mes), darse de
+// La sección "Perfil verificado" de /perfil: suscribirse (1,50 €/mes), darse de
 // baja o reactivar. La baja solo apaga la renovación: la insignia sigue hasta
 // el final del mes ya pagado.
 function VerificacionPerfil() {

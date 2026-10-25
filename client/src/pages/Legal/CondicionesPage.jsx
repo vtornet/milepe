@@ -117,7 +117,7 @@ function CondicionesPage() {
       </p>
       <p>
         <strong>Perfil verificado.</strong> Cualquier vecino puede llevar la insignia de perfil verificado junto
-        a su nombre con una suscripción de 1 € al mes (IVA incluido), que se renueva sola cada mes. Puedes darte
+        a su nombre con una suscripción de 1,50 € al mes (IVA incluido), que se renueva sola cada mes. Puedes darte
         de baja cuando quieras desde tu perfil: no se te vuelve a cobrar y conservas la insignia hasta el final
         del mes ya pagado. Si un cobro falla, Stripe lo reintenta durante unos días; si no se consigue, la
         suscripción termina. El equipo de MiLepe también puede conceder la insignia sin coste (por ejemplo, a

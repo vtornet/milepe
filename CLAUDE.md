@@ -1582,7 +1582,7 @@ active adds to the remaining days (`extenderDestacado`, same rule for
   .async_payment_succeeded, .async_payment_failed), its signing secret as
   `STRIPE_WEBHOOK_SECRET`.
 
-### Perfil verificado (suscripción de 1 €/mes)
+### Perfil verificado (suscripción de 1,50 €/mes)
 
 The blue badge next to a name (`InsigniaVerificado.jsx`, a filled scalloped
 check like X's; the town hall's "cuenta oficial" badge became a building icon
@@ -1595,7 +1595,7 @@ so the two aren't confused). Two independent ways, either is enough
   and removing it from an admin is 409.
 - **`verificado_hasta`** — the **Stripe subscription** (Checkout in
   `mode: 'subscription'`, inline `price_data.recurring` monthly,
-  `PRODUCTOS.verificacion`, `PRECIO_VERIFICACION_CENT` default 100). "Valid
+  `PRODUCTOS.verificacion`, `PRECIO_VERIFICACION_CENT` default 150). "Valid
   while the date is in the future": each `invoice.paid` moves it to the end of
   that invoice's period. **Unsubscribing only sets `cancel_at_period_end`**
   (`POST /api/pagos/verificacion/baja`; `/reactivar` undoes it), so the paid

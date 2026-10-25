@@ -4,7 +4,7 @@ import Notificacion from '../models/Notificacion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
 import { PRODUCTOS, pagosActivos, stripe, esModoPrueba } from '../utils/stripe.js';
 
-// Perfil verificado: suscripcion de Stripe a 1 EUR/mes (ver
+// Perfil verificado: suscripcion de Stripe a 1,50 EUR/mes (ver
 // PRODUCTOS.verificacion) o, sin pagar, concedido por un admin.
 //
 // Lo que manda es Usuario.verificado_hasta: cada factura pagada lo lleva al

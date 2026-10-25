@@ -101,7 +101,7 @@ const usuarioSchema = new Schema(
     // Perfil verificado (la insignia azul). Dos caminos, y vale cualquiera:
     // - verificado_manual: lo da un admin sin cobrar (y los admin lo tienen
     //   siempre, ver asegurarVerificacionDeAdmins).
-    // - verificado_hasta: la suscripcion de 1 EUR/mes. "Vale mientras la
+    // - verificado_hasta: la suscripcion de 1,50 EUR/mes. "Vale mientras la
     //   fecha este en el futuro": cada factura pagada la lleva al final de su
     //   periodo, y darse de baja no la toca, asi que se respeta lo pagado.
     // Los dos son publicos (van en CAMPOS_PUBLICOS_USUARIO) para que la

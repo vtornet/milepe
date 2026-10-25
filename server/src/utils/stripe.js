@@ -27,7 +27,7 @@ export const PRODUCTOS = {
   // baja (y entonces dura hasta el final del mes pagado).
   verificacion: {
     nombre: 'Perfil verificado en MiLepe',
-    importe: () => Number(process.env.PRECIO_VERIFICACION_CENT) || 100,
+    importe: () => Number(process.env.PRECIO_VERIFICACION_CENT) || 150,
     dias: 30,
     suscripcion: true,
   },

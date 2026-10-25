@@ -63,7 +63,7 @@ const factura = ({ id, usuarioId, fin, basil = true, sub = 'sub_ana', cliente = 
     object: {
       id,
       customer: cliente,
-      amount_paid: 100,
+      amount_paid: 150,
       ...(basil
         ? { parent: { subscription_details: { subscription: sub, metadata: { usuario_id: usuarioId, producto: 'verificacion' } } } }
         : { subscription: sub, subscription_details: { metadata: { usuario_id: usuarioId, producto: 'verificacion' } } }),
@@ -74,13 +74,13 @@ const factura = ({ id, usuarioId, fin, basil = true, sub = 'sub_ana', cliente = 
 const mio = async (u) => (await t.api.get('/pagos/verificacion', { token: u.token })).body;
 const perfil = async (u) => (await t.api.get(`/usuarios/${u.id}`)).body.usuario;
 
-test('suscribirse abre Checkout en modo suscripción a 1 €/mes', async () => {
+test('suscribirse abre Checkout en modo suscripción a 1,50 €/mes', async () => {
   assert.equal((await mio(ana)).verificado, false);
   const r = await t.api.post('/pagos/verificacion', {}, { token: ana.token });
   assert.equal(r.status, 201);
   const s = llamadas.sesiones.at(-1);
   assert.equal(s.mode, 'subscription');
-  assert.equal(s.line_items[0].price_data.unit_amount, 100);
+  assert.equal(s.line_items[0].price_data.unit_amount, 150);
   assert.deepEqual(s.line_items[0].price_data.recurring, { interval: 'month' });
   assert.equal(s.subscription_data.metadata.usuario_id, ana.id);
 });
@@ -104,7 +104,7 @@ test('la factura pagada verifica hasta el final del periodo, una sola vez y con 
   assert.equal(await Pago.countDocuments({ producto: 'verificacion', usuario_id: ana.id }), 1);
   // Y sale en el panel del admin como cobro.
   const panel = (await t.api.get('/pagos/admin?modo=prueba', { token: admin.token })).body;
-  assert.equal(panel.resumen.cobrado_total, 100);
+  assert.equal(panel.resumen.cobrado_total, 150);
 });
 
 test('ya suscrita no puede volver a suscribirse', async () => {
