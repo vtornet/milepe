@@ -2155,6 +2155,57 @@ upstream has shipped a fix before touching it; don't run `npm audit fix
 
 ## Roadmap — pending work and queued ideas
 
+### 0. Launch checklist (2026-10-25)
+
+What's left before promoting the PWA publicly, in order. Items marked
+**(usuario)** are the user's to do; the rest can be done here.
+
+**Before announcing it (blocking)**
+
+1. **Farmacias de noviembre (usuario + aquí).** The loaded calendar ends on
+   **2026-10-31**; from 1 November `/farmacias` and the rail say there's no
+   data. When the Colegio publishes the November PDF, drop it in the repo
+   root and load it (same every month).
+2. **Google OAuth "En producción" (usuario).** Google Cloud Console → OAuth
+   consent screen: from "Testing" to "In production", or "Continuar con
+   Google" only works for listed test users.
+3. **Fiscalidad de los cobros (usuario).** Stripe charges for real in the name
+   of a natural person (the legal pages name the owner with NIF). Check with a
+   gestor: alta de autónomo, declaring income, and whether VAT must be
+   charged (prices say "IVA incluido").
+4. **Derecho de desistimiento (aquí).** EU consumers have 14 days to withdraw
+   from a digital service unless they expressly agree to immediate start and
+   waive it. Add that consent to Checkout (`consent_collection` /
+   custom text) and to Condiciones §7.
+5. **Recibos de Stripe (usuario).** Stripe live → Settings → Customer emails:
+   enable receipts for successful payments (the result page and Condiciones
+   promise "te llegará el recibo de Stripe por correo").
+
+**First week (strongly recommended)**
+
+6. **Contenido inicial (usuario).** Upcoming events, local businesses, old
+   photos, an aviso or a poll before spreading it.
+7. **Cuenta oficial del Ayuntamiento (usuario).** Create it and mark it
+   official from its profile, or decide that the admin publishes Avisos.
+8. **Google Search Console (usuario).** Verify milepe.com (TXT record at
+   Namecheap) and submit `https://milepe.com/sitemap.xml`.
+9. **Sentry (usuario).** `SENTRY_DSN` is **not set** on Railway (checked
+   2026-10-25): API errors only show in Railway's logs. Code is ready.
+10. **"Wait for CI" en Railway (usuario)** on the API service, so a red test
+    run doesn't deploy.
+11. **Un segundo moderador (usuario).** Today only the admin moderates, and an
+    appeal needs an admin other than the one who decided.
+
+**Minor**
+
+12. **9 contactos inactivos** to verify (see item 1 of "Housekeeping" below).
+13. **`CLOUDINARY_CLOUD_NAME`** on Railway still starts with a space (harmless:
+    the code trims it).
+14. **Turismo:** no photos in Gastronomía and Rutas; long descriptions of the
+    first records.
+15. **Real phones (usuario):** install on Android and iPhone, enable
+    notifications, check a private message arrives as a push.
+
 State at the time of writing (2026-10-23): production has 3 accounts, 9
 posts, 81 turismo records (21 with photos, 34 images), 113 contacts (9 inactive). Order
 below is the order I'd work in.
