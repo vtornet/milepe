@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import ContactoFormulario from './ContactoFormulario.jsx';
 import { useTitulo } from '../../hooks/useTitulo.js';
 import { EsqueletoLista } from '../../components/Esqueleto.jsx';
+import CabeceraSeccion from '../../components/CabeceraSeccion.jsx';
 
 // Mismo enum que server/src/models/ContactoInteres.js
 // (CATEGORIAS_CONTACTO). El orden de esta lista es el orden en que se
@@ -148,13 +149,35 @@ function ContactosPage() {
     setFormulario(null);
   };
 
-  if (cargando) return <EsqueletoLista cuantas={6} />;
+  // Sin onAlternarFormulario para quien no es admin: CabeceraSeccion le
+  // diría "inicia sesión para publicar", y aquí nadie publica salvo el admin.
+  const cabecera = (
+    <CabeceraSeccion
+      ruta="/contactos"
+      descripcion="Teléfonos de interés de Lepe: emergencias, Ayuntamiento, salud, colegios y más."
+      textoNuevo="Nuevo contacto"
+      formularioAbierto={formulario === 'nuevo'}
+      onAlternarFormulario={esAdmin ? () => setFormulario(formulario === 'nuevo' ? null : 'nuevo') : undefined}
+    />
+  );
+
+  if (cargando) {
+    return (
+      <section>
+        {cabecera}
+        <EsqueletoLista cuantas={6} />
+      </section>
+    );
+  }
   if (error) {
     return (
-      <div className="aviso aviso-error">
-        <Icono nombre="alerta" tam={18} />
-        <span>{error}</span>
-      </div>
+      <section>
+        {cabecera}
+        <div className="aviso aviso-error">
+          <Icono nombre="alerta" tam={18} />
+          <span>{error}</span>
+        </div>
+      </section>
     );
   }
 
@@ -164,23 +187,7 @@ function ContactosPage() {
 
   return (
     <section>
-      <div className="cabecera-pagina">
-        <div className="cabecera-pagina-texto">
-          <h1>Contactos de interés</h1>
-        </div>
-        {esAdmin && (
-          <div className="cabecera-pagina-acciones">
-            <button
-              type="button"
-              className={formulario === 'nuevo' ? 'btn btn-contorno' : 'btn btn-primario'}
-              onClick={() => setFormulario(formulario === 'nuevo' ? null : 'nuevo')}
-            >
-              <Icono nombre={formulario === 'nuevo' ? 'cerrar' : 'anadir'} tam={18} />
-              {formulario === 'nuevo' ? 'Cancelar' : 'Nuevo contacto'}
-            </button>
-          </div>
-        )}
-      </div>
+      {cabecera}
 
       <p className="tarjeta-meta">
         <Icono nombre="farmacia" tam={14} /> ¿Buscas una farmacia abierta? Mira las{' '}

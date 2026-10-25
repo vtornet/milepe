@@ -1848,6 +1848,10 @@ Shared components worth knowing before writing a new page:
   `display: block`, so an icon inside text needs `display: inline-block`
   (done for `.tarjeta-meta`, `.acceso-rapido`, `.telefonos-contacto`) or it
   sits alone on its own line.
+- `Avatar.jsx` asks for the photo with `referrerPolicy="no-referrer"`
+  (Google account photos on lh3.googleusercontent.com refuse requests that
+  carry another site's referer — they showed as broken images) and falls
+  back to the initials if the photo fails to load.
 - `Avatar.jsx` falls back to initials on a colour derived from the name,
   so the same neighbour always gets the same colour — recognising someone
   in a feed is partly recognising their blob of colour before reading the
@@ -2139,5 +2143,13 @@ Rough priority; none started.
   (`utils/tiempoReal.js`, `hooks/useSondeo.js`) — see "Real time".
 - Admin stats are computed live per request; add a short cache if the
   collections grow.
-- **Visual polish**: a typography/spacing pass, and the older sections'
-  loading and empty states.
+- **Visual polish** — a pass done on 2026-10-25 (every public page at 390 px,
+  light and dark): broken Google avatars, squashed icons in flex rows
+  (`svg { flex-shrink: 0 }` in base.css), class-less buttons falling into the
+  generic `button:not([class])` style (reactions, "Cerca de mí"), section
+  headers on Tiempo/Contactos/Buscar, the Quejas summary. **Rule of thumb:
+  every `<button>` gets a class**, or it gets the generic look.
+  How to look at the live data locally: Vite with `server.proxy` from `/api`
+  to https://api.milepe.com and `VITE_API_URL=http://localhost:PORT/api`
+  (with a bare `/api`, Git Bash rewrites it into a Windows path); netlify
+  blocks iframes, so a page of several 390 px iframes only works locally.

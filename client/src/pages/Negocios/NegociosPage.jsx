@@ -106,11 +106,11 @@ function NegociosPage() {
             </option>
           ))}
         </select>
-        <button type="button" onClick={buscarCercaDeMi}>
+        <button type="button" className={cercaDeMi ? 'btn btn-primario' : 'btn btn-contorno'} onClick={buscarCercaDeMi}>
           <Icono nombre="ubicacion" tam={16} /> {cercaDeMi ? 'Cerca de mí (activo)' : 'Cerca de mí'}
         </button>
         {cercaDeMi && (
-          <button type="button" onClick={() => setCercaDeMi(null)}>
+          <button type="button" className="btn btn-plano" onClick={() => setCercaDeMi(null)}>
             Quitar
           </button>
         )}

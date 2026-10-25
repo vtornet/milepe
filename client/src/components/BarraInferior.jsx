@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import Icono from './Icono.jsx';
 import { SECCIONES_MENU, rutaDelMenu } from '../router/secciones.js';
-import { useAuth } from '../context/AuthContext.jsx';
 
 // Barra de pestañas del móvil. Va abajo y no arriba porque es donde llega
 // el pulgar con el teléfono en una mano; un menú en la esquina superior
@@ -13,7 +12,6 @@ import { useAuth } from '../context/AuthContext.jsx';
 // principal en secciones.js (Quejas y Eventos, las que más se consultan en
 // un pueblo) tienen sitio fijo; el resto están a un toque en la hoja.
 function BarraInferior({ noLeidos = 0 }) {
-  const { usuario } = useAuth();
   const location = useLocation();
   const [hojaAbierta, setHojaAbierta] = useState(false);
 
@@ -46,7 +44,9 @@ function BarraInferior({ noLeidos = 0 }) {
           </NavLink>
         ))}
 
-        <NavLink to={usuario ? '/mensajes' : '/login'} className={clase}>
+        {/* Siempre a /mensajes (RutaProtegida lleva a entrar si no hay sesión):
+            apuntando a /login, la pestaña se iluminaba en la pantalla de acceso. */}
+        <NavLink to="/mensajes" className={clase}>
           <Icono nombre="mensajes" tam={22} />
           {noLeidos > 0 && <span className="pestana-punto" />}
           <span className="pestana-etiqueta">Mensajes</span>

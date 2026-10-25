@@ -70,6 +70,13 @@ video {
   max-width: 100%;
 }
 
+/* Un icono nunca se encoge: dentro de una fila flex sin sitio (las pestañas
+   de Tablón y Útil en un móvil) el navegador aplastaba el SVG a unos pocos
+   píxeles, porque el texto de al lado no se puede partir y el icono sí. */
+svg {
+  flex-shrink: 0;
+}
+
 button,
 input,
 textarea,

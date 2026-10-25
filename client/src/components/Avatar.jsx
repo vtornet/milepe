@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 // Ocho fondos, todos con suficiente contraste para texto blanco encima. Se
 // elige por el nombre y no al azar para que el mismo vecino tenga siempre
 // el mismo color: parte de reconocer a alguien en un feed es reconocer su
@@ -31,18 +33,29 @@ const CLASE_TAMANO = { xs: 'avatar-xs', sm: 'avatar-sm', md: '', lg: 'avatar-lg'
 // lo que sale por defecto cuando nadie ha subido foto, o sea casi siempre
 // al principio- hace que un feed parezca vacío aunque esté lleno.
 function Avatar({ usuario, tamano = 'md', className = '' }) {
+  // La foto que no carga (enlace caducado, Google que la niega) vuelve a las
+  // iniciales en vez de dejar el icono de imagen rota.
+  const [fotoRota, setFotoRota] = useState(null);
   // nombre_usuario PRIMERO y no el nombre real: las iniciales se pintan en
   // publicaciones y comentarios, asi que sacarlas del nombre real seria
   // filtrar por la puerta de atras lo que la API se cuida de no enviar.
   const nombre = usuario?.nombre_usuario || usuario?.nombre || '';
   const clases = ['avatar', CLASE_TAMANO[tamano], className].filter(Boolean).join(' ');
 
-  if (usuario?.avatar_url) {
+  if (usuario?.avatar_url && fotoRota !== usuario.avatar_url) {
     return (
       <span className={clases}>
         {/* alt vacío y no el nombre: el nombre ya está escrito al lado, y
             repetirlo hace que un lector de pantalla lo lea dos veces. */}
-        <img src={usuario.avatar_url} alt="" loading="lazy" />
+        {/* Sin referer: las fotos de cuentas de Google (lh3.googleusercontent)
+            se niegan a cargarse cuando la petición dice desde qué web viene. */}
+        <img
+          src={usuario.avatar_url}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setFotoRota(usuario.avatar_url)}
+        />
       </span>
     );
   }

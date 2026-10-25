@@ -23,6 +23,10 @@ const ESTADOS = [
   { valor: 'resuelto', etiqueta: 'Resuelto' },
 ];
 
+const plural = (n, uno, varios) => (n === 1 ? uno : varios);
+// 1.6 -> "1,6 días"; 1 -> "1 día".
+const dias = (n) => `${n.toLocaleString('es-ES', { maximumFractionDigits: 1 })} ${n === 1 ? 'día' : 'días'}`;
+
 function QuejasPage() {
   const [quejas, setQuejas] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -82,12 +86,30 @@ function QuejasPage() {
       />
 
       {resumen?.total > 0 && (
-        <p className="tarjeta-meta resumen-quejas">
-          {resumen.total} quejas · {resumen.por_estado.resuelto} resueltas ({resumen.porcentaje_resueltas}%) ·{' '}
-          {resumen.por_estado.en_curso} en curso · {resumen.por_estado.pendiente} pendientes
-          {resumen.dias_hasta_respuesta !== null && ` · primera respuesta en ${resumen.dias_hasta_respuesta} días de media`}
-          {resumen.dias_hasta_resolucion !== null && ` · resueltas en ${resumen.dias_hasta_resolucion} días de media`}
-        </p>
+        <div className="resumen-quejas">
+          <ul className="resumen-quejas-cifras">
+            <li>
+              <strong>{resumen.total}</strong> {plural(resumen.total, 'queja', 'quejas')}
+            </li>
+            <li>
+              <strong>{resumen.por_estado.resuelto}</strong> {plural(resumen.por_estado.resuelto, 'resuelta', 'resueltas')} (
+              {resumen.porcentaje_resueltas}%)
+            </li>
+            <li>
+              <strong>{resumen.por_estado.en_curso}</strong> en curso
+            </li>
+            <li>
+              <strong>{resumen.por_estado.pendiente}</strong> {plural(resumen.por_estado.pendiente, 'pendiente', 'pendientes')}
+            </li>
+          </ul>
+          {(resumen.dias_hasta_respuesta !== null || resumen.dias_hasta_resolucion !== null) && (
+            <p className="tarjeta-meta">
+              {resumen.dias_hasta_respuesta !== null && `Primera respuesta en ${dias(resumen.dias_hasta_respuesta)} de media`}
+              {resumen.dias_hasta_respuesta !== null && resumen.dias_hasta_resolucion !== null && ' · '}
+              {resumen.dias_hasta_resolucion !== null && `resueltas en ${dias(resumen.dias_hasta_resolucion)} de media`}
+            </p>
+          )}
+        </div>
       )}
 
       {mostrarFormulario && <QuejaFormulario onCreada={manejarQuejaCreada} />}

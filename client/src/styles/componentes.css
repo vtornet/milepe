@@ -2496,10 +2496,6 @@ select:disabled {
   margin-bottom: var(--e-2);
 }
 
-.resumen-quejas {
-  margin-bottom: var(--e-3);
-}
-
 /* ---------------- Pestañas de un grupo (Tablón, Útil) ---------------- */
 
 .pestanas-grupo {
@@ -2683,4 +2679,32 @@ select:disabled {
 
 .bus-dia.hoy p {
   color: var(--texto);
+}
+
+/* Resumen público de Quejas: cuatro cifras en fila y los tiempos debajo. */
+.resumen-quejas {
+  margin-bottom: var(--e-4);
+}
+
+.resumen-quejas-cifras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  margin: 0 0 var(--e-2);
+  padding: 0;
+  list-style: none;
+}
+
+.resumen-quejas-cifras li {
+  padding: var(--e-1) var(--e-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-full);
+  background: var(--superficie);
+  color: var(--texto-suave);
+  font-size: var(--t-sm);
+}
+
+.resumen-quejas-cifras strong {
+  color: var(--texto);
+  font-variant-numeric: tabular-nums;
 }

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import api from '../../services/api.js';
 import Icono from '../../components/Icono.jsx';
 import PlayaHoy from './PlayaHoy.jsx';
-import { useTitulo } from '../../hooks/useTitulo.js';
+import CabeceraSeccion from '../../components/CabeceraSeccion.jsx';
+import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 
 // Los iconos de OpenWeather son publicos (no llevan clave), asi que se
 // pueden pedir directamente desde el navegador.
@@ -21,7 +22,6 @@ const nombreDia = (fechaISO) => {
 };
 
 function TiempoPage() {
-  useTitulo('El Tiempo');
   const [tiempo, setTiempo] = useState(null);
   const [obsoleto, setObsoleto] = useState(false);
   const [cargando, setCargando] = useState(true);
@@ -49,12 +49,34 @@ function TiempoPage() {
     };
   }, []);
 
-  if (cargando) return <p>Cargando el tiempo...</p>;
-  if (error) return <p className="mensaje-error">{error}</p>;
+  // La cabecera va siempre, también mientras carga o si falla: es la misma
+  // que en el resto de secciones.
+  const cabecera = <CabeceraSeccion ruta="/tiempo" descripcion="El tiempo en Lepe hoy y los próximos días, y la playa de La Antilla." />;
+
+  if (cargando) {
+    return (
+      <section>
+        {cabecera}
+        <EsqueletoFeed cuantas={2} />
+      </section>
+    );
+  }
+  if (error) {
+    return (
+      <section>
+        {cabecera}
+        <div className="aviso aviso-error">
+          <Icono nombre="alerta" tam={18} />
+          <span>{error}</span>
+        </div>
+        <PlayaHoy />
+      </section>
+    );
+  }
 
   return (
     <section>
-      <h1>El Tiempo en {tiempo.municipio}</h1>
+      {cabecera}
 
       {obsoleto && (
         <p className="tarjeta-meta">

@@ -9,6 +9,7 @@ import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import { SECCION_POR_TIPO } from '../../router/secciones.js';
 import { useTitulo } from '../../hooks/useTitulo.js';
 import { CATEGORIAS_GRUPO } from '../Grupos/categoriasGrupo.js';
+import CabeceraSeccion from '../../components/CabeceraSeccion.jsx';
 
 const enlaceTelefono = (telefono) => `tel:${telefono.split(/[/;,]/)[0].replace(/[^\d+]/g, '')}`;
 
@@ -56,6 +57,7 @@ function BuscarPage() {
 
   return (
     <section>
+      <CabeceraSeccion ruta="/buscar" descripcion="Publicaciones, grupos, turismo, teléfonos y farmacias de Lepe." />
       <form className="fila" onSubmit={enviar} role="search" style={{ gap: 'var(--e-2)', marginBottom: 'var(--e-4)' }}>
         <label className="solo-lectores" htmlFor="buscar-pagina">
           Buscar en MiLepe
