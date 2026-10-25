@@ -90,11 +90,19 @@ function SelectorReaccion({ valor, onElegir, compacto = false, deshabilitado = f
       if (evento.key === 'Escape') cerrar();
     };
 
+    // Con ratón no hay telón (ver abajo): pulsar fuera lo cierra esto.
+    const alPulsarFuera = (evento) => {
+      if (botonRef.current?.contains(evento.target) || pildoraRef.current?.contains(evento.target)) return;
+      cerrar();
+    };
+
+    window.addEventListener('pointerdown', alPulsarFuera);
     window.addEventListener('scroll', cerrar, true);
     window.addEventListener('resize', cerrar);
     window.addEventListener('keydown', alTeclear);
 
     return () => {
+      window.removeEventListener('pointerdown', alPulsarFuera);
       window.removeEventListener('scroll', cerrar, true);
       window.removeEventListener('resize', cerrar);
       window.removeEventListener('keydown', alTeclear);
@@ -118,6 +126,7 @@ function SelectorReaccion({ valor, onElegir, compacto = false, deshabilitado = f
   const alEntrar = () => {
     if (!conRaton()) return;
     clearTimeout(temporizadorCerrar.current);
+    if (abierto) return;
     temporizadorAbrir.current = setTimeout(abrir, MS_ABRIR_AL_PASAR);
   };
 
@@ -190,7 +199,10 @@ function SelectorReaccion({ valor, onElegir, compacto = false, deshabilitado = f
       {abierto &&
         createPortal(
           <>
-            <div className="reacciones-telon" onClick={cerrar} />
+            {/* Solo en táctil: con ratón, un telón a pantalla completa tapa el
+                botón, le quita el hover, la píldora se cierra, el botón vuelve
+                a quedar bajo el cursor y se reabre, en bucle (parpadeo). */}
+            {!conRaton() && <div className="reacciones-telon" onClick={cerrar} />}
             <div
               ref={pildoraRef}
               className="reacciones-menu"
