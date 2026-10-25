@@ -179,3 +179,38 @@ test('borrar la cuenta cancela la suscripción y quita la insignia', async () =>
   const u = await Usuario.findById(dani.id);
   assert.equal(u.estaVerificado(), false);
 });
+
+test('al pasar a cobros reales: lo pagado en pruebas se retira, lo real y lo manual no', async () => {
+  const { retirarBeneficiosDePrueba } = await import('../src/utils/pasoAReal.js');
+  const { default: Pago } = await import('../src/models/Pago.js');
+  const eva = await t.crearUsuario();
+  const fran = await t.crearUsuario();
+  // Eva: verificada pagando en pruebas (y además verificada a mano: eso se queda).
+  await webhook({ ...factura({ id: 'in_eva', usuarioId: eva.id, fin: enDias(30), sub: 'sub_eva', cliente: 'cus_eva' }), livemode: false });
+  await t.api.patch(`/usuarios/${eva.id}/verificado`, { verificado: true }, { token: admin.token });
+  // Fran: pagó en pruebas y luego de verdad.
+  await webhook({ ...factura({ id: 'in_fran', usuarioId: fran.id, fin: enDias(30), sub: 'sub_fran', cliente: 'cus_fran' }), livemode: false });
+  await Pago.create({ usuario_id: fran.id, producto: 'verificacion', importe: 150, dias: 30, estado: 'pagado', stripe_factura_id: 'in_fran_real', modo_prueba: false });
+
+  const claveAntes = process.env.STRIPE_SECRET_KEY;
+  try {
+    // Con claves de prueba no hace nada.
+    assert.equal(await retirarBeneficiosDePrueba(), null);
+    process.env.STRIPE_SECRET_KEY = 'sk_live_prueba_milepe';
+    const r = await retirarBeneficiosDePrueba();
+    assert.ok(r.verificaciones >= 1);
+
+    const e = await Usuario.findById(eva.id);
+    assert.equal(e.verificado_hasta, null);
+    assert.equal(e.suscripcion.stripe_suscripcion_id, null, 'la suscripción de prueba no vale en real');
+    assert.equal(e.estaVerificado(), true, 'la verificación manual se queda');
+    assert.ok((await Usuario.findById(fran.id)).verificado_hasta, 'con un pago real detrás, se respeta');
+
+    // En modo real, una suscripción guardada en pruebas se ignora.
+    await Usuario.updateOne({ _id: fran.id }, { 'suscripcion.modo_prueba': true, 'suscripcion.estado': 'activa', 'suscripcion.stripe_suscripcion_id': 'sub_fran' });
+    assert.equal((await t.api.post('/pagos/verificacion/baja', {}, { token: fran.token })).status, 409);
+    assert.equal((await mio(fran)).suscripcion.estado, null);
+  } finally {
+    process.env.STRIPE_SECRET_KEY = claveAntes;
+  }
+});

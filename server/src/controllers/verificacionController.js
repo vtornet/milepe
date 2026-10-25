@@ -15,14 +15,20 @@ import { PRODUCTOS, pagosActivos, stripe, esModoPrueba } from '../utils/stripe.j
 const sitio = () => (process.env.SITIO_URL || 'https://milepe.com').replace(/\/$/, '');
 const desdeUnix = (segundos) => (segundos ? new Date(segundos * 1000) : null);
 
+// La suscripcion guardada solo vale si es del modo en que estamos: con las
+// claves reales, el cliente y la suscripcion de prueba "no existen" para
+// Stripe y cualquier llamada con ellos falla.
+const esDeEsteModo = (usuario) => (usuario.suscripcion?.modo_prueba ?? true) === esModoPrueba();
+const suscripcionVigente = (usuario) => (esDeEsteModo(usuario) ? usuario.suscripcion || {} : {});
+
 const estadoPara = (usuario) => ({
   verificado: usuario.estaVerificado(),
   manual: Boolean(usuario.verificado_manual),
   hasta: usuario.verificado_hasta,
   suscripcion: {
-    estado: usuario.suscripcion?.estado || null,
-    renovacion_cancelada: Boolean(usuario.suscripcion?.renovacion_cancelada),
-    fin_periodo: usuario.suscripcion?.fin_periodo || null,
+    estado: suscripcionVigente(usuario).estado || null,
+    renovacion_cancelada: Boolean(suscripcionVigente(usuario).renovacion_cancelada),
+    fin_periodo: suscripcionVigente(usuario).fin_periodo || null,
   },
   precio: PRODUCTOS.verificacion.importe(),
   pagos_activos: pagosActivos(),
@@ -43,7 +49,7 @@ export const suscribirse = async (req, res, next) => {
     if (!pagosActivos()) throw new ErrorHttp(503, 'Los pagos no están disponibles ahora mismo');
     const usuario = await Usuario.findById(req.usuario._id);
     if (usuario.verificado_manual) throw new ErrorHttp(409, 'Tu perfil ya está verificado por el equipo de MiLepe: no tienes que pagar');
-    const s = usuario.suscripcion || {};
+    const s = suscripcionVigente(usuario);
     if (s.estado === 'activa' || s.estado === 'impagada') {
       throw new ErrorHttp(
         409,
@@ -56,6 +62,7 @@ export const suscribirse = async (req, res, next) => {
     const sesion = await stripe().checkout.sessions.create({
       mode: 'subscription',
       locale: 'es',
+      // Solo se reutiliza el cliente de Stripe si es de este modo (s ya lo filtra).
       ...(s.stripe_cliente_id ? { customer: s.stripe_cliente_id } : { customer_email: usuario.email }),
       client_reference_id: String(usuario._id),
       metadata: { usuario_id: String(usuario._id), producto: 'verificacion' },
@@ -88,8 +95,9 @@ const cambiarRenovacion = (cancelar) => async (req, res, next) => {
   try {
     if (!pagosActivos()) throw new ErrorHttp(503, 'Los pagos no están disponibles ahora mismo');
     const usuario = await Usuario.findById(req.usuario._id);
-    const id = usuario.suscripcion?.stripe_suscripcion_id;
-    if (!id || !['activa', 'impagada'].includes(usuario.suscripcion.estado)) {
+    const s = suscripcionVigente(usuario);
+    const id = s.stripe_suscripcion_id;
+    if (!id || !['activa', 'impagada'].includes(s.estado)) {
       throw new ErrorHttp(409, 'No tienes ninguna suscripción en curso');
     }
     await stripe().subscriptions.update(id, { cancel_at_period_end: cancelar });
@@ -171,6 +179,8 @@ const ESTADO_STRIPE = { active: 'activa', trialing: 'activa', past_due: 'impagad
 
 export const procesarEventoVerificacion = async (evento) => {
   const objeto = evento.data?.object || {};
+  // livemode viene en cada evento de Stripe; sin el (tests antiguos), el modo actual.
+  const modoPrueba = typeof evento.livemode === 'boolean' ? !evento.livemode : esModoPrueba();
 
   if (evento.type === 'checkout.session.completed' && objeto.mode === 'subscription') {
     const usuario = await usuarioDe({ metadatos: objeto.metadata, cliente: objeto.customer });
@@ -179,6 +189,7 @@ export const procesarEventoVerificacion = async (evento) => {
     usuario.suscripcion.stripe_suscripcion_id = objeto.subscription || usuario.suscripcion.stripe_suscripcion_id;
     if (!usuario.suscripcion.estado || usuario.suscripcion.estado === 'cancelada') usuario.suscripcion.estado = 'activa';
     usuario.suscripcion.renovacion_cancelada = false;
+    usuario.suscripcion.modo_prueba = modoPrueba;
     await usuario.save();
     return true;
   }
@@ -199,7 +210,7 @@ export const procesarEventoVerificacion = async (evento) => {
         dias: Math.max(1, Math.round((finPeriodo - Date.now()) / 86400000)),
         estado: 'pagado',
         stripe_factura_id: objeto.id,
-        modo_prueba: esModoPrueba(),
+        modo_prueba: modoPrueba,
         vigente_hasta: finPeriodo,
         pagado_en: new Date(),
       });
@@ -214,6 +225,7 @@ export const procesarEventoVerificacion = async (evento) => {
     usuario.suscripcion.stripe_suscripcion_id = suscripcion || usuario.suscripcion.stripe_suscripcion_id;
     usuario.suscripcion.estado = 'activa';
     usuario.suscripcion.fin_periodo = finPeriodo;
+    usuario.suscripcion.modo_prueba = modoPrueba;
     await usuario.save();
     if (!yaVerificado) {
       await Notificacion.create({
@@ -258,7 +270,7 @@ export const procesarEventoVerificacion = async (evento) => {
 // Al borrar la cuenta: la suscripcion se cancela ya (no tiene sentido seguir
 // cobrando a una cuenta que no existe). Si Stripe falla, no para el borrado.
 export const cancelarSuscripcionAlBorrar = async (usuario) => {
-  const id = usuario.suscripcion?.stripe_suscripcion_id;
+  const id = suscripcionVigente(usuario).stripe_suscripcion_id;
   if (!id || !pagosActivos() || usuario.suscripcion.estado === 'cancelada') return;
   try {
     await stripe().subscriptions.cancel(id);

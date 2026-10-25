@@ -1227,7 +1227,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 272 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 274 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1573,6 +1573,17 @@ active adds to the remaining days (`extenderDestacado`, same rule for
   `?estado=` filters the list.
 - `Pago` is kept when an account is deleted (accounting record) and is in the
   RGPD export. Condiciones §7 and Privacidad §3 (Stripe as processor) cover it.
+- **Test → live.** Stripe ids from one mode don't exist in the other, so
+  `Usuario.suscripcion.modo_prueba` records the mode (from the event's
+  `livemode`; missing = created back when only test mode existed) and
+  `verificacionController` ignores a stored subscription/customer from the
+  other mode. **On boot with live keys, `utils/pasoAReal.js`
+  (`retirarBeneficiosDePrueba`) removes what was paid with test cards**
+  (featured business, sponsored event, paid verification + its test
+  subscription) unless a real payment backs it; manual verification is
+  untouched; test `Pago`s stay (the panel separates them). Idempotent.
+  Decided with the user on 2026-10-25. Live needs its own webhook endpoint
+  (same URL, same 8 events) and both live variables on Railway.
 - Tests (`pagos.test.js`) sign webhook events with the real `stripe` library
   (`generateTestHeaderString`, no network) and replace only
   `checkout.sessions.create` (`usarClienteStripe`).

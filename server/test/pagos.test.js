@@ -179,3 +179,18 @@ test('panel del admin: solo admin, cobrado del mes y total, por estado y separan
   assert.equal((await t.api.get('/pagos/admin?estado=raro', { token: admin.token })).status, 400);
   assert.ok((await t.api.get('/pagos/admin?estado=pagado', { token: admin.token })).body.pagos.every((p) => p.estado === 'pagado'));
 });
+
+test('al pasar a cobros reales, el destacado y el patrocinio pagados en pruebas se retiran', async () => {
+  const { retirarBeneficiosDePrueba } = await import('../src/utils/pasoAReal.js');
+  const claveAntes = process.env.STRIPE_SECRET_KEY;
+  try {
+    process.env.STRIPE_SECRET_KEY = 'sk_live_prueba_milepe';
+    const r = await retirarBeneficiosDePrueba();
+    assert.equal(r.negocios, 1);
+    assert.equal(r.eventos, 1);
+  } finally {
+    process.env.STRIPE_SECRET_KEY = claveAntes;
+  }
+  assert.equal((await t.api.get('/negocios')).body.negocios.find((n) => n._id === negocioId).destacado, false);
+  assert.equal((await t.api.get('/eventos')).body.eventos.find((e) => e._id === eventoId).patrocinado, false);
+});

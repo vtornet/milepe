@@ -123,6 +123,10 @@ const usuarioSchema = new Schema(
       // Se ha dado de baja: no se renovara, pero sigue verificado hasta fin_periodo.
       renovacion_cancelada: { type: Boolean, default: false },
       fin_periodo: { type: Date, default: null },
+      // Modo de Stripe en que se creo (prueba o real). Los ids de un modo no
+      // existen en el otro: al pasar a real, los de prueba se ignoran.
+      // Sin valor = de antes de guardarlo, cuando solo habia modo de prueba.
+      modo_prueba: { type: Boolean, default: null },
     },
     email_verificado: {
       type: Boolean,

@@ -7,6 +7,7 @@ import { iniciarCronCaducarEmpleos } from './jobs/caducarEmpleos.js';
 import { iniciarCronCopiaSeguridad } from './jobs/copiaSeguridad.js';
 import { sincronizarAutobuses } from './utils/cargarAutobuses.js';
 import Usuario from './models/Usuario.js';
+import { retirarBeneficiosDePrueba } from './utils/pasoAReal.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -25,6 +26,8 @@ const iniciar = async () => {
   sincronizarAutobuses();
   // Los admin llevan siempre la insignia de verificado.
   Usuario.asegurarVerificacionDeAdmins().catch((error) => console.error('[usuarios]', error.message));
+  // Con claves reales, lo pagado con tarjetas de prueba deja de valer.
+  retirarBeneficiosDePrueba().catch((error) => console.error('[pagos]', error.message));
 };
 
 iniciar().catch((error) => {
