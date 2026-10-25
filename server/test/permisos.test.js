@@ -102,16 +102,14 @@ test('el Muro es público: se lee sin cuenta', async () => {
   assert.equal((await t.api.get('/posts')).status, 200);
 });
 
-test('nombrar y quitar moderadores: solo un admin, nunca a otro admin ni a sí mismo', async () => {
+test('nombrar y quitar moderadores y admins: solo un admin, nunca a sí mismo', async () => {
   const candidato = await t.crearUsuario();
   const cambiar = (quien, id, rol) => t.api.patch(`/usuarios/${id}/rol`, { rol }, { token: quien.token });
 
   assert.equal((await cambiar(vecino, candidato.id, 'moderador')).status, 403);
   assert.equal((await cambiar(moderador, candidato.id, 'moderador')).status, 403);
-  assert.equal((await cambiar(admin, candidato.id, 'admin')).status, 400, 'admin no se da por aquí');
+  assert.equal((await cambiar(admin, candidato.id, 'jefe')).status, 400, 'rol desconocido');
   assert.equal((await cambiar(admin, admin.id, 'usuario')).status, 400, 'ni a uno mismo');
-  const otroAdmin = await t.crearUsuario({ rol: 'admin' });
-  assert.equal((await cambiar(admin, otroAdmin.id, 'usuario')).status, 409);
 
   assert.equal((await cambiar(admin, candidato.id, 'moderador')).body.usuario.rol, 'moderador');
   assert.equal((await t.api.get('/moderacion/reportes', { token: candidato.token })).status, 200, 'ya ve la cola');
@@ -120,4 +118,31 @@ test('nombrar y quitar moderadores: solo un admin, nunca a otro admin ni a sí m
 
   assert.equal((await cambiar(admin, candidato.id, 'usuario')).body.usuario.rol, 'usuario');
   assert.equal((await t.api.get('/moderacion/reportes', { token: candidato.token })).status, 403, 'y deja de verla al momento');
+});
+
+test('panel de usuarios: solo admin, con datos privados, filtros y rol de admin', async () => {
+  assert.equal((await t.api.get('/usuarios/admin', { token: vecino.token })).status, 403);
+  assert.equal((await t.api.get('/usuarios/admin', { token: moderador.token })).status, 403);
+  assert.equal((await t.api.get('/usuarios/admin')).status, 401);
+
+  const nuevo = await t.crearUsuario();
+  const lista = await t.api.get(`/usuarios/admin?q=${encodeURIComponent(nuevo.usuario.email)}`, { token: admin.token });
+  assert.equal(lista.status, 200);
+  const fila = lista.body.usuarios.find((u) => String(u._id) === String(nuevo.id));
+  assert.ok(fila, 'sale por correo');
+  assert.ok(fila.email && fila.nombre, 'lleva correo y nombre real');
+  assert.equal(fila.contraseña, undefined);
+  assert.equal(fila.google_id, undefined);
+
+  assert.equal((await t.api.get('/usuarios/admin?rol=jefe', { token: admin.token })).status, 400);
+  assert.equal((await t.api.get('/usuarios/admin?estado=raro', { token: admin.token })).status, 400);
+
+  // Nombrar admin deja rastro en el registro y le da la insignia.
+  const r = await t.api.patch(`/usuarios/${nuevo.id}/rol`, { rol: 'admin' }, { token: admin.token });
+  assert.equal(r.body.usuario.rol, 'admin');
+  const admins = await t.api.get('/usuarios/admin?rol=admin', { token: admin.token });
+  assert.ok(admins.body.usuarios.some((u) => String(u._id) === String(nuevo.id) && u.verificado_manual));
+  const registro = await t.api.get('/moderacion/registro', { token: admin.token });
+  assert.ok(JSON.stringify(registro.body).includes('rol_cambiado'));
+  assert.equal((await t.api.patch(`/usuarios/${nuevo.id}/rol`, { rol: 'usuario' }, { token: admin.token })).body.usuario.rol, 'usuario');
 });

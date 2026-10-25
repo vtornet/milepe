@@ -34,6 +34,8 @@ export const ACCIONES_MODERACION = [
   // contenido_id y autor_contenido_id son la propia cuenta).
   'cuenta_suspendida',
   'suspension_levantada',
+  // Cambio de rol de una cuenta (usuario, moderador, admin); la nota dice de cual a cual.
+  'rol_cambiado',
 ];
 
 const registroSchema = new Schema(

@@ -263,11 +263,13 @@ created (`estado_moderacion` defaults to `'publicado'`), and
 `'eliminado'` is a soft delete — documents are never actually removed, so
 comment references and history survive. `Usuario.rol`
 (`usuario`/`moderador`/`admin`) is designed so new moderators can be added
-by editing one field on an existing document — no migration. An admin can now name or remove
-moderators from the person's profile (`PATCH /api/usuarios/:id/rol`, only
-between `usuario` and `moderador`, never on an admin nor on oneself — making
-someone admin is still a deliberate database edit); the person is notified
-and has to log in again for the client to show the panel.
+by editing one field on an existing document — no migration. An admin names or
+removes moderators **and other admins** from the person's profile or from the
+Usuarios panel (`PATCH /api/usuarios/:id/rol`, any of the three roles, never
+on oneself so at least one admin always remains); it is logged as
+`rol_cambiado` (note "de → a") and the person is notified and has to log in
+again for the client to show the panels. Becoming admin also sets
+`verificado_manual`. (Until 2026-10-25 admin was a database edit only.)
 
 Everything else runs through four collections and one controller
 (`moderacionController` + `/api/moderacion`), all of it **generic over
@@ -1132,6 +1134,21 @@ has comments).
   hide / delete (inline "¿Seguro?") and the hidden records; the API
   re-checks it. `TurismoFormulario` uploads images through
   `/subidas/imagenes` before saving.
+
+### Panel de usuarios (admin)
+
+`GET /api/usuarios/admin` (`listarUsuariosAdmin`, **admin only**, declared
+before `/:id`) is the only list where other neighbours' real name, surnames and
+email leave the API, so it is paginated (25, max 100) and admin-gated. Filters:
+`q` (username, name, surnames, email; escaped regex), `rol`, `estado`
+(`suspendidos`, `oficiales`, `verificados`, `sin_verificar_correo`,
+`inactivos`; default is active accounts only). Never returns the hash, Google
+id or tokens (`con_google` is a boolean). Client: the "Usuarios" tab of
+`ModeracionPage` (`UsuariosPanel.jsx`, admin only): each row shows the data and
+"Gestionar" opens role (inline "¿Seguro?" for admin changes), cuenta oficial
+(Ayuntamiento), verify without payment and `SuspensionAdmin` (suspending =
+banning, temporary or indefinite). It reuses the existing endpoints; it can't
+act on oneself and admins can't be suspended. Tests in `permisos.test.js`.
 
 ### Admin statistics
 
@@ -2166,20 +2183,24 @@ What's left before promoting the PWA publicly, in order. Items marked
    **2026-10-31**; from 1 November `/farmacias` and the rail say there's no
    data. When the Colegio publishes the November PDF, drop it in the repo
    root and load it (same every month).
-2. **Google OAuth "En producción" (usuario).** Google Cloud Console → OAuth
-   consent screen: from "Testing" to "In production", or "Continuar con
-   Google" only works for listed test users.
+2. **Google OAuth "En producción" (hecho).** Checked 2026-10-25 in Google
+   Cloud (project `milepe`): publishing status "En producción", external
+   users; client "MiLepe web" with origins `https://milepe.com`,
+   `https://www.milepe.com` and `http://localhost:5173` (no redirect URIs
+   needed: ID-token flow). Add `localhost:5174/5175` there if Google sign-in
+   is ever tried on those ports.
 3. **Fiscalidad de los cobros (usuario).** Stripe charges for real in the name
    of a natural person (the legal pages name the owner with NIF). Check with a
    gestor: alta de autónomo, declaring income, and whether VAT must be
    charged (prices say "IVA incluido").
-4. **Derecho de desistimiento (aquí).** EU consumers have 14 days to withdraw
+4. **Derecho de desistimiento (hecho).** EU consumers have 14 days to withdraw
    from a digital service unless they expressly agree to immediate start and
    waive it. Add that consent to Checkout (`consent_collection` /
    custom text) and to Condiciones §7.
-5. **Recibos de Stripe (usuario).** Stripe live → Settings → Customer emails:
-   enable receipts for successful payments (the result page and Condiciones
-   promise "te llegará el recibo de Stripe por correo").
+5. **Recibos de Stripe (hecho).** Confirmed 2026-10-25: a real purchase
+   made in live mode sent the customer the receipt/invoice by email (the
+   result page and Condiciones promise "te llegará el recibo de Stripe por
+   correo").
 
 **First week (strongly recommended)**
 

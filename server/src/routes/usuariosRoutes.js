@@ -9,6 +9,7 @@ import {
   perfilPublico,
   marcarOficial,
   cambiarRol,
+  listarUsuariosAdmin,
   suspenderUsuario,
   levantarSuspension,
   exportarMisDatos,
@@ -29,6 +30,8 @@ router.delete('/perfil', protegido, eliminarMiCuenta);
 
 router.get('/buscar', protegido, buscarUsuarios);
 router.get('/bloqueados', protegido, listarBloqueados);
+// Panel de usuarios del admin (con datos privados). Antes de /:id.
+router.get('/admin', protegido, autorizar('admin'), listarUsuariosAdmin);
 // La ficha de un vecino se ve sin sesion (MiLepe se lee sin cuenta), pero
 // si hay sesion la respuesta incluye la relacion: de ahi `opcional` y no
 // `protegido`. Va despues de /perfil, /buscar y /bloqueados para que esas

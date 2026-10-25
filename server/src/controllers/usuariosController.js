@@ -1,4 +1,4 @@
-import Usuario from '../models/Usuario.js';
+import Usuario, { ROLES_USUARIO } from '../models/Usuario.js';
 import Bloqueo from '../models/Bloqueo.js';
 import Seguimiento from '../models/Seguimiento.js';
 import Post from '../models/Post.js';
@@ -273,15 +273,15 @@ export const eliminarMiCuenta = async (req, res, next) => {
   }
 };
 
-// Nombrar o quitar moderadores. Solo admin (lo exige la ruta), y solo entre
-// 'usuario' y 'moderador': hacer admin a alguien, o quitarselo, sigue siendo
-// un cambio deliberado en la base de datos, no un boton. Nadie se cambia el
-// rol a si mismo.
+// Cambiar el rol de una cuenta. Solo admin (lo exige la ruta). Admite los
+// tres roles, tambien nombrar o quitar administradores: la unica salvaguarda
+// es que nadie se cambia el rol a si mismo, asi siempre queda al menos un
+// admin. Queda en el registro de auditoria y la persona recibe un aviso.
 export const cambiarRol = async (req, res, next) => {
   try {
     const { rol } = req.body || {};
-    if (!['usuario', 'moderador'].includes(rol)) {
-      throw new ErrorHttp(400, 'rol debe ser usuario o moderador');
+    if (!ROLES_USUARIO.includes(rol)) {
+      throw new ErrorHttp(400, 'rol debe ser usuario, moderador o admin');
     }
     if (String(req.params.id) === String(req.usuario._id)) {
       throw new ErrorHttp(400, 'No puedes cambiar tu propio rol');
@@ -289,26 +289,113 @@ export const cambiarRol = async (req, res, next) => {
 
     const usuario = await Usuario.findOne({ _id: req.params.id, activo: true });
     if (!usuario) throw new ErrorHttp(404, 'Usuario no encontrado');
-    if (usuario.rol === 'admin') {
-      throw new ErrorHttp(409, 'Un administrador no se cambia desde aquí');
-    }
 
     if (usuario.rol !== rol) {
+      const anterior = usuario.rol;
       usuario.rol = rol;
+      // Un admin lleva siempre la insignia de verificado.
+      if (rol === 'admin') usuario.verificado_manual = true;
       await usuario.save();
+
+      await RegistroModeracion.registrar({
+        moderador_id: req.usuario._id,
+        accion: 'rol_cambiado',
+        contenido_tipo: 'usuario',
+        contenido_id: usuario._id,
+        autor_contenido_id: usuario._id,
+        nota: `${anterior} → ${rol}`,
+      });
+      const MENSAJES = {
+        admin: 'Ahora eres administrador de MiLepe. Cierra sesión y vuelve a entrar para ver todos los paneles.',
+        moderador: 'Ahora formas parte del equipo de moderación de MiLepe. Tienes el panel en el menú.',
+        usuario: 'Ya no formas parte del equipo de MiLepe.',
+      };
       await Notificacion.create({
         usuario_id: usuario._id,
         tipo: 'moderacion',
-        mensaje:
-          rol === 'moderador'
-            ? 'Ahora formas parte del equipo de moderación de MiLepe. Tienes el panel en el menú.'
-            : 'Ya no formas parte del equipo de moderación de MiLepe.',
+        mensaje: MENSAJES[rol],
         referencia_id: usuario._id,
         referencia_tipo: 'usuario',
       });
     }
 
     res.json({ ok: true, usuario: { _id: usuario._id, nombre_usuario: usuario.nombre_usuario, rol: usuario.rol } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Panel de usuarios del admin: la unica lista donde salen el nombre real y
+// el correo de otros vecinos, por eso es solo admin y se pagina. Filtros:
+// `q` (usuario, nombre, apellidos o correo), `rol`, `estado`
+// (suspendidos | oficiales | verificados | sin_verificar_correo | inactivos).
+// Por defecto solo cuentas activas (las anonimizadas por RGPD no pintan nada).
+export const listarUsuariosAdmin = async (req, res, next) => {
+  try {
+    const { q, rol, estado } = req.query;
+    const limite = Math.min(Math.max(parseInt(req.query.limite, 10) || 25, 1), 100);
+    const pagina = Math.max(parseInt(req.query.pagina, 10) || 1, 1);
+    const ahora = new Date();
+
+    const filtro = { activo: estado !== 'inactivos' };
+    if (rol) {
+      if (!ROLES_USUARIO.includes(rol)) throw new ErrorHttp(400, 'rol no valido');
+      filtro.rol = rol;
+    }
+    const porEstado = {
+      suspendidos: { $or: [{ 'suspension.permanente': true }, { 'suspension.hasta': { $gt: ahora } }] },
+      oficiales: { oficial: true },
+      verificados: { $or: [{ verificado_manual: true }, { verificado_hasta: { $gt: ahora } }] },
+      sin_verificar_correo: { email_verificado: false },
+    };
+    const condiciones = [];
+    if (estado && estado !== 'inactivos') {
+      if (!porEstado[estado]) throw new ErrorHttp(400, 'estado no valido');
+      condiciones.push(porEstado[estado]);
+    }
+    const consulta = (q || '').trim();
+    if (consulta) {
+      const patron = new RegExp(escaparRegExp(consulta), 'i');
+      condiciones.push({ $or: [{ nombre_usuario: patron }, { nombre: patron }, { apellidos: patron }, { email: patron }] });
+    }
+    if (condiciones.length) filtro.$and = condiciones;
+
+    const [total, usuarios] = await Promise.all([
+      Usuario.countDocuments(filtro),
+      Usuario.find(filtro)
+        .select(
+          `${CAMPOS_PUBLICOS_USUARIO} +nombre +apellidos +google_id email email_verificado perfil_completo rol oficial verificado_manual verificado_hasta suspension activo fecha_creacion`,
+        )
+        .sort({ fecha_creacion: -1 })
+        .skip((pagina - 1) * limite)
+        .limit(limite),
+    ]);
+
+    res.json({
+      ok: true,
+      total,
+      pagina,
+      paginas: Math.max(Math.ceil(total / limite), 1),
+      usuarios: usuarios.map((u) => ({
+        _id: u._id,
+        nombre_usuario: u.nombre_usuario,
+        nombre: u.nombre,
+        apellidos: u.apellidos,
+        email: u.email,
+        email_verificado: u.email_verificado,
+        perfil_completo: u.perfil_completo,
+        con_google: Boolean(u.google_id),
+        avatar_url: u.avatar_url,
+        rol: u.rol,
+        oficial: u.oficial,
+        verificado_manual: u.verificado_manual,
+        verificado_hasta: u.verificado_hasta,
+        suspension: u.suspension,
+        suspendido: u.estaSuspendido(ahora),
+        activo: u.activo,
+        fecha_creacion: u.fecha_creacion,
+      })),
+    });
   } catch (error) {
     next(error);
   }

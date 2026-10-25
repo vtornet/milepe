@@ -7,6 +7,7 @@ import FilaEdicion from './FilaEdicion.jsx';
 import RegistroModeracion from './RegistroModeracion.jsx';
 import EstadisticasPanel from './EstadisticasPanel.jsx';
 import PagosPanel from './PagosPanel.jsx';
+import UsuariosPanel from './UsuariosPanel.jsx';
 import ReclamacionesNegocios from './ReclamacionesNegocios.jsx';
 
 const PESTANAS = [
@@ -15,6 +16,7 @@ const PESTANAS = [
   { clave: 'ediciones', etiqueta: 'Ediciones' },
   { clave: 'registro', etiqueta: 'Registro' },
   // Solo admin: son datos de toda la red, no de la cola de moderación.
+  { clave: 'usuarios', etiqueta: 'Usuarios', soloAdmin: true },
   { clave: 'negocios', etiqueta: 'Negocios', soloAdmin: true },
   { clave: 'estadisticas', etiqueta: 'Estadísticas', soloAdmin: true },
   { clave: 'pagos', etiqueta: 'Pagos', soloAdmin: true },
@@ -127,7 +129,7 @@ function ModeracionPage() {
           </button>
         ))}
 
-        {!['registro', 'ediciones', 'estadisticas', 'negocios', 'pagos'].includes(pestana) && (
+        {!['registro', 'ediciones', 'estadisticas', 'negocios', 'pagos', 'usuarios'].includes(pestana) && (
           <label className="filtro-casilla">
             <input
               type="checkbox"
@@ -195,6 +197,8 @@ function ModeracionPage() {
       )}
 
       {pestana === 'registro' && <RegistroModeracion />}
+
+      {pestana === 'usuarios' && esAdmin && <UsuariosPanel />}
 
       {pestana === 'negocios' && esAdmin && <ReclamacionesNegocios />}
 
