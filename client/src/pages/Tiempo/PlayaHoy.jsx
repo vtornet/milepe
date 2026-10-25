@@ -17,22 +17,66 @@ const NOMBRE_DIA = (dia, hoy) => (dia === hoy ? 'Hoy' : 'Mañana');
 // "La playa hoy" en La Antilla: mareas, agua, oleaje y UV. Solo horas para
 // las mareas, sin alturas: el modelo las da respecto al nivel medio del mar,
 // no al cero de las tablas náuticas, y un "-1,8 m" confunde más que ayuda.
+// Reintentos automáticos antes de rendirse: un fallo suelto (la API
+// reiniciándose en un despliegue, la cobertura del móvil) no debe dejar la
+// sección sin datos hasta que alguien recargue.
+const ESPERAS_REINTENTO_MS = [2000, 6000];
+
 function PlayaHoy() {
   const [playa, setPlaya] = useState(null);
   const [error, setError] = useState(false);
+  // Cambia para volver a pedir los datos (botón "Reintentar").
+  const [intento, setIntento] = useState(0);
 
   useEffect(() => {
     let cancelado = false;
-    api
-      .get('/playa')
-      .then(({ data }) => !cancelado && setPlaya(data.playa))
-      .catch(() => !cancelado && setError(true));
+    let temporizador;
+    const pedir = (fallos) => {
+      api
+        .get('/playa')
+        .then(({ data }) => {
+          if (cancelado) return;
+          setPlaya(data.playa);
+          setError(false);
+        })
+        .catch(() => {
+          if (cancelado) return;
+          if (fallos < ESPERAS_REINTENTO_MS.length) {
+            temporizador = setTimeout(() => pedir(fallos + 1), ESPERAS_REINTENTO_MS[fallos]);
+          } else {
+            setError(true);
+          }
+        });
+    };
+    pedir(0);
     return () => {
       cancelado = true;
+      clearTimeout(temporizador);
     };
-  }, []);
+  }, [intento]);
 
-  if (error) return null;
+  // Antes desaparecía sin decir nada si fallaba: parecía que la sección ya no
+  // existía.
+  if (error && !playa) {
+    return (
+      <>
+        <h2>La playa hoy · La Antilla</h2>
+        <article className="tarjeta">
+          <p className="tarjeta-meta">No se han podido cargar los datos de la playa ahora mismo.</p>
+          <button
+            type="button"
+            className="btn btn-contorno btn-sm"
+            onClick={() => {
+              setError(false);
+              setIntento((n) => n + 1);
+            }}
+          >
+            Reintentar
+          </button>
+        </article>
+      </>
+    );
+  }
   if (!playa) return null;
 
   const hoy = playa.mareas[0]?.dia;
