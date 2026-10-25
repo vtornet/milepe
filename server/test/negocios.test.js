@@ -92,3 +92,34 @@ test('ofertas: futura, como mucho 90 días, se ve mientras vale y se quita sin t
 test('el propietario no puede reclamar lo que ya es suyo', async () => {
   assert.equal((await t.api.post(`/negocios/${id}/reclamar`, { mensaje: 'Es mío' }, { token: duena.token })).status, 409);
 });
+
+test('"soy el propietario" al publicar abre una reclamación; la etiqueta llega al aceptarla', async () => {
+  const sinPrueba = await t.api.post('/negocios', { ...negocio, titulo: 'Sin prueba', prueba_propiedad: '  ' }, { token: otro.token });
+  assert.equal(sinPrueba.status, 400);
+  assert.ok(!(await t.api.get('/negocios')).body.negocios.some((n) => n.titulo === 'Sin prueba'), 'no deja el negocio a medias');
+
+  const r = await t.api.post('/negocios', { ...negocio, titulo: 'Taller Paco', prueba_propiedad: 'Llamad al 959 11 22 33 y preguntad por Paco' }, { token: otro.token });
+  assert.equal(r.status, 201);
+  assert.equal(r.body.reclamacion_pendiente, true);
+  assert.equal(r.body.negocio.propietario_id ?? null, null, 'todavía no es propietario');
+  const nuevo = r.body.negocio._id;
+
+  assert.deepEqual((await t.api.get('/negocios/mis-reclamaciones', { token: otro.token })).body.negocios, [nuevo]);
+
+  const cola = (await t.api.get('/negocios/reclamaciones', { token: admin.token })).body.reclamaciones;
+  const suya = cola.find((x) => String(x.post_id._id) === nuevo);
+  assert.equal(suya.es_quien_lo_publico, true);
+  assert.equal(suya.negocio.direccion, negocio.direccion);
+
+  assert.equal((await t.api.patch(`/negocios/reclamaciones/${suya._id}`, { estado: 'aceptada' }, { token: admin.token })).status, 200);
+  const ficha = (await t.api.get('/negocios')).body.negocios.find((n) => n._id === nuevo);
+  assert.equal(String(ficha.propietario_id), otro.id);
+  assert.deepEqual((await t.api.get('/negocios/mis-reclamaciones', { token: otro.token })).body.negocios, []);
+});
+
+test('quien publicó un negocio sin marcarlo puede acreditarlo después', async () => {
+  const r = await t.api.post('/negocios', { ...negocio, titulo: 'Mercería Ana' }, { token: duena.token });
+  assert.equal(r.body.reclamacion_pendiente, false);
+  const reclamar = await t.api.post(`/negocios/${r.body.negocio._id}/reclamar`, { mensaje: 'Tengo la licencia a mi nombre' }, { token: duena.token });
+  assert.equal(reclamar.status, 201);
+});

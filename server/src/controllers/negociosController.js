@@ -44,6 +44,16 @@ export const crearNegocio = async (req, res, next) => {
   try {
     const { titulo, contenido, imagenes, categoria, direccion, ubicacion, telefono, horario, sitio_web } = req.body;
 
+    // "Soy el propietario" al publicarlo: no da la ficha por suya, abre la
+    // misma reclamacion que el boton de la tarjeta, con la prueba que aporte.
+    // La etiqueta "Gestionado por su propietario" llega cuando un admin la
+    // acepta. Se valida antes de crear nada, para no dejar un negocio a medias.
+    const prueba = typeof req.body.prueba_propiedad === 'string' ? req.body.prueba_propiedad.trim() : '';
+    if (req.body.prueba_propiedad !== undefined && !prueba) {
+      throw new ErrorHttp(400, 'Cuenta cómo podemos comprobar que el negocio es tuyo');
+    }
+    if (prueba.length > 500) throw new ErrorHttp(400, 'La prueba es demasiado larga (500 caracteres como mucho)');
+
     post = await Post.create({
       autor_id: req.usuario._id,
       tipo: 'negocio',
@@ -62,9 +72,13 @@ export const crearNegocio = async (req, res, next) => {
       sitio_web,
     });
 
+    const reclamacion = prueba
+      ? await ReclamacionNegocio.create({ post_id: post._id, usuario_id: req.usuario._id, mensaje: prueba })
+      : null;
+
     await post.populate('autor_id', CAMPOS_PUBLICOS_USUARIO);
 
-    res.status(201).json({ ok: true, negocio: formatearNegocio(post, detalle) });
+    res.status(201).json({ ok: true, negocio: formatearNegocio(post, detalle), reclamacion_pendiente: Boolean(reclamacion) });
   } catch (error) {
     if (post) await Post.deleteOne({ _id: post._id });
     next(error);
@@ -293,6 +307,17 @@ export const reclamarNegocio = async (req, res, next) => {
   }
 };
 
+// Los negocios que quien pregunta tiene reclamados y sin resolver: la
+// tarjeta dice "pendiente de verificar" en vez de ofrecer reclamarlo otra vez.
+export const listarMisReclamaciones = async (req, res, next) => {
+  try {
+    const filas = await ReclamacionNegocio.find({ usuario_id: req.usuario._id, estado: 'pendiente' }).select('post_id');
+    res.json({ ok: true, negocios: filas.map((f) => String(f.post_id)) });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Cola del admin: las pendientes, las mas antiguas primero.
 export const listarReclamaciones = async (req, res, next) => {
   try {
@@ -302,7 +327,29 @@ export const listarReclamaciones = async (req, res, next) => {
       .populate('usuario_id', CAMPOS_PUBLICOS_USUARIO)
       .populate('post_id', 'titulo autor_id');
 
-    res.json({ ok: true, reclamaciones });
+    // Lo que necesita el admin para comprobarlo (llamar al local, mirar la
+    // web) y si quien reclama es quien lo publico.
+    const detalles = await NegocioDetalle.find({ post_id: { $in: reclamaciones.map((r) => r.post_id?._id).filter(Boolean) } })
+      .select('post_id telefono direccion sitio_web propietario_id')
+      .lean();
+    const porPost = new Map(detalles.map((d) => [String(d.post_id), d]));
+
+    res.json({
+      ok: true,
+      reclamaciones: reclamaciones.map((r) => {
+        const d = porPost.get(String(r.post_id?._id)) || {};
+        return {
+          ...r.toObject(),
+          negocio: {
+            telefono: d.telefono || null,
+            direccion: d.direccion || null,
+            sitio_web: d.sitio_web || null,
+            tiene_propietario: Boolean(d.propietario_id),
+          },
+          es_quien_lo_publico: Boolean(r.post_id?.autor_id && r.usuario_id?._id && r.post_id.autor_id.equals(r.usuario_id._id)),
+        };
+      }),
+    });
   } catch (error) {
     next(error);
   }

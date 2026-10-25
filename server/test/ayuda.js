@@ -34,6 +34,11 @@ export async function arrancar({ limites = false } = {}) {
   const { default: Usuario } = await import('../src/models/Usuario.js');
   const { firmarToken } = await import('../src/utils/jwt.js');
 
+  // Los indices (unicos, parciales) se crean en segundo plano al cargar cada
+  // modelo; sin esperarlos, un test que prueba "no se puede dos veces" puede
+  // llegar antes que el indice y pasar el duplicado. En produccion ya existen.
+  await Promise.all(mongoose.modelNames().map((nombre) => mongoose.model(nombre).init()));
+
   const servidor = app.listen(0);
   const base = `http://127.0.0.1:${servidor.address().port}/api`;
 

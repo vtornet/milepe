@@ -118,7 +118,7 @@ function Reclamar({ negocio, onHecho, onCancelar }) {
   return (
     <form className="formulario-edicion" onSubmit={enviar}>
       <label>
-        Cuéntanos cómo podemos comprobar que es tuyo (por ejemplo, el teléfono del local o el CIF)
+        Cómo podemos comprobarlo: por ejemplo, llamaros al teléfono del local, que os escriba desde el correo de su web, o el CIF o la licencia a vuestro nombre
         <textarea rows={3} required maxLength={500} value={mensaje} onChange={(e) => setMensaje(e.target.value)} />
       </label>
       {error && <p className="mensaje-error">{error}</p>}
@@ -134,7 +134,7 @@ function Reclamar({ negocio, onHecho, onCancelar }) {
   );
 }
 
-function NegocioTarjeta({ negocio: inicial }) {
+function NegocioTarjeta({ negocio: inicial, reclamacionPendiente = false, onReclamado }) {
   const { usuario } = useAuth();
   const [negocio, setNegocio] = useState(inicial);
   const [modo, setModo] = useState(null); // null | 'editar' | 'reclamar' | 'reclamado'
@@ -144,6 +144,9 @@ function NegocioTarjeta({ negocio: inicial }) {
   const yo = usuario ? String(usuario._id) : null;
   const gestiono = Boolean(yo && (usuario.rol === 'admin' || (propietario ? propietario === yo : String(autorId) === yo)));
   const puedoReclamar = Boolean(yo && !gestiono && propietario !== yo);
+  // Quien lo publicó lo gestiona mientras no tenga propietario, pero eso no
+  // es lo mismo que serlo: puede acreditarlo para que lleve la etiqueta.
+  const puedoAcreditar = Boolean(yo && !propietario && String(autorId) === yo);
 
   return (
     <TarjetaPublicacion
@@ -203,7 +206,19 @@ function NegocioTarjeta({ negocio: inicial }) {
           }}
         />
       )}
-      {modo === 'reclamar' && <Reclamar negocio={negocio} onCancelar={() => setModo(null)} onHecho={() => setModo('reclamado')} />}
+      {modo === 'reclamar' && (
+        <Reclamar
+          negocio={negocio}
+          onCancelar={() => setModo(null)}
+          onHecho={() => {
+            setModo('reclamado');
+            onReclamado?.();
+          }}
+        />
+      )}
+      {!modo && reclamacionPendiente && !propietario && (
+        <p className="tarjeta-meta">Has pedido gestionar este negocio como propietario: está pendiente de que un administrador lo compruebe.</p>
+      )}
       {modo === 'reclamado' && (
         <p className="tarjeta-meta">Recibido. Un administrador lo revisará y te avisaremos.</p>
       )}
@@ -213,7 +228,12 @@ function NegocioTarjeta({ negocio: inicial }) {
           Editar ficha y oferta
         </button>
       )}
-      {!modo && puedoReclamar && (
+      {!modo && puedoAcreditar && !reclamacionPendiente && (
+        <button type="button" className="btn btn-plano btn-sm" onClick={() => setModo('reclamar')}>
+          Acreditar que soy el propietario
+        </button>
+      )}
+      {!modo && puedoReclamar && !reclamacionPendiente && (
         <button type="button" className="btn btn-plano btn-sm" onClick={() => setModo('reclamar')}>
           ¿Es tu negocio? Gestiónalo
         </button>

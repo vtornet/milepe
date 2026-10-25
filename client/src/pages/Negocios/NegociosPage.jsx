@@ -6,6 +6,7 @@ import Icono from '../../components/Icono.jsx';
 import { EsqueletoFeed } from '../../components/Esqueleto.jsx';
 import NegocioFormulario from './NegocioFormulario.jsx';
 import NegocioTarjeta from './NegocioTarjeta.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 const CATEGORIAS = [
   { valor: '', etiqueta: 'Todas las categorías' },
@@ -24,6 +25,17 @@ function NegociosPage() {
   const [categoria, setCategoria] = useState('');
   const [cercaDeMi, setCercaDeMi] = useState(null); // { lat, lng } o null
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const { usuario } = useAuth();
+  // Negocios que tengo reclamados y sin resolver: su tarjeta lo dice.
+  const [reclamados, setReclamados] = useState([]);
+
+  useEffect(() => {
+    if (!usuario) return;
+    api
+      .get('/negocios/mis-reclamaciones')
+      .then(({ data }) => setReclamados(data.negocios))
+      .catch(() => {});
+  }, [usuario]);
 
   useEffect(() => {
     let cancelado = false;
@@ -55,18 +67,22 @@ function NegociosPage() {
   }, [categoria, cercaDeMi]);
 
   const buscarCercaDeMi = () => {
+    // Sin alert(): un diálogo del navegador bloquea la página y parece un
+    // fallo del sistema. El aviso sale en la propia página.
+    setError(null);
     if (!navigator.geolocation) {
-      alert('Tu navegador no permite compartir tu ubicación.');
+      setError('Tu navegador no permite compartir tu ubicación.');
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (posicion) => setCercaDeMi({ lat: posicion.coords.latitude, lng: posicion.coords.longitude }),
-      () => alert('No se pudo obtener tu ubicación.'),
+      () => setError('No se pudo obtener tu ubicación. Revisa el permiso de ubicación del navegador.'),
     );
   };
 
-  const manejarNegocioCreado = (negocioNuevo) => {
+  const manejarNegocioCreado = (negocioNuevo, { reclamacionPendiente } = {}) => {
     setNegocios([negocioNuevo, ...negocios]);
+    if (reclamacionPendiente) setReclamados((actuales) => [...actuales, negocioNuevo._id]);
     setMostrarFormulario(false);
   };
 
@@ -114,7 +130,12 @@ function NegociosPage() {
       )}
 
       {negocios.map((negocio) => (
-        <NegocioTarjeta key={negocio._id} negocio={negocio} />
+        <NegocioTarjeta
+          key={negocio._id}
+          negocio={negocio}
+          reclamacionPendiente={reclamados.includes(negocio._id)}
+          onReclamado={() => setReclamados((actuales) => [...actuales, negocio._id])}
+        />
       ))}
     </section>
   );

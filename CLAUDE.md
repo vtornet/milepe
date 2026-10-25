@@ -1014,6 +1014,16 @@ re-derive otherwise:
   published it. Owner replies to reviews carry a "Propietario" badge
   (`propietarioId` threaded from `TarjetaPublicacion` down to each comment).
   RGPD: claims are exported, and deleting an account frees its businesses.
+  **"Soy el propietario" when publishing** (`prueba_propiedad` in
+  `POST /negocios`) does *not* make you the owner: it creates the same
+  `ReclamacionNegocio` with that proof, validated before anything is created,
+  and the "Gestionado por su propietario" badge only appears when an admin
+  accepts it. The author of an unclaimed listing manages it but isn't its
+  owner, so their card offers "Acreditar que soy el propietario" (same
+  claim). `GET /negocios/mis-reclamaciones` (your pending ones) lets the card
+  say "pendiente de verificar". The admin queue now carries the business's
+  phone, website, address and whether the claimant published it, so the
+  claim can be checked (calling the shop) rather than taken on trust.
 - **Turismo** is not a post section any more — see "Turismo" below.
 - **Empleo**: `modalidad` (`busco`/`ofrezco`) is a *required* query param on
   `GET /api/empleo`, not an optional filter like `categoria` elsewhere — the
@@ -1211,7 +1221,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 247 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 249 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1232,6 +1242,10 @@ several processes downloading the `mongod` binary at once can corrupt it.
   Only `limites.test.js` turns them on, and its tests share one counter, so
   **their order matters**. Without `trust proxy` (production only)
   `X-Forwarded-For` is ignored in tests, so every request is the same IP.
+- `arrancar()` waits for every model's indexes (`Model.init()`) before
+  serving: they are built in the background, and a "can't do it twice" test
+  could otherwise beat the unique index (it happened with
+  `ReclamacionNegocio`).
 - The error handler `console.error`s every error, including the 4xx the
   tests provoke on purpose, so `arrancar()` silences `console.error/log`
   until `detener()`. If a test fails mysteriously, comment that out first.

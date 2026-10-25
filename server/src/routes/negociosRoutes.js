@@ -7,6 +7,7 @@ import {
   guardarOferta,
   reclamarNegocio,
   listarReclamaciones,
+  listarMisReclamaciones,
   resolverReclamacion,
 } from '../controllers/negociosController.js';
 import { protegido, autorizar } from '../middlewares/auth.js';
@@ -17,6 +18,7 @@ const router = Router();
 router.get('/', listarNegocios);
 // Antes de /:id, o Express leeria "reclamaciones" como un id.
 router.get('/reclamaciones', protegido, autorizar('admin'), listarReclamaciones);
+router.get('/mis-reclamaciones', protegido, listarMisReclamaciones);
 router.patch('/reclamaciones/:id', protegido, autorizar('admin'), resolverReclamacion);
 router.get('/:id', obtenerNegocio);
 router.post('/', protegido, exigePerfilCompleto, crearNegocio);
