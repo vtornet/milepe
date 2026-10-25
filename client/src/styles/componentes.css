@@ -2526,6 +2526,41 @@ select:disabled {
   color: var(--marca-fuerte);
 }
 
+/* En el móvil no caben en fila (Útil tiene cuatro) y había que desplazar
+   para ver la última: se reparten el ancho a partes iguales, como una barra
+   segmentada, con el icono encima y el nombre debajo (en dos líneas si hace
+   falta). --pestanas lo pone GrupoPestanas.jsx con cuántas hay. */
+@media (max-width: 599px) {
+  .pestanas-grupo {
+    display: grid;
+    grid-template-columns: repeat(var(--pestanas, 3), minmax(0, 1fr));
+    gap: 0;
+    overflow: visible;
+    padding: 3px;
+    border: 1px solid var(--borde);
+    border-radius: var(--r-md);
+    background: var(--superficie);
+  }
+
+  .pestanas-grupo a {
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    min-height: 52px;
+    padding: var(--e-1) 4px;
+    border: 0;
+    border-radius: var(--r-sm);
+    font-size: var(--t-xs);
+    line-height: 1.15;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .pestanas-grupo a.activa {
+    background: var(--marca-tenue);
+  }
+}
+
 /* ---------------- Encuestas ---------------- */
 
 .encuesta-opciones {

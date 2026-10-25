@@ -7,10 +7,11 @@ import { pestanasDelGrupo } from './secciones.js';
 // página y su propia ruta, así que los enlaces de siempre (/empleo,
 // /farmacias...) siguen funcionando: el grupo solo añade esta fila arriba.
 function GrupoPestanas({ grupo }) {
+  const pestanas = pestanasDelGrupo(grupo);
   return (
     <>
-      <nav className="pestanas-grupo" aria-label="Apartados">
-        {pestanasDelGrupo(grupo).map((s) => (
+      <nav className="pestanas-grupo" aria-label="Apartados" style={{ '--pestanas': pestanas.length }}>
+        {pestanas.map((s) => (
           <NavLink key={s.ruta} to={s.ruta} end className={({ isActive }) => (isActive ? 'activa' : undefined)}>
             <Icono nombre={s.icono} tam={16} />
             {s.pestana || s.etiqueta}
