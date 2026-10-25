@@ -10,7 +10,7 @@ import Icono from './Icono.jsx';
 // "¿seguro?" en un botón reversible solo estorba. Lo que sí avisa es de
 // que dejar de seguir cierra la conversación privada, porque eso no es
 // evidente y sí tiene consecuencias.
-function BotonSeguir({ usuarioId, compacto = false }) {
+function BotonSeguir({ usuarioId, compacto = false, enLinea = false }) {
   const { usuario } = useAuth();
   const { relacionCon, seguir, dejarDeSeguir } = useSeguimientos();
 
@@ -38,6 +38,23 @@ function BotonSeguir({ usuarioId, compacto = false }) {
       setOcupado(false);
     }
   };
+
+  // En la cabecera de una publicación: texto pulsable en la línea de la
+  // fecha. Como botón con borde se comía el sitio del nombre en el móvil
+  // ("del…" en vez de "deligober").
+  if (enLinea) {
+    return (
+      <button
+        type="button"
+        className={`seguir-en-linea${sigo ? '' : ' por-seguir'}`}
+        onClick={alternar}
+        disabled={ocupado}
+        title={sigo ? 'Dejar de seguir' : 'Seguir a este vecino'}
+      >
+        {sigo ? (mutuo ? 'Os seguís' : 'Siguiendo') : 'Seguir'}
+      </button>
+    );
+  }
 
   const clase = compacto
     ? `btn btn-sm ${sigo ? 'btn-contorno' : 'btn-primario'}`

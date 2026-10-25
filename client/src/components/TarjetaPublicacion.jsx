@@ -125,13 +125,24 @@ function TarjetaPublicacion({
                 <Link to={seccion.ruta}>{seccion.etiqueta}</Link>
               </>
             )}
+            {/* Seguir al autor desde el propio muro, que es donde se le
+                descubre. Se esconde solo si es tu publicación o si no hay
+                sesión. Va aquí, como texto, y no como botón en la fila: ahí
+                le quitaba al nombre el sitio que necesita en un móvil. */}
+            {autorId && usuario && String(autorId) !== String(usuario._id) && (
+              // Punto y botón juntos: si no cabe, bajan los dos de línea en
+              // vez de dejar el punto colgando al final de la anterior.
+              <span className="pub-sub-grupo">
+                <span aria-hidden="true">·</span>
+                <BotonSeguir usuarioId={autorId} enLinea />
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Seguir al autor desde el propio muro, que es donde se le
-            descubre. El componente se esconde solo si es tu publicacion o
-            si no hay sesion. */}
-        <BotonSeguir usuarioId={autorId} compacto />
+        {/* Los iconos, juntos y sin encogerse: el nombre se queda con todo
+            el espacio que sobra. */}
+        <div className="pub-cabecera-acciones">
 
         {soyElAutor && !editando && (
           <button
@@ -157,6 +168,7 @@ function TarjetaPublicacion({
 
         <BotonCompartir post={post} />
         <BotonReportar contenidoTipo="post" contenidoId={post._id} compacto />
+        </div>
       </header>
 
       {/* Preguntar aquí mismo, no con un confirm() del navegador: ese

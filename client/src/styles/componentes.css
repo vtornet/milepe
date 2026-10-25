@@ -354,9 +354,44 @@ input[type='radio'] {
   align-items: center;
   gap: var(--e-3);
   padding: var(--e-4) var(--e-4) 0;
-  /* Con seguir, editar y reportar a la derecha ya son hasta tres cosas:
-     sin wrap, en un movil estrecho la ultima se salia de la tarjeta. */
-  flex-wrap: wrap;
+}
+
+/* Editar, borrar, compartir y reportar: un bloque que no se encoge ni se
+   parte. El nombre (.pub-autor, flex: 1 y min-width: 0) se queda con el
+   resto. Antes "Os seguís" iba aquí como botón y el nombre se cortaba en
+   "del…" con la fecha partida en tres líneas. */
+.pub-cabecera-acciones {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 2px;
+  align-self: flex-start;
+}
+
+.pub-sub-grupo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  white-space: nowrap;
+}
+
+/* "Seguir" / "Os seguís" en la línea de la fecha (BotonSeguir enLinea). */
+.seguir-en-linea {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--texto-tenue);
+  font: inherit;
+  cursor: pointer;
+}
+
+.seguir-en-linea.por-seguir {
+  color: var(--marca);
+  font-weight: 650;
+}
+
+.seguir-en-linea:hover:not(:disabled) {
+  text-decoration: underline;
 }
 
 .pub-autor {
