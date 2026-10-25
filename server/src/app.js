@@ -8,6 +8,7 @@ import * as Sentry from '@sentry/node';
 import routes from './routes/index.js';
 import { sentryActivo, deberiaAvisar } from './instrument.js';
 import { limiteGeneral, limiteEscrituras } from './middlewares/limites.js';
+import { webhookStripe } from './controllers/pagosController.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -95,6 +96,11 @@ app.use(
 // Antes de leer el cuerpo de la peticion: rechazar una rafaga no debe
 // costar ni parsear el JSON. Despues de CORS, para que el 429 lleve las
 // cabeceras que el navegador necesita para dejar leerlo.
+// Webhook de Stripe ANTES de los limites y de express.json: Stripe firma el
+// cuerpo crudo (si se parsea, la firma ya no cuadra) y un 429 a Stripe seria
+// un pago real sin aplicar.
+app.post('/api/pagos/webhook', express.raw({ type: 'application/json' }), webhookStripe);
+
 app.use('/api', limiteGeneral);
 app.use('/api', limiteEscrituras);
 app.use(express.json());

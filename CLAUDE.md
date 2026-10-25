@@ -20,8 +20,7 @@ earlier `Amistad` friend-request model), notifications, private messaging
 gated on mutual follow, threaded comments, post editing, Web Push, and the
 report + appeal + audit-log moderation workflow.
 That completes the feature set this project set out to translate from
-Piverse; Stripe (`/api/pagos`) is the only thing left from the original
-brief. Since then: Turismo became admin-maintained information (not
+Piverse; Stripe (`/api/pagos`) is built too (see "Pagos (Stripe)"). Since then: Turismo became admin-maintained information (not
 posts), Contactos de interés grew into a ~110-entry directory, an admin
 statistics tab exists, the UI uses line icons instead of emoji, and the
 app is live at milepe.com. **See "Roadmap" near the end of this file for
@@ -1228,7 +1227,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 256 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 262 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1533,6 +1532,49 @@ the loading step changes.
   dial link uses only the first.
 - The right rail shows "Farmacia de guardia" (hidden on `/farmacias`);
   Contactos links to the page. `farmacia` is a new line icon.
+
+### Pagos (Stripe)
+
+**One-off payments with Stripe Checkout, no subscriptions** (decided with the
+user, 2026-10-25): a business manager pays **9,90 €** for 30 days of
+`destacado`; an event's author pays **4,90 €** to sponsor it until the event
+(max 30 days). Prices in cents, VAT included, in `utils/stripe.js`
+(`PRODUCTOS`, overridable with `PRECIO_*_CENT`). Paying again while still
+active adds to the remaining days (`extenderDestacado`, same rule for
+`patrocinado_hasta`).
+
+- Same contract as mail/push: **no `STRIPE_SECRET_KEY`, no payments** —
+  `GET /api/pagos/config` says `activo: false` and `BotonPagar` renders
+  nothing. `sk_test_…` = test mode (the button says so); going live is
+  swapping the two variables on Railway.
+- `POST /api/pagos/checkout {producto, post_id}` checks who may buy
+  (`puedeGestionar` for businesses, author/admin for events; a past event is
+  400), creates a `Pago` *pendiente* and a Checkout session with inline
+  `price_data` (no products to create in the Stripe dashboard),
+  `metadata.pago_id`, `locale: 'es'`, return URL
+  `/pagos/resultado?pago=<id>`.
+- **Only the webhook applies a payment**, never the browser's return (anyone
+  can type the success URL). `POST /api/pagos/webhook` is mounted in
+  `app.js` **before the rate limits and `express.json()`**: the signature is
+  checked on the raw body, and a 429 to Stripe would be a real payment left
+  unapplied. `aplicarPago` is idempotent (`findOneAndUpdate` from
+  `pendiente`): Stripe re-sends events. Handles `checkout.session.completed`
+  (paid), `async_payment_succeeded/failed`, `expired`. Bad signature 400;
+  our own failure 500 so Stripe retries.
+- `ResultadoPagoPage` polls `GET /api/pagos/:id` (own payments only, else
+  404) until the webhook lands.
+- Sponsored events go first in the upcoming agenda (not in the history);
+  featured businesses already did.
+- `Pago` is kept when an account is deleted (accounting record) and is in the
+  RGPD export. Condiciones §7 and Privacidad §3 (Stripe as processor) cover it.
+- Tests (`pagos.test.js`) sign webhook events with the real `stripe` library
+  (`generateTestHeaderString`, no network) and replace only
+  `checkout.sessions.create` (`usarClienteStripe`).
+- **To switch it on**: on Railway set `STRIPE_SECRET_KEY` (test key) and, after
+  creating the webhook endpoint `https://api.milepe.com/api/pagos/webhook` in
+  Stripe (events: checkout.session.completed, .expired,
+  .async_payment_succeeded, .async_payment_failed), its signing secret as
+  `STRIPE_WEBHOOK_SECRET`.
 
 ### Autobuses
 
@@ -2095,7 +2137,7 @@ spans the row.
 - Seed content before promoting the app — an empty network doesn't attract
   anyone: events, businesses, old photos.
 
-### 4. Stripe (`/api/pagos`) — the only item left from the original brief
+### 4. Stripe (`/api/pagos`) — done, see "Pagos (Stripe)"; pending: keys on Railway
 
 `NegocioDetalle.destacado_hasta` and `EventoDetalle.patrocinado_hasta` plus
 `extenderDestacado()`-style renewal already exist ("valid while a date is

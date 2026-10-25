@@ -2708,3 +2708,8 @@ select:disabled {
   color: var(--texto);
   font-variant-numeric: tabular-nums;
 }
+
+/* Botón de pago (destacar un negocio, patrocinar un evento). */
+.boton-pagar {
+  margin-top: var(--e-2);
+}

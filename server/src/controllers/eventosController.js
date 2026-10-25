@@ -97,7 +97,15 @@ export const listarEventos = async (req, res, next) => {
       { $lookup: { from: 'eventodetalles', localField: '_id', foreignField: 'post_id', as: 'detalle' } },
       { $unwind: '$detalle' },
       ...(Object.keys(filtroDetalle).length ? [{ $match: filtroDetalle }] : []),
-      { $sort: { 'detalle.fecha_inicio': incluirPasados ? -1 : 1 } },
+      // En la agenda de proximos, los patrocinados van primero (es lo que se
+      // paga); dentro de cada grupo, por fecha. Con el historial no: ahi
+      // manda la fecha.
+      ...(incluirPasados
+        ? [{ $sort: { 'detalle.fecha_inicio': -1 } }]
+        : [
+            { $addFields: { _patrocinado: { $gt: ['$detalle.patrocinado_hasta', '$$NOW'] } } },
+            { $sort: { _patrocinado: -1, 'detalle.fecha_inicio': 1 } },
+          ]),
       { $lookup: { from: 'usuarios', localField: 'autor_id', foreignField: '_id', as: 'autor' } },
       { $unwind: '$autor' },
       {
@@ -178,7 +186,7 @@ export const obtenerEvento = async (req, res, next) => {
 
 // --- Voy a ir y calendario ---
 
-const cargarEvento = async (id) => {
+export const cargarEvento = async (id) => {
   const post = await Post.findOne({ _id: id, tipo: 'evento', estado_moderacion: 'publicado' });
   const detalle = post && (await EventoDetalle.findOne({ post_id: post._id }));
   if (!detalle) throw new ErrorHttp(404, 'Evento no encontrado');

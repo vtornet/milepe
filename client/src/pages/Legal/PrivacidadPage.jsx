@@ -138,6 +138,12 @@ function PrivacidadPage() {
           datos (en privado, no accesibles desde internet).
         </li>
         <li>
+          <strong>Stripe</strong> — solo si pagas por destacar un negocio o patrocinar un evento: cobra el pago y
+          recibe tu correo para enviarte el recibo. Los datos de tu tarjeta los trata Stripe directamente; a
+          nosotros solo nos llega si el pago se completó. Guardamos qué compraste, cuánto y cuándo, y lo
+          conservamos aunque elimines tu cuenta durante el plazo que exige la ley para los registros contables.
+        </li>
+        <li>
           <strong>Resend</strong> — envía los correos de verificación y de recuperación de contraseña.
         </li>
         <li>

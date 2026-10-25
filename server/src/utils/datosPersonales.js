@@ -21,6 +21,7 @@ import AnuncioDetalle from '../models/AnuncioDetalle.js';
 import AnimalDetalle from '../models/AnimalDetalle.js';
 import ReclamacionNegocio from '../models/ReclamacionNegocio.js';
 import CorreoBloqueado from '../models/CorreoBloqueado.js';
+import Pago from '../models/Pago.js';
 import MiembroGrupo from '../models/MiembroGrupo.js';
 import Grupo from '../models/Grupo.js';
 import PublicacionGrupoDetalle from '../models/PublicacionGrupoDetalle.js';
@@ -55,7 +56,7 @@ const sinInternos = ({ __v, ...resto }) => resto;
 export const exportarDatos = async (usuarioId) => {
   const usuario = await Usuario.findById(usuarioId).select('+nombre +apellidos').lean();
 
-  const [posts, comentarios, reacciones, siguiendo, seguidores, bloqueos, notificaciones, reportes, apelaciones, suscripciones, reclamaciones, asistencias, votos, grupos] =
+  const [posts, comentarios, reacciones, siguiendo, seguidores, bloqueos, notificaciones, reportes, apelaciones, suscripciones, reclamaciones, asistencias, votos, grupos, pagos] =
     await Promise.all([
       Post.find({ autor_id: usuarioId }).lean(),
       Comentario.find({ autor_id: usuarioId }).lean(),
@@ -71,6 +72,7 @@ export const exportarDatos = async (usuarioId) => {
       AsistenciaEvento.find({ usuario_id: usuarioId }).lean(),
       VotoEncuesta.find({ usuario_id: usuarioId }).lean(),
       MiembroGrupo.find({ usuario_id: usuarioId }).populate('grupo_id', 'nombre creador_id').lean(),
+      Pago.find({ usuario_id: usuarioId }).lean(),
     ]);
 
   // Cada publicacion con los datos de su seccion.
@@ -123,6 +125,15 @@ export const exportarDatos = async (usuarioId) => {
       grupo: g.grupo_id?.nombre || null,
       creado_por_mi: String(g.grupo_id?.creador_id) === String(usuarioId),
       desde: g.fecha_creacion,
+    })),
+    // Los pagos se conservan aunque se borre la cuenta (registro contable).
+    pagos: pagos.map((p) => ({
+      producto: p.producto,
+      importe_eur: p.importe / 100,
+      estado: p.estado,
+      dias: p.dias,
+      fecha: p.fecha_creacion,
+      pagado_en: p.pagado_en,
     })),
     eventos_a_los_que_voy: asistencias.map((a) => ({ evento: a.post_id, desde: a.fecha_creacion })),
     // Solo el servicio, no la direccion entera: es un identificador del navegador.

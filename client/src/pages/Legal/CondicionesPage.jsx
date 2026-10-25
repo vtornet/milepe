@@ -104,6 +104,17 @@ function CondicionesPage() {
         trabajo que anuncia sean legales. Desconfía de quien pida dinero por adelantado para darte un empleo, y
         repórtalo.
       </p>
+      <p>
+        <strong>Servicios de pago.</strong> Quien gestiona la ficha de un negocio puede destacarla 30 días
+        (9,90 €), y quien publica un evento puede patrocinarlo hasta su fecha, con un máximo de 30 días
+        (4,90 €). Los precios incluyen el IVA. El pago es único, no una suscripción: no se renueva solo, y si
+        vuelves a pagar mientras sigue vigente, los días se suman a los que te quedan. El cobro lo gestiona{' '}
+        <strong>Stripe</strong>; MiLepe no ve ni guarda los datos de tu tarjeta. Destacar o patrocinar solo
+        cambia dónde aparece la publicación (primero en su sección, con una marca): no la libra de la
+        moderación, y si se retira por incumplir estas condiciones no se devuelve el importe. Si el servicio
+        no se presta por un fallo nuestro, te lo devolvemos. Para cualquier reclamación sobre un cobro,
+        escríbenos.
+      </p>
 
       <h2>8. Tablón, animales y encuestas</h2>
       <p>

@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import TarjetaPublicacion, { Dato } from '../../components/TarjetaPublicacion.jsx';
 import Icono from '../../components/Icono.jsx';
 import { fechaCorta } from '../../utils/fechas.js';
+import BotonPagar from '../../components/BotonPagar.jsx';
 
 const ETIQUETA_CATEGORIA = {
   restauracion: 'Restauración',
@@ -227,6 +228,13 @@ function NegocioTarjeta({ negocio: inicial, reclamacionPendiente = false, onRecl
         <button type="button" className="btn btn-contorno btn-sm" onClick={() => setModo('editar')}>
           Editar ficha y oferta
         </button>
+      )}
+      {!modo && gestiono && (
+        <BotonPagar
+          producto="negocio_destacado"
+          postId={negocio._id}
+          texto={negocio.destacado ? 'Ampliar el destacado 30 días' : 'Destacar 30 días'}
+        />
       )}
       {!modo && puedoAcreditar && !reclamacionPendiente && (
         <button type="button" className="btn btn-plano btn-sm" onClick={() => setModo('reclamar')}>

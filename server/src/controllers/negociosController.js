@@ -215,11 +215,11 @@ export const obtenerNegocio = async (req, res, next) => {
 
 // Quien puede tocar la ficha: un admin, el propietario reconocido o, si nadie
 // la ha reclamado todavia, quien la publico.
-const puedeGestionar = (usuario, post, detalle) =>
+export const puedeGestionar = (usuario, post, detalle) =>
   usuario.rol === 'admin' ||
   (detalle.propietario_id ? detalle.propietario_id.equals(usuario._id) : post.autor_id.equals(usuario._id));
 
-const cargarNegocio = async (id) => {
+export const cargarNegocio = async (id) => {
   const post = await Post.findOne({ _id: id, tipo: 'negocio' });
   if (!post || post.estado_moderacion !== 'publicado') throw new ErrorHttp(404, 'Negocio no encontrado');
   const detalle = await NegocioDetalle.findOne({ post_id: post._id });

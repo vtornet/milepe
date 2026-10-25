@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import Icono from '../../components/Icono.jsx';
 import TarjetaPublicacion, { Dato } from '../../components/TarjetaPublicacion.jsx';
 import { fechaEvento } from '../../utils/fechas.js';
+import BotonPagar from '../../components/BotonPagar.jsx';
 
 const ETIQUETA_CATEGORIA = {
   feria: 'Feria',
@@ -87,6 +88,13 @@ function EventoTarjeta({ evento, voyInicial = false }) {
       }
     >
       {aviso && <p className="tarjeta-meta">{aviso}</p>}
+      {!yaPaso && usuario && (usuario.rol === 'admin' || String(evento.autor?._id || evento.autor_id) === String(usuario._id)) && (
+        <BotonPagar
+          producto="evento_patrocinado"
+          postId={evento._id}
+          texto={evento.patrocinado ? 'Ampliar el patrocinio' : 'Patrocinar hasta el evento'}
+        />
+      )}
     </TarjetaPublicacion>
   );
 }
