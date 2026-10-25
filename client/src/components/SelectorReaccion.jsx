@@ -206,13 +206,18 @@ function SelectorReaccion({ valor, onElegir, compacto = false, deshabilitado = f
               onMouseEnter={() => clearTimeout(temporizadorCerrar.current)}
               onMouseLeave={alSalir}
             >
-              {REACCIONES.map((r) => (
+              {REACCIONES.map((r, i) => (
                 <button
                   key={r.tipo}
                   type="button"
                   role="menuitem"
-                  className={r.tipo === valor ? 'elegida' : undefined}
-                  title={r.etiqueta}
+                  // Con clase SIEMPRE: un <button> sin clase recibe el estilo
+                  // genérico de los botones sueltos (button:not([class]) en
+                  // componentes.css), que le metía 16px de relleno y dejaba el
+                  // emoji pequeño y desplazado.
+                  className={`reaccion-opcion${r.tipo === valor ? ' elegida' : ''}`}
+                  data-etiqueta={r.etiqueta}
+                  style={{ '--orden': i }}
                   onClick={() => {
                     cerrar();
                     onElegir(r.tipo);

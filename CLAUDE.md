@@ -529,6 +529,13 @@ comments (`compacto`). Three things about it are load-bearing:
   for keyboard, which would otherwise have no way in. A long press also
   fires a click, so a ref swallows that one click — without it, lifting your
   finger opened the pill and set a reaction nobody asked for.
+- Each option has the class **`reaccion-opcion`** (styled as
+  `.reacciones-menu .reaccion-opcion`). Without a class, the generic
+  `button:not([class])` rule later in `componentes.css` — same specificity as
+  `.reacciones-menu button` — won and gave them 16px padding, a border and
+  15px text: the emoji was small and 5px off-centre (seen live). Hover/focus
+  shows the reaction's name above it (`data-etiqueta` + `::after`), and the
+  options pop in staggered (off with reduced motion).
 - The buttons are `display: grid` + `place-items: center` with explicit
   `padding: 0` and an emoji font stack. The browser's own button padding
   inside a 44px box leaves the emoji no room, and emoji metrics differ per

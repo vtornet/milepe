@@ -613,8 +613,7 @@ a.insignia:hover {
 }
 
 .accion-emoji {
-  font-size: 15px;
-  line-height: 1;
+  font-size: 17px;
 }
 
 .accion-cuenta {
@@ -653,49 +652,112 @@ a.insignia:hover {
   transition: opacity 90ms ease-out;
 }
 
-/* Rejilla con place-items y no una línea de texto centrada: un emoji no
+/* Una pila de fuentes de emoji para todo lo que pinta una reacción: sin
+   ella cada sistema elige su fuente por su cuenta y las métricas cambian. */
+.reacciones-menu .reaccion-opcion,
+.accion-emoji,
+.resumen-reacciones-emojis span {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  line-height: 1;
+}
+
+/* Cada opción lleva la clase .reaccion-opcion a propósito: sin clase, el
+   estilo genérico de button:not([class]) (más abajo en este archivo, y con
+   la misma especificidad que ".reacciones-menu button") ganaba y le metía
+   16px de relleno, borde y letra de 15px: el emoji quedaba pequeño y
+   corrido a la derecha.
+
+   Rejilla con place-items y no una línea de texto centrada: un emoji no
    tiene las mismas métricas en cada sistema (Apple, Segoe, Noto) y
-   centrarlo como texto lo deja descuadrado. Y padding: 0 explícito, porque
-   el relleno que el navegador le pone a un <button> por su cuenta, dentro
-   de una caja de 44px, deja al emoji sin sitio y lo empuja fuera. */
-.reacciones-menu button {
+   centrarlo como texto lo deja descuadrado. */
+.reacciones-menu .reaccion-opcion {
+  position: relative;
   display: grid;
   place-items: center;
   width: 44px;
   height: 44px;
+  min-height: 0;
   padding: 0;
   border: 0;
   background: transparent;
-  border-radius: 999px;
-  font-size: 26px;
-  line-height: 1;
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  border-radius: var(--r-full);
+  font-size: 28px;
   cursor: pointer;
-  transition: transform var(--transicion), background var(--transicion);
+  transition: transform 120ms ease-out, background var(--transicion);
+  transform-origin: 50% 80%;
+  animation: reaccion-entra 220ms ease-out both;
+  animation-delay: calc(var(--orden, 0) * 25ms);
 }
 
-.reacciones-menu button:hover,
-.reacciones-menu button:focus-visible {
+/* El nombre de la reacción, en una etiqueta encima, al pasar el ratón o
+   llegar con el teclado: con solo el emoji, "Me asombra" y "Qué pena" no
+   son evidentes. */
+.reacciones-menu .reaccion-opcion::after {
+  content: attr(data-etiqueta);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 8px;
+  border-radius: var(--r-full);
+  background: var(--texto);
+  color: var(--superficie);
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 100ms ease-out;
+}
+
+.reacciones-menu .reaccion-opcion:hover,
+.reacciones-menu .reaccion-opcion:focus-visible {
   background: var(--superficie-hover);
-  transform: scale(1.18);
+  transform: translateY(-4px) scale(1.22);
+  outline: none;
+}
+
+.reacciones-menu .reaccion-opcion:hover::after,
+.reacciones-menu .reaccion-opcion:focus-visible::after {
+  opacity: 1;
 }
 
 /* La que ya tienes puesta, marcada con un aro en vez de con un color de
    fondo propio: un tono nuevo habría que definirlo para los dos modos, y
    el aro usa --marca, que ya existe en ambos. */
-.reacciones-menu button.elegida {
-  background: var(--superficie-hover);
+.reacciones-menu .reaccion-opcion.elegida {
+  background: var(--marca-tenue);
   box-shadow: inset 0 0 0 2px var(--marca);
+}
+
+@keyframes reaccion-entra {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reacciones-menu .reaccion-opcion {
+    animation: none;
+    transition: background var(--transicion);
+  }
+
+  .reacciones-menu .reaccion-opcion:hover,
+  .reacciones-menu .reaccion-opcion:focus-visible {
+    transform: none;
+  }
 }
 
 /* 44px es la medida de un dedo, pero siete botones de 44 más los huecos se
    salen de un móvil de 360. Por debajo de ahí se encogen: mejor un botón
    algo más pequeño que una fila que no entra. */
 @media (max-width: 420px) {
-  .reacciones-menu button {
+  .reacciones-menu .reaccion-opcion {
     width: 38px;
     height: 38px;
-    font-size: 22px;
+    font-size: 24px;
   }
 }
 
@@ -741,16 +803,21 @@ a.insignia:hover {
 }
 
 .resumen-reacciones-emojis span {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   display: grid;
   place-items: center;
   border-radius: var(--r-full);
   background: var(--superficie);
-  border: 1.5px solid var(--superficie);
+  border: 2px solid var(--superficie);
   box-shadow: var(--sombra-1);
-  font-size: 11px;
-  margin-right: -5px;
+  font-size: 13px;
+  margin-right: -6px;
+}
+
+/* El número, separado de la pila de emojis (que se solapan entre sí). */
+.resumen-reacciones-emojis {
+  margin-right: 6px;
 }
 
 /* ---------------- Comentarios ---------------- */
