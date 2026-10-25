@@ -166,7 +166,7 @@ export const listarNegocios = async (req, res, next) => {
                 destacado: { $gt: ['$destacado_hasta', new Date()] },
                 propietario_id: 1,
                 oferta: { $cond: [{ $gt: ['$oferta.vigente_hasta', '$$NOW'] }, '$oferta', null] },
-                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', avatar_url: '$autor.avatar_url', oficial: '$autor.oficial' },
+                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', avatar_url: '$autor.avatar_url', oficial: '$autor.oficial', verificado_manual: '$autor.verificado_manual', verificado_hasta: '$autor.verificado_hasta' },
               },
             },
           ],

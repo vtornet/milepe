@@ -9,7 +9,7 @@ const fechaHora = (iso) => new Date(iso).toLocaleString('es-ES', { dateStyle: 's
 const nombreMes = (mes) =>
   new Date(`${mes}-15T12:00:00Z`).toLocaleDateString('es-ES', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
-const PRODUCTO = { negocio_destacado: 'Negocio destacado', evento_patrocinado: 'Evento patrocinado' };
+const PRODUCTO = { negocio_destacado: 'Negocio destacado', evento_patrocinado: 'Evento patrocinado', verificacion: 'Perfil verificado (mes)' };
 const ESTADO = {
   pagado: { texto: 'Pagado', clase: 'insignia-exito' },
   pendiente: { texto: 'Pendiente', clase: 'insignia-aviso' },

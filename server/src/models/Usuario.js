@@ -98,6 +98,32 @@ const usuarioSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    // Perfil verificado (la insignia azul). Dos caminos, y vale cualquiera:
+    // - verificado_manual: lo da un admin sin cobrar (y los admin lo tienen
+    //   siempre, ver asegurarVerificacionDeAdmins).
+    // - verificado_hasta: la suscripcion de 1 EUR/mes. "Vale mientras la
+    //   fecha este en el futuro": cada factura pagada la lleva al final de su
+    //   periodo, y darse de baja no la toca, asi que se respeta lo pagado.
+    // Los dos son publicos (van en CAMPOS_PUBLICOS_USUARIO) para que la
+    // insignia viaje con el autor como la de cuenta oficial.
+    verificado_manual: {
+      type: Boolean,
+      default: false,
+    },
+    verificado_hasta: {
+      type: Date,
+      default: null,
+    },
+    // Estado de la suscripcion en Stripe. No es publico (no esta en
+    // CAMPOS_PUBLICOS_USUARIO): solo lo ve su dueño en su perfil.
+    suscripcion: {
+      stripe_cliente_id: { type: String, default: null },
+      stripe_suscripcion_id: { type: String, default: null },
+      estado: { type: String, enum: ['activa', 'impagada', 'cancelada', null], default: null },
+      // Se ha dado de baja: no se renovara, pero sigue verificado hasta fin_periodo.
+      renovacion_cancelada: { type: Boolean, default: false },
+      fin_periodo: { type: Date, default: null },
+    },
     email_verificado: {
       type: Boolean,
       default: false,
@@ -212,6 +238,10 @@ const CAMPOS_NUNCA_SERIALIZADOS = [
   'token_verificacion_expira',
 ];
 
+usuarioSchema.methods.estaVerificado = function estaVerificado(ahora = new Date()) {
+  return Boolean(this.verificado_manual || (this.verificado_hasta && this.verificado_hasta > ahora));
+};
+
 usuarioSchema.methods.estaSuspendido = function estaSuspendido(ahora = new Date()) {
   const s = this.suspension;
   return Boolean(s?.permanente || (s?.hasta && s.hasta > ahora));
@@ -290,5 +320,11 @@ usuarioSchema.index(
 );
 
 usuarioSchema.index({ rol: 1 });
+
+// Los admin estan siempre verificados. Se asegura al arrancar la API (un
+// admin se nombra editando la base de datos, no hay otro sitio donde hacerlo).
+usuarioSchema.statics.asegurarVerificacionDeAdmins = function asegurarVerificacionDeAdmins() {
+  return this.updateMany({ rol: 'admin', verificado_manual: { $ne: true } }, { verificado_manual: true });
+};
 
 export default model('Usuario', usuarioSchema);

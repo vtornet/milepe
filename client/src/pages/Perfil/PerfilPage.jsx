@@ -9,6 +9,7 @@ import Avatar from '../../components/Avatar.jsx';
 import Icono from '../../components/Icono.jsx';
 import { Linea } from '../../components/Esqueleto.jsx';
 import { fechaCorta } from '../../utils/fechas.js';
+import VerificacionPerfil from './VerificacionPerfil.jsx';
 
 // Mi perfil: arriba lo que ven los demás, debajo el formulario para
 // editarlo.
@@ -102,6 +103,8 @@ function PerfilPage() {
 
             <FormularioPerfil perfil={perfil} onGuardado={alGuardar} textoBoton="Guardar cambios" />
           </div>
+
+          <VerificacionPerfil />
 
           <AvisosPush />
 

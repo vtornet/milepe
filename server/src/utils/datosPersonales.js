@@ -22,6 +22,7 @@ import AnimalDetalle from '../models/AnimalDetalle.js';
 import ReclamacionNegocio from '../models/ReclamacionNegocio.js';
 import CorreoBloqueado from '../models/CorreoBloqueado.js';
 import Pago from '../models/Pago.js';
+import { cancelarSuscripcionAlBorrar } from '../controllers/verificacionController.js';
 import MiembroGrupo from '../models/MiembroGrupo.js';
 import Grupo from '../models/Grupo.js';
 import PublicacionGrupoDetalle from '../models/PublicacionGrupoDetalle.js';
@@ -189,6 +190,7 @@ export const eliminarCuenta = async (usuarioId) => {
   if (usuario.estaSuspendido()) {
     await CorreoBloqueado.bloquear(usuario.email, usuario.suspension);
   }
+  await cancelarSuscripcionAlBorrar(usuario);
 
   const posts = await Post.find({ autor_id: usuarioId, estado_moderacion: { $ne: 'eliminado' } });
   for (const post of posts) {
@@ -260,6 +262,8 @@ export const eliminarCuenta = async (usuarioId) => {
   usuario.google_id = null;
   usuario.avatar_url = null;
   usuario.oficial = false;
+  usuario.verificado_manual = false;
+  usuario.verificado_hasta = null;
   usuario.rol = 'usuario';
   usuario.activo = false;
   usuario.token_recuperacion = null;

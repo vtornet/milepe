@@ -115,6 +115,17 @@ function CondicionesPage() {
         no se presta por un fallo nuestro, te lo devolvemos. Para cualquier reclamación sobre un cobro,
         escríbenos.
       </p>
+      <p>
+        <strong>Perfil verificado.</strong> Cualquier vecino puede llevar la insignia de perfil verificado junto
+        a su nombre con una suscripción de 1 € al mes (IVA incluido), que se renueva sola cada mes. Puedes darte
+        de baja cuando quieras desde tu perfil: no se te vuelve a cobrar y conservas la insignia hasta el final
+        del mes ya pagado. Si un cobro falla, Stripe lo reintenta durante unos días; si no se consigue, la
+        suscripción termina. El equipo de MiLepe también puede conceder la insignia sin coste (por ejemplo, a
+        administradores, comercios o entidades conocidas). La insignia indica que la cuenta tiene la suscripción
+        al día o que la ha concedido el equipo; <strong>no es una garantía</strong> de identidad ni de lo que esa
+        persona publica, y no la libra de la moderación. Si una cuenta verificada se suspende o se elimina por
+        incumplir estas condiciones, no se devuelve lo pagado.
+      </p>
 
       <h2>8. Tablón, animales y encuestas</h2>
       <p>

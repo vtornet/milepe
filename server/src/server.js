@@ -6,6 +6,7 @@ import conectarDB from './config/db.js';
 import { iniciarCronCaducarEmpleos } from './jobs/caducarEmpleos.js';
 import { iniciarCronCopiaSeguridad } from './jobs/copiaSeguridad.js';
 import { sincronizarAutobuses } from './utils/cargarAutobuses.js';
+import Usuario from './models/Usuario.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -22,6 +23,8 @@ const iniciar = async () => {
   iniciarCronCopiaSeguridad();
   // Sin await: no retrasa que la API empiece a escuchar, y nunca lanza.
   sincronizarAutobuses();
+  // Los admin llevan siempre la insignia de verificado.
+  Usuario.asegurarVerificacionDeAdmins().catch((error) => console.error('[usuarios]', error.message));
 };
 
 iniciar().catch((error) => {

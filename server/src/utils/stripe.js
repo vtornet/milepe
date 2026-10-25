@@ -23,6 +23,14 @@ export const PRODUCTOS = {
     // Hasta la fecha del evento, con este maximo.
     dias: 30,
   },
+  // La unica suscripcion: se cobra cada mes hasta que el vecino se da de
+  // baja (y entonces dura hasta el final del mes pagado).
+  verificacion: {
+    nombre: 'Perfil verificado en MiLepe',
+    importe: () => Number(process.env.PRECIO_VERIFICACION_CENT) || 100,
+    dias: 30,
+    suscripcion: true,
+  },
 };
 
 let cliente = null;

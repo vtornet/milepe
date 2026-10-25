@@ -6,6 +6,7 @@ import ErrorHttp from '../utils/ErrorHttp.js';
 import { PRODUCTOS, pagosActivos, stripe, esModoPrueba } from '../utils/stripe.js';
 import { cargarNegocio, puedeGestionar } from './negociosController.js';
 import { cargarEvento } from './eventosController.js';
+import { procesarEventoVerificacion } from './verificacionController.js';
 
 const DIA_MS = 24 * 60 * 60 * 1000;
 const sitio = () => (process.env.SITIO_URL || 'https://milepe.com').replace(/\/$/, '');
@@ -149,8 +150,14 @@ export const webhookStripe = async (req, res) => {
   }
 
   try {
+    // La suscripcion de verificacion tiene sus propios avisos (facturas
+    // mensuales, bajas); si es uno de ellos, ya esta.
+    if (await procesarEventoVerificacion(evento)) return res.json({ ok: true, recibido: true });
+
     const sesion = evento.data?.object;
-    const pagoId = sesion?.metadata?.pago_id || sesion?.client_reference_id;
+    // client_reference_id de una suscripcion es el id del usuario, no de un
+    // Pago: solo vale el de los pagos unicos.
+    const pagoId = sesion?.mode === 'subscription' ? null : sesion?.metadata?.pago_id || sesion?.client_reference_id;
     if (pagoId && /^[a-f0-9]{24}$/i.test(pagoId)) {
       if (
         (evento.type === 'checkout.session.completed' && sesion.payment_status === 'paid') ||

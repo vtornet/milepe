@@ -14,6 +14,7 @@ import { SECCION_POR_TIPO } from '../../router/secciones.js';
 import { fechaCorta } from '../../utils/fechas.js';
 import { useTitulo } from '../../hooks/useTitulo.js';
 import SuspensionAdmin from './SuspensionAdmin.jsx';
+import InsigniaVerificado from '../../components/InsigniaVerificado.jsx';
 
 // La ficha pública de un vecino: lo que ve el resto del pueblo.
 //
@@ -102,7 +103,8 @@ function VecinoPage() {
 
         <div>
           <div className="pub-nombre" style={{ fontSize: 'var(--t-lg)' }}>
-            {ficha.usuario.nombre_usuario} {ficha.usuario.oficial && <InsigniaOficial conTexto />}
+            {ficha.usuario.nombre_usuario} <InsigniaVerificado usuario={ficha.usuario} conTexto />{' '}
+            {ficha.usuario.oficial && <InsigniaOficial conTexto />}
           </div>
           <p className="tarjeta-meta">
             Vecino desde {fechaCorta(ficha.usuario.fecha_creacion)}
@@ -121,6 +123,21 @@ function VecinoPage() {
                 >
                   {ficha.usuario.oficial ? 'Quitar cuenta oficial' : 'Marcar como cuenta oficial'}
                 </button>
+                {/* Verificación sin pagar. A un admin no se le quita (lo está siempre). */}
+                {!(ficha.usuario.rol === 'admin' && ficha.usuario.verificado_manual) && (
+                  <button
+                    type="button"
+                    className="btn btn-plano btn-sm"
+                    onClick={async () => {
+                      const { data } = await api.patch(`/usuarios/${ficha.usuario._id}/verificado`, {
+                        verificado: !ficha.usuario.verificado_manual,
+                      });
+                      setFicha({ ...ficha, usuario: { ...ficha.usuario, verificado_manual: data.usuario.verificado_manual } });
+                    }}
+                  >
+                    {ficha.usuario.verificado_manual ? 'Quitar verificación' : 'Verificar sin pago'}
+                  </button>
+                )}
                 {ficha.usuario.rol !== 'admin' && String(ficha.usuario._id) !== String(usuario._id) && (
                   <button
                     type="button"

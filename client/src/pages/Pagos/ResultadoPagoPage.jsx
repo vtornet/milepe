@@ -17,10 +17,36 @@ function ResultadoPagoPage() {
   useTitulo('Pago');
   const [parametros] = useSearchParams();
   const pagoId = parametros.get('pago');
+  const esVerificacion = parametros.get('verificacion') === '1';
   const cancelado = parametros.get('cancelado') === '1';
   const [pago, setPago] = useState(null);
   const [agotado, setAgotado] = useState(false);
   const [error, setError] = useState(null);
+
+  // Suscripción de verificación: no hay un Pago que mirar hasta que llega la
+  // primera factura; se espera a que el perfil salga verificado.
+  const [verificado, setVerificado] = useState(false);
+  useEffect(() => {
+    if (!esVerificacion || cancelado) return undefined;
+    let cancelar = false;
+    let temporizador;
+    const preguntar = async (intento) => {
+      try {
+        const { data } = await api.get('/pagos/verificacion');
+        if (cancelar) return;
+        if (data.verificado) setVerificado(data);
+        else if (intento < MAX_INTENTOS) temporizador = setTimeout(() => preguntar(intento + 1), ESPERA_MS);
+        else setAgotado(true);
+      } catch (err) {
+        if (!cancelar) setError(err.response?.data?.mensaje || 'No se pudo comprobar la suscripción.');
+      }
+    };
+    preguntar(1);
+    return () => {
+      cancelar = true;
+      clearTimeout(temporizador);
+    };
+  }, [esVerificacion, cancelado]);
 
   useEffect(() => {
     if (!pagoId || cancelado) return undefined;
@@ -52,6 +78,14 @@ function ResultadoPagoPage() {
     return (
       <EstadoVacio icono="cerrar" titulo="Pago cancelado" accion={<Link to="/" className="btn btn-primario">Volver</Link>}>
         No se ha cobrado nada. Puedes intentarlo de nuevo cuando quieras.
+      </EstadoVacio>
+    );
+  }
+  if (esVerificacion && verificado) {
+    return (
+      <EstadoVacio icono="verificado" titulo="¡Perfil verificado!" accion={<Link to="/perfil" className="btn btn-primario">Ir a mi perfil</Link>}>
+        Ya llevas la insignia junto a tu nombre. La suscripción se renueva cada mes; puedes darte de baja desde tu perfil cuando
+        quieras.
       </EstadoVacio>
     );
   }

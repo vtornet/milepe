@@ -2745,3 +2745,25 @@ select:disabled {
   gap: var(--e-1);
   font-variant-numeric: tabular-nums;
 }
+
+/* Insignia de perfil verificado (InsigniaVerificado.jsx): check azul relleno. */
+.insignia-verificado {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+  color: var(--marca);
+  font-size: var(--t-xs);
+  font-weight: 650;
+  vertical-align: middle;
+}
+
+.insignia-verificado svg {
+  display: inline-block;
+}
+
+.verificacion-perfil h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--e-1);
+}

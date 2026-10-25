@@ -14,6 +14,7 @@ export const TIPOS_NOTIFICACION = [
   'moderacion',
   'mensaje_nuevo',
   'reclamacion_negocio',
+  'verificacion',
 ];
 
 const notificacionSchema = new Schema(

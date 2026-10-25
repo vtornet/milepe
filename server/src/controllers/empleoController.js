@@ -116,7 +116,7 @@ export const listarEmpleo = async (req, res, next) => {
                 jornal: '$detalle.jornal',
                 fecha_caducidad: '$detalle.fecha_caducidad',
                 estado_oferta: '$detalle.estado_oferta',
-                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', avatar_url: '$autor.avatar_url', oficial: '$autor.oficial' },
+                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', avatar_url: '$autor.avatar_url', oficial: '$autor.oficial', verificado_manual: '$autor.verificado_manual', verificado_hasta: '$autor.verificado_hasta' },
               },
             },
           ],

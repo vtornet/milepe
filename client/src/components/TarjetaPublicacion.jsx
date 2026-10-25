@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import api from '../services/api.js';
 import { haceCuanto, fechaCompleta } from '../utils/fechas.js';
 import TextoConEtiquetas from './TextoConEtiquetas.jsx';
+import InsigniaVerificado from './InsigniaVerificado.jsx';
 
 // Armazón común de una publicación: avatar, autor, cuándo, insignias,
 // título, texto, imágenes, datos propios de la sección y barra de acciones.
@@ -99,6 +100,7 @@ function TarjetaPublicacion({
             ) : (
               quien?.nombre_usuario || 'Vecino de Lepe'
             )}
+            <InsigniaVerificado usuario={quien} />
             {quien?.oficial && <InsigniaOficial />}
           </div>
           <div className="pub-sub">

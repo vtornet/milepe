@@ -4,8 +4,9 @@ import Icono from './Icono.jsx';
 // admin en el servidor; aquí únicamente se pinta.
 function InsigniaOficial({ conTexto = false }) {
   return (
-    <span className="insignia-oficial" title="Cuenta oficial verificada">
-      <Icono nombre="verificado" tam={15} />
+    <span className="insignia-oficial" title="Cuenta oficial del Ayuntamiento">
+      {/* Edificio y no un check: el check azul es el de perfil verificado. */}
+      <Icono nombre="edificio" tam={15} />
       {conTexto && <span>Cuenta oficial</span>}
     </span>
   );

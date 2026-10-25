@@ -1227,7 +1227,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 263 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 272 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1581,6 +1581,53 @@ active adds to the remaining days (`extenderDestacado`, same rule for
   Stripe (events: checkout.session.completed, .expired,
   .async_payment_succeeded, .async_payment_failed), its signing secret as
   `STRIPE_WEBHOOK_SECRET`.
+
+### Perfil verificado (suscripción de 1 €/mes)
+
+The blue badge next to a name (`InsigniaVerificado.jsx`, a filled scalloped
+check like X's; the town hall's "cuenta oficial" badge became a building icon
+so the two aren't confused). Two independent ways, either is enough
+(`Usuario.estaVerificado()`, mirrored by `client/src/utils/verificado.js`):
+
+- **`verificado_manual`** — granted by an admin for free from `/vecino/:id`
+  (`PATCH /api/usuarios/:id/verificado`, notifies the person). **Admins
+  always have it**: `Usuario.asegurarVerificacionDeAdmins()` runs on boot,
+  and removing it from an admin is 409.
+- **`verificado_hasta`** — the **Stripe subscription** (Checkout in
+  `mode: 'subscription'`, inline `price_data.recurring` monthly,
+  `PRODUCTOS.verificacion`, `PRECIO_VERIFICACION_CENT` default 100). "Valid
+  while the date is in the future": each `invoice.paid` moves it to the end of
+  that invoice's period. **Unsubscribing only sets `cancel_at_period_end`**
+  (`POST /api/pagos/verificacion/baja`; `/reactivar` undoes it), so the paid
+  month is always honoured and nothing has to switch the badge off.
+- Both fields are in `CAMPOS_PUBLICOS_USUARIO` and in the hand-written
+  `autor` projections of the seven section aggregations (like `oficial`), so
+  the badge travels with the author. `Usuario.suscripcion` (Stripe ids, state,
+  `renovacion_cancelada`, `fin_periodo`) is **not** public — only `GET
+  /api/pagos/verificacion` for its owner.
+- Webhook (`verificacionController.procesarEventoVerificacion`, called first
+  by `webhookStripe`): `checkout.session.completed` (mode subscription →
+  store customer/subscription ids), `invoice.paid` (one `Pago` per invoice —
+  `producto: 'verificacion'`, no `post_id`, **unique `stripe_factura_id`**
+  makes repeats harmless — and extend `verificado_hasta`),
+  `invoice.payment_failed` (state `impagada`, badge kept until the paid period
+  ends while Stripe retries), `customer.subscription.updated/deleted`. The
+  user is found from the subscription's `metadata.usuario_id`, falling back to
+  the stored Stripe customer. **Both invoice shapes are read**: the 2025
+  "basil" API moved subscription data to `invoice.parent.subscription_details`
+  and the period end to `items.data[].current_period_end`.
+- **The Stripe webhook endpoint must listen to `invoice.paid`,
+  `invoice.payment_failed`, `customer.subscription.updated` and
+  `customer.subscription.deleted`** besides the four `checkout.session.*`.
+- Deleting an account cancels the subscription immediately (best effort) and
+  removes the badge. Monthly charges show in Moderación → Pagos.
+- Profile UI: `VerificacionPerfil.jsx` in `/perfil` (subscribe, unsubscribe
+  with an inline "¿Seguro?", re-subscribe); `ResultadoPagoPage` polls
+  `/pagos/verificacion` after `?verificacion=1`. Condiciones §7 explains that
+  the badge is **not** an identity guarantee.
+- Tests: `verificacion.test.js` (signed webhooks in both API shapes,
+  idempotency, unsubscribe keeps the badge, expiry, manual and admin rules,
+  account deletion).
 
 ### Autobuses
 

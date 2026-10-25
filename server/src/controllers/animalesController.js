@@ -127,7 +127,7 @@ export const listarAnimales = async (req, res, next) => {
                   _id: '$autor._id',
                   nombre_usuario: '$autor.nombre_usuario',
                   avatar_url: '$autor.avatar_url',
-                  oficial: '$autor.oficial',
+                  oficial: '$autor.oficial', verificado_manual: '$autor.verificado_manual', verificado_hasta: '$autor.verificado_hasta',
                 },
               },
             },

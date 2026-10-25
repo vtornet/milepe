@@ -15,6 +15,7 @@ import {
   eliminarMiCuenta,
 } from '../controllers/usuariosController.js';
 import { protegido, opcional, autorizar } from '../middlewares/auth.js';
+import { marcarVerificado } from '../controllers/verificacionController.js';
 
 const router = Router();
 
@@ -35,6 +36,7 @@ router.get('/bloqueados', protegido, listarBloqueados);
 router.get('/:id', opcional, perfilPublico);
 
 router.patch('/:id/oficial', protegido, autorizar('admin'), marcarOficial);
+router.patch('/:id/verificado', protegido, autorizar('admin'), marcarVerificado);
 router.patch('/:id/rol', protegido, autorizar('admin'), cambiarRol);
 router.put('/:id/suspension', protegido, autorizar('admin'), suspenderUsuario);
 router.delete('/:id/suspension', protegido, autorizar('admin'), levantarSuspension);

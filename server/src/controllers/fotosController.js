@@ -98,7 +98,7 @@ export const listarFotos = async (req, res, next) => {
                 revision_pendiente: '$revision_pendiente',
                 epoca: '$detalle.epoca',
                 decada: '$detalle.decada',
-                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', avatar_url: '$autor.avatar_url', oficial: '$autor.oficial' },
+                autor: { _id: '$autor._id', nombre_usuario: '$autor.nombre_usuario', avatar_url: '$autor.avatar_url', oficial: '$autor.oficial', verificado_manual: '$autor.verificado_manual', verificado_hasta: '$autor.verificado_hasta' },
               },
             },
           ],

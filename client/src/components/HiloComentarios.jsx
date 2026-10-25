@@ -10,6 +10,7 @@ import BotonReportar from './BotonReportar.jsx';
 import SelectorReaccion from './SelectorReaccion.jsx';
 import ResumenReacciones from './ResumenReacciones.jsx';
 import { haceCuanto, fechaCompleta } from '../utils/fechas.js';
+import InsigniaVerificado from './InsigniaVerificado.jsx';
 
 // Cuántas respuestas se piden de golpe en cada nivel.
 const POR_PAGINA = 10;
@@ -386,6 +387,7 @@ function Comentario({
           ) : (
             comentario.autor_id?.nombre_usuario || 'Vecino'
           )}
+          <InsigniaVerificado usuario={comentario.autor_id} />
           {comentario.autor_id?.oficial && <InsigniaOficial />}
           {propietarioId && String(autorId) === String(propietarioId) && (
             <span className="insignia insignia-marca" style={{ marginLeft: 4 }}>
