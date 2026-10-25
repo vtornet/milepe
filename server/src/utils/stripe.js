@@ -48,4 +48,6 @@ export const usarClienteStripe = (falso) => {
   cliente = falso;
 };
 
-export const esModoPrueba = () => (process.env.STRIPE_SECRET_KEY || '').trim().startsWith('sk_test_');
+// sk_ = clave estandar, rk_ = clave restringida (la que se usa en real: la
+// estandar de la cuenta la comparten otros proyectos y no se puede revelar).
+export const esModoPrueba = () => /^(sk|rk)_test_/.test((process.env.STRIPE_SECRET_KEY || '').trim());

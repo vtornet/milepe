@@ -1584,6 +1584,11 @@ active adds to the remaining days (`extenderDestacado`, same rule for
   untouched; test `Pago`s stay (the panel separates them). Idempotent.
   Decided with the user on 2026-10-25. Live needs its own webhook endpoint
   (same URL, same 8 events) and both live variables on Railway.
+  **Live uses a restricted key (`rk_live_…`)**, not the standard secret: the
+  Appstracta account's standard live key is shared with other projects and
+  can't be revealed (rotating it would break them). Permissions: Checkout
+  Sessions, Subscriptions and Customers, write. `esModoPrueba()` accepts
+  `sk_test_`/`rk_test_`.
 - Tests (`pagos.test.js`) sign webhook events with the real `stripe` library
   (`generateTestHeaderString`, no network) and replace only
   `checkout.sessions.create` (`usarClienteStripe`).
