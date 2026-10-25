@@ -5,6 +5,7 @@ import app from './app.js';
 import conectarDB from './config/db.js';
 import { iniciarCronCaducarEmpleos } from './jobs/caducarEmpleos.js';
 import { iniciarCronCopiaSeguridad } from './jobs/copiaSeguridad.js';
+import { sincronizarAutobuses } from './utils/cargarAutobuses.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -19,6 +20,8 @@ const iniciar = async () => {
   // confirmar la conexion a Mongo, no al importar el modulo.
   iniciarCronCaducarEmpleos();
   iniciarCronCopiaSeguridad();
+  // Sin await: no retrasa que la API empiece a escuchar, y nunca lanza.
+  sincronizarAutobuses();
 };
 
 iniciar().catch((error) => {

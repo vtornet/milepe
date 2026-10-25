@@ -1228,7 +1228,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 249 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 256 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1533,6 +1533,37 @@ the loading step changes.
   dial link uses only the first.
 - The right rail shows "Farmacia de guardia" (hidden on `/farmacias`);
   Contactos links to the page. `farmacia` is a new line icon.
+
+### Autobuses
+
+`/api/autobuses` + `/autobuses` (a tab of the Útil group). `LineaAutobus`
+(standalone, no `Post`): the **urbano de Lepe** (Autocares Gonca, Mon–Fri
+only, one route Centro de Salud → Bar Álvaro with 11 stops stored as minutes
+from the first) and five **Damas** lines (Lepe ⇄ Huelva, Lepe ⇄ Sevilla, La
+Antilla ⇄ Huelva / Lepe / Sevilla), each direction with `laborables`,
+`sabados`, `domingos` departure lists.
+
+- **Source of truth is `server/scripts/datos/autobuses.json`**, copied by hand
+  from damas-sa.es/rutas-y-horarios (wpDataTables per line) and
+  autocaresgonca.es/servicio-17-urbano-de-lepe; both robots.txt allow it.
+  Neither publishes a feed nor real-time data, and the page says so.
+- **The API syncs it on boot** (`utils/cargarAutobuses.js`,
+  `sincronizarAutobuses()` from `server.js`, never blocks or crashes the
+  boot) when the file's `revisado` date is newer than what's stored. So
+  **updating a timetable = edit the JSON, bump `revisado`, deploy** — no
+  tunnel needed. Each line is replaced whole; lines no longer in the file are
+  deactivated. `scripts/cargar-autobuses.mjs --simular` validates the file.
+- Next departures are computed **on the server in Madrid time**
+  (`utils/horarioAutobus.js`, pure and tested): the visitor's phone clock
+  may be in another country. If none are left today, it returns the first
+  departure of the next day with service. Holidays are unknown (no
+  calendar): the page warns that holidays use another timetable.
+- The urbano card lets you pick your stop and recomputes with that stop's
+  offset (a bus that left Centro de Salud a few minutes ago hasn't reached
+  Bar Álvaro yet). The page refreshes every minute (`useSondeo`).
+- In `PAGINAS_SEO`, the edge function's path list and the sitemap.
+- Damas changes timetables (they announce it under "Última hora", e.g. the
+  19 Oct 2026 change): re-check their page now and then.
 
 ### La playa hoy (mareas)
 
@@ -2076,7 +2107,7 @@ Rough priority; none started.
 2. **Quejas with a response** — done (see "Section controllers" → Quejas):
    history with public answers, the official account can process them, and a
    public summary on `/quejas`.
-3. **Daily utilities** in the Muro/rail: bus times, beach status (flag,
+3. **Daily utilities** in the Muro/rail: beach status (flag,
    jellyfish, crowding). (Tides, water temperature, waves and UV are done —
    see "La playa hoy".) (Pharmacy on duty is done — see "Farmacias de
    guardia"; ask the Colegio for a data feed.) El Tiempo (cached

@@ -25,10 +25,12 @@ import animalesRoutes from './animalesRoutes.js';
 import buscarRoutes from './buscarRoutes.js';
 import encuestasRoutes from './encuestasRoutes.js';
 import { servirSitemap } from '../controllers/sitemapController.js';
+import { listarLineas } from '../controllers/autobusesController.js';
 
 const router = Router();
 
 // Salud del servicio (usado por Railway/monitorizacion)
+router.get('/autobuses', listarLineas); // horarios del urbano y de Damas, con las proximas salidas
 router.get('/sitemap.xml', servirSitemap); // milepe.com/sitemap.xml, via client/netlify.toml
 
 router.get('/health', (req, res) => {

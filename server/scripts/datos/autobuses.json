@@ -1,0 +1,426 @@
+{
+  "revisado": "2026-10-25",
+  "lineas": [
+    {
+      "codigo": "urbano-lepe",
+      "nombre": "Urbano de Lepe",
+      "operador": "Autocares Gonca",
+      "tipo": "urbano",
+      "orden": 1,
+      "fuente": "https://www.autocaresgonca.es/servicio-17-urbano-de-lepe",
+      "telefono": "959 383 374",
+      "nota": "Solo de lunes a viernes. Las horas de cada parada son las de la empresa.",
+      "sentidos": [
+        {
+          "desde": "Centro de Salud",
+          "hacia": "Bar Álvaro",
+          "horarios": {
+            "laborables": [
+              "07:30",
+              "08:00",
+              "08:30",
+              "09:00",
+              "09:30",
+              "10:00",
+              "11:00",
+              "12:00",
+              "13:00"
+            ],
+            "sabados": [],
+            "domingos": []
+          }
+        }
+      ],
+      "paradas": [
+        {
+          "nombre": "Centro de Salud",
+          "minutos": 0
+        },
+        {
+          "nombre": "Correo",
+          "minutos": 4
+        },
+        {
+          "nombre": "Lateral del apeadero",
+          "minutos": 5
+        },
+        {
+          "nombre": "Urb. V. Bella",
+          "minutos": 7
+        },
+        {
+          "nombre": "C.P. César Barrio",
+          "minutos": 9
+        },
+        {
+          "nombre": "Lonja",
+          "minutos": 11
+        },
+        {
+          "nombre": "Estación",
+          "minutos": 13
+        },
+        {
+          "nombre": "C.P. O. Castañeda",
+          "minutos": 15
+        },
+        {
+          "nombre": "La Arboleda",
+          "minutos": 16
+        },
+        {
+          "nombre": "Coronación",
+          "minutos": 17
+        },
+        {
+          "nombre": "Bar Álvaro",
+          "minutos": 20
+        }
+      ]
+    },
+    {
+      "codigo": "damas-lepe-huelva",
+      "nombre": "Lepe – Huelva",
+      "operador": "Damas",
+      "tipo": "interurbano",
+      "orden": 2,
+      "fuente": "https://damas-sa.es/rutas-y-horarios/#lepe-huelva",
+      "telefono": null,
+      "nota": "Horas de paso aproximadas. En festivos suele aplicarse el horario de domingo: compruébalo con Damas.",
+      "sentidos": [
+        {
+          "desde": "Lepe",
+          "hacia": "Huelva",
+          "horarios": {
+            "laborables": [
+              "07:00",
+              "08:00",
+              "08:15",
+              "08:50",
+              "09:50",
+              "11:50",
+              "13:50",
+              "15:45",
+              "16:50",
+              "17:45",
+              "18:50",
+              "19:50"
+            ],
+            "sabados": [
+              "08:00",
+              "09:50",
+              "12:00",
+              "13:50",
+              "16:00",
+              "20:30"
+            ],
+            "domingos": [
+              "09:50",
+              "12:00",
+              "13:50",
+              "16:00",
+              "18:00",
+              "20:30"
+            ]
+          }
+        },
+        {
+          "desde": "Huelva",
+          "hacia": "Lepe",
+          "horarios": {
+            "laborables": [
+              "08:00",
+              "09:00",
+              "10:00",
+              "11:00",
+              "12:00",
+              "13:00",
+              "13:30",
+              "14:00",
+              "15:00",
+              "17:00",
+              "18:00",
+              "19:00",
+              "20:00",
+              "21:00"
+            ],
+            "sabados": [
+              "09:00",
+              "11:00",
+              "13:00",
+              "15:00",
+              "17:00",
+              "21:00"
+            ],
+            "domingos": [
+              "09:00",
+              "11:00",
+              "13:00",
+              "15:00",
+              "17:00",
+              "21:00"
+            ]
+          }
+        }
+      ],
+      "paradas": []
+    },
+    {
+      "codigo": "damas-lepe-sevilla",
+      "nombre": "Lepe – Sevilla",
+      "operador": "Damas",
+      "tipo": "interurbano",
+      "orden": 3,
+      "fuente": "https://damas-sa.es/rutas-y-horarios/#lepe-sevilla",
+      "telefono": null,
+      "nota": "Horas de paso aproximadas. En festivos suele aplicarse el horario de domingo: compruébalo con Damas.",
+      "sentidos": [
+        {
+          "desde": "Lepe",
+          "hacia": "Sevilla",
+          "horarios": {
+            "laborables": [
+              "07:00",
+              "08:00",
+              "09:50",
+              "11:50",
+              "13:50",
+              "15:45"
+            ],
+            "sabados": [
+              "08:00",
+              "09:50",
+              "12:00",
+              "13:50",
+              "16:00",
+              "20:30"
+            ],
+            "domingos": [
+              "09:50",
+              "13:50",
+              "16:00",
+              "18:00",
+              "20:30"
+            ]
+          }
+        },
+        {
+          "desde": "Sevilla",
+          "hacia": "Lepe",
+          "horarios": {
+            "laborables": [
+              "07:30",
+              "09:30",
+              "11:30",
+              "13:30",
+              "15:30",
+              "17:30",
+              "19:30"
+            ],
+            "sabados": [
+              "07:30",
+              "09:30",
+              "11:30",
+              "13:30",
+              "15:30",
+              "19:30"
+            ],
+            "domingos": [
+              "09:30",
+              "11:30",
+              "13:30",
+              "15:30",
+              "19:30"
+            ]
+          }
+        }
+      ],
+      "paradas": []
+    },
+    {
+      "codigo": "damas-antilla-huelva",
+      "nombre": "La Antilla – Huelva",
+      "operador": "Damas",
+      "tipo": "interurbano",
+      "orden": 4,
+      "fuente": "https://damas-sa.es/rutas-y-horarios/#antilla-huelva",
+      "telefono": null,
+      "nota": "Horas de paso aproximadas. En festivos suele aplicarse el horario de domingo: compruébalo con Damas.",
+      "sentidos": [
+        {
+          "desde": "La Antilla",
+          "hacia": "Huelva",
+          "horarios": {
+            "laborables": [
+              "07:50",
+              "09:50",
+              "11:50",
+              "15:50",
+              "17:50",
+              "19:50"
+            ],
+            "sabados": [
+              "07:50",
+              "11:50",
+              "15:50",
+              "20:20"
+            ],
+            "domingos": [
+              "11:50",
+              "15:50",
+              "17:50",
+              "20:20"
+            ]
+          }
+        },
+        {
+          "desde": "Huelva",
+          "hacia": "La Antilla",
+          "horarios": {
+            "laborables": [
+              "08:00",
+              "12:00",
+              "15:00",
+              "17:00",
+              "20:00",
+              "21:00"
+            ],
+            "sabados": [
+              "09:00",
+              "13:00",
+              "17:00",
+              "21:00"
+            ],
+            "domingos": [
+              "09:00",
+              "13:00",
+              "17:00",
+              "21:00"
+            ]
+          }
+        }
+      ],
+      "paradas": []
+    },
+    {
+      "codigo": "damas-antilla-lepe",
+      "nombre": "La Antilla – Lepe",
+      "operador": "Damas",
+      "tipo": "interurbano",
+      "orden": 5,
+      "fuente": "https://damas-sa.es/rutas-y-horarios/#antilla-lepe",
+      "telefono": null,
+      "nota": "Horas de paso aproximadas. En festivos suele aplicarse el horario de domingo: compruébalo con Damas.",
+      "sentidos": [
+        {
+          "desde": "La Antilla",
+          "hacia": "Lepe",
+          "horarios": {
+            "laborables": [
+              "07:50",
+              "09:50",
+              "11:50",
+              "15:50",
+              "17:50",
+              "19:50"
+            ],
+            "sabados": [
+              "07:50",
+              "11:50",
+              "15:50",
+              "20:20"
+            ],
+            "domingos": [
+              "11:50",
+              "15:50",
+              "17:50",
+              "20:20"
+            ]
+          }
+        },
+        {
+          "desde": "Lepe",
+          "hacia": "La Antilla",
+          "horarios": {
+            "laborables": [
+              "08:40",
+              "12:40",
+              "15:40",
+              "17:40",
+              "20:40",
+              "21:40"
+            ],
+            "sabados": [
+              "09:40",
+              "13:40",
+              "17:40",
+              "21:40"
+            ],
+            "domingos": [
+              "09:40",
+              "13:40",
+              "17:40",
+              "21:40"
+            ]
+          }
+        }
+      ],
+      "paradas": []
+    },
+    {
+      "codigo": "damas-antilla-sevilla",
+      "nombre": "La Antilla – Sevilla",
+      "operador": "Damas",
+      "tipo": "interurbano",
+      "orden": 6,
+      "fuente": "https://damas-sa.es/rutas-y-horarios/#antilla-sevilla",
+      "telefono": null,
+      "nota": "Horas de paso aproximadas. En festivos suele aplicarse el horario de domingo: compruébalo con Damas.",
+      "sentidos": [
+        {
+          "desde": "La Antilla",
+          "hacia": "Sevilla",
+          "horarios": {
+            "laborables": [
+              "07:50",
+              "15:50"
+            ],
+            "sabados": [
+              "07:50",
+              "11:50",
+              "15:50",
+              "20:20"
+            ],
+            "domingos": [
+              "15:50",
+              "17:50",
+              "20:20"
+            ]
+          }
+        },
+        {
+          "desde": "Sevilla",
+          "hacia": "La Antilla",
+          "horarios": {
+            "laborables": [
+              "15:30",
+              "19:30"
+            ],
+            "sabados": [
+              "07:30",
+              "11:30",
+              "15:30",
+              "19:30"
+            ],
+            "domingos": [
+              "11:30",
+              "15:30",
+              "19:30"
+            ]
+          }
+        }
+      ],
+      "paradas": []
+    }
+  ]
+}

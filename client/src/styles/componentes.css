@@ -2636,3 +2636,51 @@ select:disabled {
   display: grid;
   gap: var(--e-2);
 }
+
+/* --- Autobuses (pages/Autobuses) --- */
+.bus-titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin: 0;
+  font-size: var(--t-lg);
+}
+
+.bus-sentido {
+  padding: var(--e-3) 0;
+  border-bottom: 1px solid var(--borde);
+}
+
+.bus-sentido:last-of-type {
+  border-bottom: 0;
+}
+
+.bus-sentido-nombre {
+  font-weight: 600;
+}
+
+.bus-proximas {
+  margin: var(--e-1) 0 var(--e-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.bus-proximas strong {
+  font-size: var(--t-lg);
+  color: var(--marca);
+}
+
+.bus-tabla {
+  display: grid;
+  gap: var(--e-2);
+  margin: var(--e-2) 0;
+}
+
+.bus-dia p {
+  margin: 2px 0 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-tenue);
+}
+
+.bus-dia.hoy p {
+  color: var(--texto);
+}

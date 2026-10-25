@@ -57,6 +57,7 @@ const EmpleoPage = perezosa(() => import('../pages/Empleo/EmpleoPage.jsx'));
 const NegociosPage = perezosa(() => import('../pages/Negocios/NegociosPage.jsx'));
 const ContactosPage = perezosa(() => import('../pages/Contactos/ContactosPage.jsx'));
 const FarmaciasPage = perezosa(() => import('../pages/Farmacias/FarmaciasPage.jsx'));
+const AutobusesPage = perezosa(() => import('../pages/Autobuses/AutobusesPage.jsx'));
 const AvisosPage = perezosa(() => import('../pages/Avisos/AvisosPage.jsx'));
 const TablonPage = perezosa(() => import('../pages/Tablon/TablonPage.jsx'));
 const AnimalesPage = perezosa(() => import('../pages/Animales/AnimalesPage.jsx'));
@@ -127,6 +128,7 @@ function AppRouter() {
       <Route element={<GrupoPestanas grupo="util" />}>
         <Route path="/tiempo" element={<TiempoPage />} />
         <Route path="/farmacias" element={<FarmaciasPage />} />
+        <Route path="/autobuses" element={<AutobusesPage />} />
         <Route path="/contactos" element={<ContactosPage />} />
       </Route>
 

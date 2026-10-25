@@ -29,6 +29,7 @@ export const SECCIONES = [
   { ruta: '/util', etiqueta: 'Útil', icono: 'util', tipos: [], grupo: 'util', soloMenu: true },
   { ruta: '/tiempo', etiqueta: 'El Tiempo', pestana: 'Tiempo y playa', icono: 'tiempo', tipos: [], grupo: 'util' },
   { ruta: '/farmacias', etiqueta: 'Farmacias', pestana: 'Farmacias de guardia', icono: 'farmacia', tipos: [], grupo: 'util' },
+  { ruta: '/autobuses', etiqueta: 'Autobuses', icono: 'autobus', tipos: [], grupo: 'util' },
   { ruta: '/contactos', etiqueta: 'Contactos', pestana: 'Teléfonos', icono: 'contactos', tipos: [], grupo: 'util' },
   // No es una seccion de contenido, pero en el movil la caja de busqueda de
   // la barra superior no cabe y desde aqui se llega a ella.

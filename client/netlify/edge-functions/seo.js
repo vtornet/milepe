@@ -78,6 +78,7 @@ export const config = {
     '/encuestas',
     '/grupos',
     '/tiempo',
+    '/autobuses',
     '/farmacias',
     '/contactos',
     '/turismo/sol_y_playa',

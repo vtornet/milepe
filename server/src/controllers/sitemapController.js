@@ -22,6 +22,7 @@ const SECCIONES = [
   ['/encuestas', 'daily'],
   ['/grupos', 'daily'],
   ['/tiempo', 'hourly'],
+  ['/autobuses', 'weekly'],
   ['/farmacias', 'daily'],
   ['/contactos', 'weekly'],
   ['/turismo', 'weekly'],
