@@ -1,0 +1,16 @@
+L-V;Farmacia Perales González;9:30-22:00
+L-V;Farmacia Saniger Bernal;9:30-22:00
+L-V;Farmacia Sánchez Martín;9:30-22:00
+S;Farmacia Saniger Bernal;9:30-22:00
+S;Farmacia Sánchez Martín;9:30-22:00
+D;Farmacia Sánchez Martín;9:30-22:00
+festivos;Farmacia Sánchez Martín;9:30-22:00
+todos;Farmacia Vacas Barranco;24h
+festivo;02/11/2026
+02/11/2026;Farmacia Tena Trincado;9:30-22:00
+03/11/2026;Farmacia Tena Trincado;9:30-22:00
+04/11/2026;Farmacia Tena Trincado;9:30-22:00
+05/11/2026;Farmacia Tena Trincado;9:30-22:00
+06/11/2026;Farmacia Tena Trincado;9:30-22:00
+07/11/2026;Farmacia Tena Trincado;9:30-22:00
+08/11/2026;Farmacia Tena Trincado;9:30-22:00
