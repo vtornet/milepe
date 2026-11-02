@@ -912,7 +912,9 @@ a.insignia:hover {
   display: inline-flex;
 }
 
-.selector-estrellas button {
+/* Con clase: sin ella, "button:not([class])" (más abajo, misma
+   especificidad) gana y cada estrella sale en una caja con borde. */
+.selector-estrellas .estrella-opcion {
   border: none;
   background: none;
   cursor: pointer;
@@ -922,16 +924,44 @@ a.insignia:hover {
   line-height: 1;
 }
 
+/* En fila: la regla genérica "form" (más abajo) pone flex-direction:
+   column y, sin decirlo aquí, avatar, caja y botón salían uno debajo de
+   otro. Las estrellas de una reseña van en su propia línea, encima. */
 .formulario-comentario {
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: var(--e-2);
   align-items: center;
   margin-top: var(--e-3);
 }
 
+.formulario-comentario .selector-estrellas {
+  flex-basis: 100%;
+  order: -1;
+}
+
 .formulario-comentario input {
+  flex: 1;
+  min-width: 0;
   border-radius: var(--r-full);
   background: var(--superficie);
+}
+
+/* Con clase y con dos clases en el selector: si no, la regla genérica
+   "form button[type='submit']" (más abajo) gana y lo deja en un cuadrado
+   azul de 36 px con 20 px de relleno a cada lado, sin sitio para el icono. */
+.formulario-comentario .formulario-comentario-enviar {
+  flex-shrink: 0;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  margin: 0;
+  min-height: 36px;
+  padding: 0 var(--e-3);
+  border-radius: var(--r-full);
+  font-size: var(--t-sm);
 }
 
 /* ---------------- Esqueletos de carga ---------------- */
@@ -1431,7 +1461,6 @@ a.insignia:hover {
   padding-left: var(--e-3);
 }
 
-.formulario-reporte,
 .formulario-resolucion {
   border: 1px solid var(--borde);
   border-radius: var(--r-sm);
@@ -1440,11 +1469,57 @@ a.insignia:hover {
   background: var(--superficie-2);
 }
 
+/* Ventana de reporte (BotonReportar): hoja inferior en el móvil (la del
+   "Más", .velo/.hoja de layout.css), diálogo centrado desde 600 px. */
+.hoja-titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin: 0 0 var(--e-3);
+  font-size: var(--t-lg);
+}
+
+.formulario-reporte select,
+.formulario-reporte textarea {
+  width: 100%;
+}
+
 .formulario-reporte-acciones {
   display: flex;
   gap: var(--e-2);
   margin-top: var(--e-3);
   flex-wrap: wrap;
+}
+
+.formulario-reporte .formulario-reporte-acciones {
+  justify-content: flex-end;
+  margin-top: var(--e-4);
+}
+
+/* Dos clases: si no, "form button[type='submit']" le mete margen arriba y
+   lo descuadra respecto a Cancelar. */
+.formulario-reporte .formulario-reporte-acciones button {
+  margin-top: 0;
+  align-self: auto;
+}
+
+@media (min-width: 600px) {
+  .velo.velo-dialogo {
+    align-items: center;
+    justify-content: center;
+    padding: var(--e-4);
+  }
+
+  .hoja.hoja-dialogo {
+    max-width: 440px;
+    border-radius: var(--r-xl);
+    padding-bottom: var(--e-4);
+    animation: aparecer 160ms ease-out;
+  }
+
+  .hoja-dialogo .hoja-asa {
+    display: none;
+  }
 }
 
 .entrada-registro {
@@ -2751,6 +2826,159 @@ select:disabled {
   color: var(--texto);
 }
 
+/* --- Calendario laboral (pages/Calendario) --- */
+.cal-resumen p {
+  margin: 0;
+}
+
+.cal-resumen p + p {
+  margin-top: var(--e-2);
+}
+
+.cal-proximo {
+  font-size: var(--t-lg);
+  color: var(--marca);
+}
+
+.cal-proximo::first-letter {
+  text-transform: uppercase;
+}
+
+.cal-anios {
+  display: flex;
+  gap: var(--e-2);
+  margin: var(--e-4) 0;
+}
+
+.cal-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-2);
+}
+
+.cal-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-4);
+  margin: var(--e-4) 0 var(--e-3);
+  padding: 0;
+  list-style: none;
+  font-size: var(--t-sm);
+}
+
+.cal-leyenda li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+}
+
+.cal-muestra {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.cal-muestra.nacional,
+.cal-dia.festivo.nacional {
+  background: var(--marca);
+}
+
+.cal-muestra.andalucia,
+.cal-dia.festivo.andalucia {
+  background: var(--aviso);
+}
+
+.cal-muestra.local,
+.cal-dia.festivo.local {
+  background: var(--acento);
+}
+
+.cal-meses {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--e-4);
+}
+
+.cal-mes h3 {
+  margin: 0 0 var(--e-1);
+  font-size: var(--t-sm);
+}
+
+.cal-rejilla {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  font-size: var(--t-xs);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-cabeza {
+  color: var(--texto-tenue);
+  font-weight: 600;
+}
+
+.cal-dia {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.cal-dia.domingo {
+  color: var(--texto-tenue);
+}
+
+.cal-dia.festivo {
+  color: var(--texto-sobre-marca);
+  font-weight: 700;
+}
+
+.cal-dia.hoy {
+  outline: 2px solid var(--texto);
+  outline-offset: -1px;
+}
+
+.cal-titulo-lista {
+  margin: var(--e-6) 0 var(--e-2);
+  font-size: var(--t-lg);
+}
+
+.cal-lista {
+  margin: 0 0 var(--e-4);
+  padding: 0;
+  list-style: none;
+}
+
+.cal-lista li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 13em) 1fr;
+  align-items: center;
+  gap: var(--e-2);
+  padding: var(--e-2) 0;
+  border-bottom: 1px solid var(--borde);
+}
+
+.cal-lista li.pasado {
+  color: var(--texto-tenue);
+}
+
+.cal-lista-fecha::first-letter {
+  text-transform: uppercase;
+}
+
+@media (max-width: 480px) {
+  .cal-lista li {
+    grid-template-columns: 12px 1fr;
+  }
+
+  .cal-lista li > :last-child {
+    grid-column: 2;
+  }
+}
+
 /* Resumen público de Quejas: cuatro cifras en fila y los tiempos debajo. */
 .resumen-quejas {
   margin-bottom: var(--e-4);
@@ -2836,4 +3064,15 @@ select:disabled {
   display: flex;
   align-items: center;
   gap: var(--e-1);
+}
+
+/* Quejas: "Ver en el mapa" y, al abrirlo, el enlace a Google Maps. */
+.queja-mapa-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+
+.queja-mapa-acciones + .mapa-ubicacion {
+  margin: var(--e-2) 0 var(--e-3);
 }

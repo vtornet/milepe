@@ -44,4 +44,21 @@ function SelectorUbicacion({ value, onChange }) {
   );
 }
 
+// El mismo mapa, de solo lectura: enseña dónde está una queja ya publicada.
+// Sin rueda del ratón para hacer zoom, o al bajar por el listado la página
+// se queda enganchada en el mapa.
+export function MapaPunto({ punto }) {
+  return (
+    <div className="mapa-ubicacion">
+      <MapContainer center={punto} zoom={17} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <Marker position={punto} icon={iconoMarcador} />
+      </MapContainer>
+    </div>
+  );
+}
+
 export default SelectorUbicacion;

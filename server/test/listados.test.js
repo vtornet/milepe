@@ -121,3 +121,26 @@ test('Estadísticas: solo el admin; cuadran con lo creado y la serie no tiene hu
   assert.equal(serie.reduce((s, d) => s + d.n, 0), total, 'todo lo publicado hoy cae en la serie (lo oculto no)');
   assert.equal(serie.at(-1).n, total, 'el último día es hoy');
 });
+
+test('Muro y /posts/:id: un negocio con propietario lo trae (insignia en sus reseñas)', async () => {
+  const id = await crear('/negocios', { titulo: 'Con dueño', contenido: 'x', categoria: 'ocio', direccion: 'Lepe', ubicacion: { lat: 37.25, lng: -7.2 } }, 'negocio');
+  await modelos.NegocioDetalle.updateOne({ post_id: id }, { propietario_id: vecino.id });
+
+  const enMuro = (await t.api.get('/posts?tipo=negocio')).body.posts.find((p) => p._id === id);
+  assert.equal(String(enMuro.propietario_id), vecino.id);
+  assert.equal(String((await t.api.get(`/posts/${id}`)).body.post.propietario_id), vecino.id);
+
+  const sinDueno = (await t.api.get('/posts?tipo=negocio')).body.posts.find((p) => p._id !== id);
+  assert.equal(sinDueno.propietario_id, undefined);
+});
+
+test('Muro y /posts/:id: una queja trae su punto ("Ver en el mapa"); /quejas trae el tipo', async () => {
+  const id = await crear('/quejas', quejaValida({ ubicacion: { lat: 37.2561, lng: -7.2012 } }), 'queja');
+
+  const enMuro = (await t.api.get('/posts?tipo=queja')).body.posts.find((p) => p._id === id);
+  assert.deepEqual(enMuro.ubicacion, { lat: 37.2561, lng: -7.2012 });
+  assert.deepEqual((await t.api.get(`/posts/${id}`)).body.post.ubicacion, { lat: 37.2561, lng: -7.2012 });
+
+  const enSeccion = (await t.api.get('/quejas')).body.quejas.find((q) => q._id === id);
+  assert.equal(enSeccion.tipo, 'queja');
+});

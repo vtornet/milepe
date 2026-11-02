@@ -1021,6 +1021,13 @@ re-derive otherwise:
   sent): the admin, the owner, or — while nobody has claimed it — whoever
   published it. Owner replies to reviews carry a "Propietario" badge
   (`propietarioId` threaded from `TarjetaPublicacion` down to each comment).
+  Outside Negocios (Muro, `/p/:id`, profile, #tag) `TarjetaPublicacion` turns
+  reviews on by itself for `tipo: 'negocio'`, and `listarMuro`/`obtenerPost`
+  add `propietario_id` to negocio posts (`conDatosDelDetalle`: one query per
+  detail type per page, only when the page has that type). The same helper
+  adds a queja's `ubicacion` ({lat,lng}), so `TarjetaPublicacion` shows "Ver
+  en el mapa" (`VerEnMapa.jsx`, Leaflet loaded lazily — the Muro isn't a lazy
+  page) on any `tipo: 'queja'` post; the Quejas listing sends `tipo` for that.
   RGPD: claims are exported, and deleting an account frees its businesses.
   **"Soy el propietario" when publishing** (`prueba_propiedad` in
   `POST /negocios`) does *not* make you the owner: it creates the same
@@ -1692,6 +1699,19 @@ Antilla ⇄ Huelva / Lepe / Sevilla), each direction with `laborables`,
 - In `PAGINAS_SEO`, the edge function's path list and the sitemap.
 - Damas changes timetables (they announce it under "Última hora", e.g. the
   19 Oct 2026 change): re-check their page now and then.
+
+### Calendario laboral
+
+`/calendario` (tab "Festivos" of Útil) is **client-only**: no API, no model.
+The holidays live in `client/src/pages/Calendario/festivosLepe.js`, typed by
+hand per year — the 12 national/Andalusian days from the Junta's yearly
+decree in the BOJA (2027: Decreto 84/2026) and Lepe's two local holidays from
+the separate order published near the end of the previous year. A year
+without its local ones carries `localesPendientes: true` and the page says
+so. "Today" is Madrid's date. **Each year:** add Lepe's local holidays for
+2027 when they are published, and the next year's block when the decree comes
+out (usually spring). In `PAGINAS_SEO`, the edge function's path list and
+the sitemap.
 
 ### La playa hoy (mareas)
 

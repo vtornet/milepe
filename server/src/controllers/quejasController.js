@@ -17,6 +17,7 @@ const historialPublico = (historial = []) =>
 const formatearQueja = (post, detalle) => ({
   _id: post._id,
   titulo: post.titulo,
+  tipo: post.tipo,
   contenido: post.contenido,
   imagenes: post.imagenes,
   reacciones: post.reacciones_resumen,
@@ -105,6 +106,7 @@ export const listarQuejas = async (req, res, next) => {
             {
               $project: {
                 _id: 1,
+                tipo: 1,
                 titulo: 1,
                 contenido: 1,
                 imagenes: 1,

@@ -32,6 +32,7 @@ export const PAGINAS_SEO = {
   '/grupos': { titulo: 'Grupos', descripcion: 'Grupos de Lepe: barrios, asociaciones, hermandades, peñas y clubes.' },
   '/tiempo': { titulo: 'El tiempo en Lepe', descripcion: 'El tiempo en Lepe hoy y los próximos días, mareas, temperatura del agua e índice UV en La Antilla.' },
   '/autobuses': { titulo: 'Autobuses', descripcion: 'Horarios del autobús urbano de Lepe y de los autobuses de Damas a Huelva, Sevilla y La Antilla.', api: '/autobuses' },
+  '/calendario': { titulo: 'Calendario laboral de Lepe', descripcion: 'Días festivos en Lepe: nacionales, de Andalucía y las dos fiestas locales del municipio.' },
   '/farmacias': { titulo: 'Farmacias de guardia', descripcion: 'Farmacias de guardia en Lepe hoy y mañana, con horario, dirección y teléfono.' },
   '/contactos': { titulo: 'Teléfonos de interés', descripcion: 'Teléfonos de interés de Lepe: emergencias, Ayuntamiento, Policía Local, centros de salud, colegios y más.', api: '/contactos-interes' },
 };

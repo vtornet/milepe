@@ -13,6 +13,7 @@ import api from '../services/api.js';
 import { haceCuanto, fechaCompleta } from '../utils/fechas.js';
 import TextoConEtiquetas from './TextoConEtiquetas.jsx';
 import InsigniaVerificado from './InsigniaVerificado.jsx';
+import VerEnMapa from './VerEnMapa.jsx';
 
 // Armazón común de una publicación: avatar, autor, cuándo, insignias,
 // título, texto, imágenes, datos propios de la sección y barra de acciones.
@@ -36,9 +37,12 @@ function TarjetaPublicacion({
   chips,
   datos,
   acciones,
-  permitirValoracion = false,
-  // Negocios: quien es el propietario, para marcar sus respuestas a las reseñas.
-  propietarioId = null,
+  // Por defecto, según el tipo: un negocio lleva reseñas con estrellas también
+  // fuera de su sección (Muro, /p/:id, perfil, #etiqueta).
+  permitirValoracion,
+  // Negocios: quien es el propietario, para marcar sus respuestas a las
+  // reseñas. Fuera de Negocios lo trae el propio post (propietario_id).
+  propietarioId,
   children,
 }) {
   const { usuario } = useAuth();
@@ -240,6 +244,10 @@ function TarjetaPublicacion({
 
             {datos && <div className="pub-datos">{datos}</div>}
 
+            {/* La ubicación de una queja viene en su listado y, fuera de él,
+                la añade el servidor al post (conDatosDelDetalle). */}
+            {post.tipo === 'queja' && post.ubicacion && <VerEnMapa punto={post.ubicacion} />}
+
             {children}
           </div>
 
@@ -265,8 +273,8 @@ function TarjetaPublicacion({
         postId={post._id}
         reaccionesIniciales={post.reacciones || post.reacciones_resumen}
         numComentarios={post.num_comentarios}
-        permitirValoracion={permitirValoracion}
-        propietarioId={propietarioId}
+        permitirValoracion={permitirValoracion ?? post.tipo === 'negocio'}
+        propietarioId={propietarioId ?? post.propietario_id ?? null}
       />
     </article>
   );

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import Icono from './Icono.jsx';
@@ -30,6 +31,14 @@ function BotonReportar({ contenidoTipo, contenidoId, compacto = false }) {
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState(null);
   const [error, setError] = useState(null);
+
+  // Escape cierra la ventana, como cualquier diálogo.
+  useEffect(() => {
+    if (!abierto) return undefined;
+    const alPulsar = (evento) => evento.key === 'Escape' && setAbierto(false);
+    document.addEventListener('keydown', alPulsar);
+    return () => document.removeEventListener('keydown', alPulsar);
+  }, [abierto]);
 
   if (!usuario) return null;
 
@@ -83,41 +92,60 @@ function BotonReportar({ contenidoTipo, contenidoId, compacto = false }) {
         {!compacto && ' Reportar'}
       </button>
 
-      {abierto && (
-        <form onSubmit={enviar} className="formulario-reporte">
-          <label>
-            Motivo
-            <select value={motivo} onChange={(evento) => setMotivo(evento.target.value)}>
-              {MOTIVOS.map((m) => (
-                <option key={m.valor} value={m.valor}>
-                  {m.etiqueta}
-                </option>
-              ))}
-            </select>
-          </label>
+      {/* En un portal sobre <body>: el botón vive en la fila de la cabecera
+          de una publicación, en el pie de un comentario o en una burbuja de
+          mensaje, y pintado ahí el formulario quedaba aplastado dentro de
+          esa fila (en el móvil, descuadrado). Hoja inferior en el móvil,
+          diálogo centrado en pantallas anchas. */}
+      {abierto &&
+        createPortal(
+          <div className="velo velo-dialogo" onClick={() => setAbierto(false)} role="presentation">
+            <div
+              className="hoja hoja-dialogo"
+              onClick={(evento) => evento.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="titulo-reporte"
+            >
+              <div className="hoja-asa" />
+              <h2 id="titulo-reporte" className="hoja-titulo">
+                <Icono nombre="bandera" tam={18} /> Reportar a los moderadores
+              </h2>
+              <form onSubmit={enviar} className="formulario-reporte">
+                <label htmlFor="reporte-motivo">Motivo</label>
+                <select id="reporte-motivo" value={motivo} onChange={(evento) => setMotivo(evento.target.value)}>
+                  {MOTIVOS.map((m) => (
+                    <option key={m.valor} value={m.valor}>
+                      {m.etiqueta}
+                    </option>
+                  ))}
+                </select>
 
-          <label>
-            Detalle (opcional)
-            <input
-              value={detalle}
-              maxLength={500}
-              placeholder="Algo más que deba saber el moderador"
-              onChange={(evento) => setDetalle(evento.target.value)}
-            />
-          </label>
+                <label htmlFor="reporte-detalle">Detalle (opcional)</label>
+                <textarea
+                  id="reporte-detalle"
+                  rows={3}
+                  value={detalle}
+                  maxLength={500}
+                  placeholder="Algo más que deba saber el moderador"
+                  onChange={(evento) => setDetalle(evento.target.value)}
+                />
 
-          <div className="formulario-reporte-acciones">
-            <button type="submit" disabled={enviando}>
-              {enviando ? 'Enviando...' : 'Enviar reporte'}
-            </button>
-            <button type="button" onClick={() => setAbierto(false)}>
-              Cancelar
-            </button>
-          </div>
+                {error && <p className="mensaje-error">{error}</p>}
 
-          {error && <p className="mensaje-error">{error}</p>}
-        </form>
-      )}
+                <div className="formulario-reporte-acciones">
+                  <button type="button" className="btn btn-plano" onClick={() => setAbierto(false)}>
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn btn-primario" disabled={enviando}>
+                    {enviando ? 'Enviando…' : 'Enviar reporte'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

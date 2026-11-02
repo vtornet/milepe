@@ -1,6 +1,9 @@
 import Post from '../models/Post.js';
 import { normalizarEtiqueta } from '../utils/etiquetas.js';
 import Comentario from '../models/Comentario.js';
+import NegocioDetalle from '../models/NegocioDetalle.js';
+import QuejaDetalle from '../models/QuejaDetalle.js';
+import { deGeoJSONaLatLng } from '../utils/geo.js';
 import Reaccion, { TIPOS_REACCION } from '../models/Reaccion.js';
 import Bloqueo from '../models/Bloqueo.js';
 import Notificacion from '../models/Notificacion.js';
@@ -19,6 +22,37 @@ const noEsVisible = (post) => !post || post.estado_moderacion === 'eliminado';
 const notificarSiNoEsUnoMismo = async ({ destinatarioId, autorAccionId, ...datos }) => {
   if (destinatarioId.equals(autorAccionId)) return;
   await Notificacion.create({ usuario_id: destinatarioId, ...datos });
+};
+
+// El feed no hace joins, pero hay dos datos del *_detalle que la tarjeta
+// necesita también fuera de su sección: el propietario de un negocio (sus
+// respuestas a las reseñas llevan "Propietario") y el punto de una queja
+// ("Ver en el mapa"). Una consulta por tipo para toda la página, y solo si
+// la página trae alguno de ese tipo.
+const conDatosDelDetalle = async (posts) => {
+  const idsDe = (tipo) => posts.filter((p) => p.tipo === tipo).map((p) => p._id);
+  const idsNegocio = idsDe('negocio');
+  const idsQueja = idsDe('queja');
+  if (idsNegocio.length === 0 && idsQueja.length === 0) return posts;
+
+  const [negocios, quejas] = await Promise.all([
+    idsNegocio.length
+      ? NegocioDetalle.find({ post_id: { $in: idsNegocio }, propietario_id: { $ne: null } }).select('post_id propietario_id').lean()
+      : [],
+    idsQueja.length ? QuejaDetalle.find({ post_id: { $in: idsQueja } }).select('post_id ubicacion').lean() : [],
+  ]);
+
+  const extra = new Map();
+  for (const d of negocios) extra.set(String(d.post_id), { propietario_id: d.propietario_id });
+  for (const d of quejas) {
+    const ubicacion = deGeoJSONaLatLng(d.ubicacion);
+    if (ubicacion) extra.set(String(d.post_id), { ubicacion });
+  }
+
+  return posts.map((p) => {
+    const datos = extra.get(String(p._id));
+    return datos ? { ...p.toJSON(), ...datos } : p;
+  });
 };
 
 // Muro: feed general, todas las secciones a la vez, sin joins. Filtro
@@ -55,7 +89,7 @@ export const listarMuro = async (req, res, next) => {
 
     res.json({
       ok: true,
-      posts,
+      posts: await conDatosDelDetalle(posts),
       paginacion: { pagina, limite, total, totalPaginas: Math.ceil(total / limite) },
     });
   } catch (error) {
@@ -98,7 +132,8 @@ export const obtenerPost = async (req, res, next) => {
       throw new ErrorHttp(404, 'Publicacion no encontrada');
     }
 
-    res.json({ ok: true, post });
+    const [completo] = await conDatosDelDetalle([post]);
+    res.json({ ok: true, post: completo });
   } catch (error) {
     next(error);
   }

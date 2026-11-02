@@ -23,6 +23,7 @@ const SECCIONES = [
   ['/grupos', 'daily'],
   ['/tiempo', 'hourly'],
   ['/autobuses', 'weekly'],
+  ['/calendario', 'monthly'],
   ['/farmacias', 'daily'],
   ['/contactos', 'weekly'],
   ['/turismo', 'weekly'],

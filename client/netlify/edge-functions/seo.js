@@ -79,6 +79,7 @@ export const config = {
     '/grupos',
     '/tiempo',
     '/autobuses',
+    '/calendario',
     '/farmacias',
     '/contactos',
     '/turismo/sol_y_playa',

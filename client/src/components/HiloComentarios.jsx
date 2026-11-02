@@ -529,7 +529,7 @@ function Formulario({ usuario, palabra, permitirValoracion = false, autoFoco = f
         {permitirValoracion && (
           <span className="selector-estrellas">
             {[1, 2, 3, 4, 5].map((n) => (
-              <button key={n} type="button" onClick={() => setValoracion(n)} title={`${n} de 5`}>
+              <button key={n} type="button" className="estrella-opcion" onClick={() => setValoracion(n)} title={`${n} de 5`}>
                 {n <= valoracion ? '★' : '☆'}
                 <span className="solo-lectores">{`Puntuar con ${n}`}</span>
               </button>
@@ -546,9 +546,9 @@ function Formulario({ usuario, palabra, permitirValoracion = false, autoFoco = f
           maxLength={1000}
         />
 
-        <button type="submit" className="btn-icono" disabled={enviando || !texto.trim()} title="Enviar">
-          <Icono nombre="enviar" />
-          <span className="solo-lectores">Enviar</span>
+        <button type="submit" className="formulario-comentario-enviar" disabled={enviando || !texto.trim()}>
+          <Icono nombre="enviar" tam={16} />
+          {enviando ? 'Enviando…' : 'Enviar'}
         </button>
       </form>
 
