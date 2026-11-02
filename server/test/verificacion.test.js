@@ -83,6 +83,11 @@ test('suscribirse abre Checkout en modo suscripción a 1,50 €/mes', async () =
   assert.equal(s.line_items[0].price_data.unit_amount, 150);
   assert.deepEqual(s.line_items[0].price_data.recurring, { interval: 'month' });
   assert.equal(s.subscription_data.metadata.usuario_id, ana.id);
+  // Derecho de desistimiento: la suscripción empieza al instante y se cobra
+  // el primer mes, así que el vecino debe aceptar condiciones antes de pagar.
+  assert.equal(s.consent_collection.terms_of_service, 'required');
+  const { CONSENTIMIENTO_DESISTIMIENTO } = await import('../src/utils/stripe.js');
+  assert.equal(s.custom_text.terms_of_service_acceptance.message, CONSENTIMIENTO_DESISTIMIENTO);
 });
 
 test('la factura pagada verifica hasta el final del periodo, una sola vez y con la insignia pública', async () => {

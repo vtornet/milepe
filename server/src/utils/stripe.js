@@ -33,6 +33,14 @@ export const PRODUCTOS = {
   },
 };
 
+// Consentimiento de derecho de desistimiento para servicios digitales de pago
+// (Ley General para la Defensa de los Consumidores y Usuarios, art. 103): el
+// vecino acepta que el servicio empieza de inmediato y renuncia al desistimiento
+// de 14 días. Se muestra en el boton de aceptacion de condiciones de Stripe
+// Checkout y se exige antes de poder pagar.
+export const CONSENTIMIENTO_DESISTIMIENTO =
+  'Al pagar, acepto que el servicio comience de inmediato y renuncio a mi derecho de desistimiento de 14 días.';
+
 let cliente = null;
 
 export const pagosActivos = () => Boolean(process.env.STRIPE_SECRET_KEY);

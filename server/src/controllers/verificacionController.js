@@ -2,7 +2,7 @@ import Usuario from '../models/Usuario.js';
 import Pago from '../models/Pago.js';
 import Notificacion from '../models/Notificacion.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
-import { PRODUCTOS, pagosActivos, stripe, esModoPrueba } from '../utils/stripe.js';
+import { PRODUCTOS, pagosActivos, stripe, esModoPrueba, CONSENTIMIENTO_DESISTIMIENTO } from '../utils/stripe.js';
 
 // Perfil verificado: suscripcion de Stripe a 1,50 EUR/mes (ver
 // PRODUCTOS.verificacion) o, sin pagar, concedido por un admin.
@@ -62,6 +62,10 @@ export const suscribirse = async (req, res, next) => {
     const sesion = await stripe().checkout.sessions.create({
       mode: 'subscription',
       locale: 'es',
+      // Derecho de desistimiento: la suscripción empieza al instante y se
+      // cobra el primer mes; el vecino debe aceptarlo antes de pagar.
+      consent_collection: { terms_of_service: 'required' },
+      custom_text: { terms_of_service_acceptance: { message: CONSENTIMIENTO_DESISTIMIENTO } },
       // Solo se reutiliza el cliente de Stripe si es de este modo (s ya lo filtra).
       ...(s.stripe_cliente_id ? { customer: s.stripe_cliente_id } : { customer_email: usuario.email }),
       client_reference_id: String(usuario._id),

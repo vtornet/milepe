@@ -9,7 +9,7 @@ import PaginaLegal from './PaginaLegal.jsx';
 // el funcionamiento de la moderación, hay que cambiar también este texto.
 function CondicionesPage() {
   return (
-    <PaginaLegal titulo="Condiciones de uso" actualizado="24 de octubre de 2026">
+    <PaginaLegal titulo="Condiciones de uso" actualizado="25 de octubre de 2026">
       <h2>1. Qué es MiLepe</h2>
       <p>
         MiLepe es una red social para los vecinos de Lepe (Huelva): un sitio donde avisar al Ayuntamiento de lo
@@ -114,6 +114,15 @@ function CondicionesPage() {
         moderación, y si se retira por incumplir estas condiciones no se devuelve el importe. Si el servicio
         no se presta por un fallo nuestro, te lo devolvemos. Para cualquier reclamación sobre un cobro,
         escríbenos.
+      </p>
+      <p>
+        <strong>Derecho de desistimiento.</strong> Como consumidor, tienes un derecho de desistimiento de 14 días
+        para cancelar la compra, con o sin que nos consultes. La diferencia es el <strong>momento en que empieza a
+        contar</strong>: para los servicios de pago de MiLepe (destacar un negocio, patrocinar un evento o
+        suscribirte a la verificación) ese momento es el <strong>del pago</strong>, porque la prestación se
+        comienza <strong>de inmediato</strong>. Al aceptar en la pasarela, con ese consentimiento expreso, conoces
+        ese principio y renuncias al derecho de desistimiento. No obstante, si el servicio no se presta por un
+        fallo nuestro, te lo devolvemos.
       </p>
       <p>
         <strong>Perfil verificado.</strong> Cualquier vecino puede llevar la insignia de perfil verificado junto

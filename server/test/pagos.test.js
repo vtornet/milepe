@@ -98,6 +98,12 @@ test('solo quien gestiona el negocio puede pagar su destacado; la sesión lleva 
   assert.equal(sesion.line_items[0].price_data.currency, 'eur');
   assert.equal(sesion.metadata.pago_id, r.body.pago_id);
   assert.match(sesion.success_url, new RegExp(`/pagos/resultado\\?pago=${r.body.pago_id}$`));
+  // Derecho de desistimiento: la pasarela exige aceptar condiciones antes de
+  // pagar, con el texto que explica que se renuncia al desistimiento de 14
+  // días porque el servicio empieza al instante.
+  assert.equal(sesion.consent_collection.terms_of_service, 'required');
+  const { CONSENTIMIENTO_DESISTIMIENTO } = await import('../src/utils/stripe.js');
+  assert.equal(sesion.custom_text.terms_of_service_acceptance.message, CONSENTIMIENTO_DESISTIMIENTO);
 });
 
 test('el webhook firmado aplica el pago una sola vez aunque llegue repetido', async () => {
@@ -137,6 +143,7 @@ test('evento: solo su autor, hasta su fecha, y sale primero en la agenda', async
 
   const { body } = await comprar(duena, 'evento_patrocinado', eventoId);
   assert.equal(sesionesCreadas.at(-1).line_items[0].price_data.unit_amount, 490);
+  assert.equal(sesionesCreadas.at(-1).consent_collection.terms_of_service, 'required');
   await webhook(completado(body.pago_id));
   const pago = (await t.api.get(`/pagos/${body.pago_id}`, { token: duena.token })).body.pago;
   assert.equal(pago.dias, 10, 'hasta el evento, no 30 días');

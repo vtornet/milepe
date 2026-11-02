@@ -3,7 +3,7 @@ import Usuario from '../models/Usuario.js';
 import NegocioDetalle from '../models/NegocioDetalle.js';
 import EventoDetalle from '../models/EventoDetalle.js';
 import ErrorHttp from '../utils/ErrorHttp.js';
-import { PRODUCTOS, pagosActivos, stripe, esModoPrueba } from '../utils/stripe.js';
+import { PRODUCTOS, pagosActivos, stripe, esModoPrueba, CONSENTIMIENTO_DESISTIMIENTO } from '../utils/stripe.js';
 import { cargarNegocio, puedeGestionar } from './negociosController.js';
 import { cargarEvento } from './eventosController.js';
 import { procesarEventoVerificacion } from './verificacionController.js';
@@ -70,6 +70,11 @@ export const crearCheckout = async (req, res, next) => {
     const sesion = await stripe().checkout.sessions.create({
       mode: 'payment',
       locale: 'es',
+      // Derecho de desistimiento: el servicio empieza al instante, así que el
+      // vecino debe aceptar condiciones antes de pagar. `consent_collection`
+      // pide la aceptación y `custom_text` cambia el texto que se muestra.
+      consent_collection: { terms_of_service: 'required' },
+      custom_text: { terms_of_service_acceptance: { message: CONSENTIMIENTO_DESISTIMIENTO } },
       customer_email: usuario?.email,
       client_reference_id: String(pago._id),
       metadata: { pago_id: String(pago._id), producto, post_id: String(post._id) },

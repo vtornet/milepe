@@ -19,6 +19,12 @@ const obtenerCliente = () => {
   return cliente;
 };
 
+// Para los tests: inyectar un cliente de Google falso. Los tests no tienen
+// red, y verificar contra Google de verdad significaria llamar a su API.
+export const usarClienteGoogle = (falso) => {
+  cliente = falso;
+};
+
 /**
  * Comprueba el ID token y devuelve los datos del usuario de Google.
  * Lanza si el token no es valido, esta caducado o no fue emitido para
