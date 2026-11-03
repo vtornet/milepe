@@ -1931,6 +1931,15 @@ can't decode it, e.g. HEIC on Android). Phone photos often exceed the 8 MB
 limit and cost mobile data; every upload goes through `utils/subidas.js`
 `subirImagenes`, so the selectors no longer reject by size.
 
+**Photos are served at the size they are drawn** (`utils/imagenes.js`:
+`redimensionada(url, ancho)` adds `f_auto,q_auto,w_N,c_limit` to a
+Cloudinary URL, `srcsetDe(url, anchos)` builds a srcset; any other URL is
+left alone). `TarjetaPublicacion`'s grid uses 400/800/1200 with `sizes`, the
+tap-to-enlarge link 1600, `Avatar` 160. Cloudinary bills per GB delivered and
+the free plan is **disabled, not charged**, when exceeded, so this is the main
+cost lever: the heaviest Muro photo (a 3.9 MB PNG) goes out as 98 KB at 800
+px (2026-11-03). Any new `<img>` of an uploaded photo should go through these.
+
 Every section's `Post` accepts `imagenes` (an array of already-uploaded
 URLs) at creation. The client forms that take photos are `FotoFormulario`
 (required), `NegocioFormulario` and `EventoFormulario` (optional), plus the

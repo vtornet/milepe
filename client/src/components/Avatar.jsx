@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { redimensionada } from '../utils/imagenes.js';
 
 // Ocho fondos, todos con suficiente contraste para texto blanco encima. Se
 // elige por el nombre y no al azar para que el mismo vecino tenga siempre
@@ -50,7 +51,9 @@ function Avatar({ usuario, tamano = 'md', className = '' }) {
         {/* Sin referer: las fotos de cuentas de Google (lh3.googleusercontent)
             se niegan a cargarse cuando la petición dice desde qué web viene. */}
         <img
-          src={usuario.avatar_url}
+          // Se sube a 1024 px y se pinta a 40-56: 160 basta hasta en pantallas
+          // de densidad 3. Las fotos de Google no son de Cloudinary y van igual.
+          src={redimensionada(usuario.avatar_url, 160)}
           alt=""
           loading="lazy"
           referrerPolicy="no-referrer"

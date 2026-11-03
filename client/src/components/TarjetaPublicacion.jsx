@@ -14,6 +14,7 @@ import { haceCuanto, fechaCompleta } from '../utils/fechas.js';
 import TextoConEtiquetas from './TextoConEtiquetas.jsx';
 import InsigniaVerificado from './InsigniaVerificado.jsx';
 import VerEnMapa from './VerEnMapa.jsx';
+import { redimensionada, srcsetDe } from '../utils/imagenes.js';
 
 // Armazón común de una publicación: avatar, autor, cuándo, insignias,
 // título, texto, imágenes, datos propios de la sección y barra de acciones.
@@ -257,9 +258,20 @@ function TarjetaPublicacion({
             // cuatro porque a partir de ahí la cuadrícula se vuelve un mosaico
             // ilegible; las demás siguen ahí, solo que no se amontonan.
             <div className={`pub-medios pub-medios-${Math.min(imagenes.length, 4)}`}>
+              {/* Las fotos se piden al tamaño en que se pintan (la columna
+                  mide 640 px; con varias, la mitad), no a 1600 px: en el
+                  Muro es casi todo lo que se descarga, y Cloudinary cobra
+                  por GB entregado. Al tocarla se abre grande, que es cuando
+                  hace falta. */}
               {imagenes.slice(0, 4).map((url) => (
-                <a key={url} href={url} target="_blank" rel="noreferrer">
-                  <img src={url} alt={post.titulo || 'Imagen de la publicación'} loading="lazy" />
+                <a key={url} href={redimensionada(url, 1600)} target="_blank" rel="noreferrer">
+                  <img
+                    src={redimensionada(url, 800)}
+                    srcSet={srcsetDe(url, [400, 800, 1200])}
+                    sizes={imagenes.length === 1 ? '(max-width: 680px) 100vw, 640px' : '(max-width: 680px) 50vw, 320px'}
+                    alt={post.titulo || 'Imagen de la publicación'}
+                    loading="lazy"
+                  />
                 </a>
               ))}
             </div>
