@@ -1251,7 +1251,7 @@ data is small, so it is dumped with the driver itself.
 ### Tests and CI
 
 `cd server && npm test` runs `node --test` (built in, no framework) over
-`server/test/*.test.js`: 274 tests, about two minutes. Each file runs
+`server/test/*.test.js`: 283 tests, about two minutes. Each file runs
 in its **own process** with its **own** in-memory MongoDB
 (`mongodb-memory-server`, a devDependency), started by `test/ayuda.js`,
 which imports `app.js` (not `server.js`: no crons, no fixed port) and gives
@@ -1279,6 +1279,16 @@ several processes downloading the `mongod` binary at once can corrupt it.
 - The error handler `console.error`s every error, including the 4xx the
   tests provoke on purpose, so `arrancar()` silences `console.error/log`
   until `detener()`. If a test fails mysteriously, comment that out first.
+- A file can occasionally **hang** instead of failing (seen once with
+  `moderacion.test.js`: 15 minutes stuck, then 36 s and green run alone, so
+  it was the machine, not the code). Run the suite with
+  `node --test --test-concurrency=1 --test-timeout=180000 "test/**/*.test.js"`
+  when you need it to finish: a hang then fails instead of blocking.
+- `auth.test.js` covers `/auth/google` with `usarClienteGoogle()` (a fake
+  client). Its payload must have **Google's** shape (`sub`, `name`,
+  `picture`, `email_verified`), not ours, and `google_id`/`nombre` are
+  checked in the database (`select('+google_id +nombre')`): the API never
+  returns them.
 - Checked that they bite, not just pass: breaking the delete permission,
   the report threshold (3 → 4) and `skipSuccessfulRequests` each made the
   matching tests fail.
@@ -1529,8 +1539,15 @@ the loading step changes.
   per day: `L-V;Farmacia;9:30-22:00`, `S`, `D`, `festivos`, `todos;Farmacia;24h`,
   `festivo;12/10/2026` (a holiday uses only the `festivos`/`todos` lines, not
   its weekday's), or plain dated lines. Lines it can't read come back with
-  their number instead of being dropped. October 2026 for Lepe is in
-  `scripts/datos/guardias-lepe-2026-10.txt`; the PDF itself is not committed.
+  their number instead of being dropped. Each month is in
+  `scripts/datos/guardias-lepe-AAAA-MM.txt` (October and November 2026 so
+  far); the PDFs are not committed. A pharmacy that is on the cuadro for only
+  part of the month (November: "Tena Trincado, guardia del 2 al 8", plus
+  dated Saturday/Sunday/holiday entries) goes as **dated lines**, not a
+  pattern. Load with the tunnel open:
+  `node scripts/cargar-guardias.mjs 2026-11 scripts/datos/guardias-lepe-2026-11.txt --simular`,
+  then without `--simular`; check the total against the cuadro (weekdays ×
+  pharmacies + Saturdays + Sundays + holidays + the 24 h one every day).
 - **Three localities, three cuadros.** For the Colegio Lepe (53), La Antilla
   (50) and Islantilla (48) are separate, each with its own rota; only Lepe's
   PDF has been seen, so La Antilla and Islantilla have no calendar yet.
@@ -2094,7 +2111,11 @@ Checked in a real browser against `vite preview`.
   (`/mi-contenido`) is the author's view and the only place an appeal can
   be filed from. `components/BotonReportar.jsx` sits inside
   `PanelInteraccion`, which is what gets reporting into all six sections at
-  once — and, in its `compacto` form, onto each individual comment.
+  once — and, in its `compacto` form, onto each individual comment. Its form
+  opens in a **portal on `<body>`** (`.velo.velo-dialogo` + `.hoja.hoja-dialogo`:
+  bottom sheet on phones, centred dialog from 600 px, Escape closes): drawn
+  next to the button it got squashed inside the card header / comment footer
+  / message bubble row.
   The shell shows "Moderación" (with the pending count) only to the team,
   and "Mi contenido" only when `GET /moderacion/mi-contenido-moderado`
   comes back non-empty: that's one extra request per app load for a link
@@ -2109,7 +2130,8 @@ Checked in a real browser against `vite preview`.
 - **Grouped sections** (in `secciones.js`): an entry with `grupo` is a tab of
   that group, and only the group's head (`ruta === /<grupo>`) appears in the
   menus (`SECCIONES_MENU`). Tablón = compraventa (`/tablon`, the head) +
-  Animales + Empleo; Útil = Tiempo y playa + Farmacias + Teléfonos, whose
+  Animales + Empleo; Útil = Tiempo y playa + Farmacias + Autobuses +
+  Festivos (`/calendario`) + Teléfonos, whose
   head `/util` has no page (`soloMenu`) and redirects to `/tiempo`. Every tab
   keeps its own route — old links and the Muro's "go to section" still work —
   and `GrupoPestanas` (a pathless layout route) adds the tab row on top.
@@ -2199,10 +2221,12 @@ What's left before promoting the PWA publicly, in order. Items marked
 
 **Before announcing it (blocking)**
 
-1. **Farmacias de noviembre (usuario + aquí).** The loaded calendar ends on
-   **2026-10-31**; from 1 November `/farmacias` and the rail say there's no
-   data. When the Colegio publishes the November PDF, drop it in the repo
-   root and load it (same every month).
+1. **Farmacias de diciembre (usuario + aquí).** November is loaded
+   (2026-11-02); the calendar ends on **2026-11-30**, and from 1 December
+   `/farmacias` and the rail say there's no data. When the Colegio publishes
+   the December PDF, drop it in the repo root and load it (same every month).
+   Also pending: Lepe's two **local holidays for 2027** in
+   `client/src/pages/Calendario/festivosLepe.js` once they are published.
 2. **Google OAuth "En producción" (hecho).** Checked 2026-10-25 in Google
    Cloud (project `milepe`): publishing status "En producción", external
    users; client "MiLepe web" with origins `https://milepe.com`,
@@ -2351,7 +2375,16 @@ Rough priority; none started.
   (`svg { flex-shrink: 0 }` in base.css), class-less buttons falling into the
   generic `button:not([class])` style (reactions, "Cerca de mí"), section
   headers on Tiempo/Contactos/Buscar, the Quejas summary. **Rule of thumb:
-  every `<button>` gets a class**, or it gets the generic look.
+  every `<button>` gets a class**, or it gets the generic look. Same trap
+  with **`form button[type='submit']`** (0,1,2) and **`form { flex-direction:
+  column }`**: they beat a single class such as `.btn-icono` and stacked the
+  comment form and hid its send button (fixed 2026-11-02 with
+  `.formulario-comentario .formulario-comentario-enviar` and an explicit
+  `flex-direction: row`). Inside a form, style buttons with two classes.
+  Without the Chrome extension, screenshots work with headless Edge
+  (`msedge.exe --headless=new --screenshot`, add `--virtual-time-budget=3000`
+  or entry animations are caught half-way); to click first, drive it over
+  CDP (`--remote-debugging-port`) with Node's built-in WebSocket.
   How to look at the live data locally: Vite with `server.proxy` from `/api`
   to https://api.milepe.com and `VITE_API_URL=http://localhost:PORT/api`
   (with a bare `/api`, Git Bash rewrites it into a Windows path); netlify
